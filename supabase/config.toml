@@ -1,0 +1,5 @@
+[project]
+id = "znjgmtkmweujzitgwhos"
+
+[functions.asaas-webhook]
+verify_jwt = false

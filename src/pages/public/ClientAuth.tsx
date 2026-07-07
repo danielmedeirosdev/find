@@ -1,0 +1,202 @@
+import { useState } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { supabase, authErrorMessage, isSupabaseConfigured } from '../../lib/supabase'
+import { ensureAuthSession } from '../../lib/auth'
+import { formatPhone } from '../../lib/format'
+import { BarberPole } from '../../components/BarberPole'
+import { useAuth } from '../../contexts/AuthContext'
+
+export function ClientAuth() {
+  const location = useLocation()
+  const isSignup = location.pathname === '/cadastro'
+  const navigate = useNavigate()
+  const { refreshProfile } = useAuth()
+
+  const [mode, setMode] = useState<'login' | 'signup'>(isSignup ? 'signup' : 'login')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    if (!isSupabaseConfigured) {
+      setError('Configure o Supabase no arquivo .env antes de criar conta.')
+      setLoading(false)
+      return
+    }
+
+    try {
+      if (mode === 'signup') {
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              role: 'client',
+              name: name.trim(),
+              phone: phone.replace(/\D/g, ''),
+            },
+          },
+        })
+        if (signUpError) {
+          setError(signUpError.message)
+          setLoading(false)
+          return
+        }
+        if (!data.user) {
+          setError('Não foi possível criar a conta.')
+          setLoading(false)
+          return
+        }
+
+        try {
+          await ensureAuthSession(email, password)
+        } catch {
+          setError(
+            'Conta criada! Confirme seu e-mail e faça login. (Ou desative "Confirm email" no Supabase → Authentication → Email)'
+          )
+          setLoading(false)
+          return
+        }
+
+        const { data: existingClient } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('id', data.user.id)
+          .maybeSingle()
+
+        if (!existingClient) {
+          const { error: clientError } = await supabase.from('clients').insert({
+            id: data.user.id,
+            name: name.trim(),
+            phone: phone.replace(/\D/g, ''),
+          })
+          if (clientError) {
+            setError(clientError.message)
+            setLoading(false)
+            return
+          }
+        }
+
+        await refreshProfile()
+        navigate('/minhas-reservas')
+      } else {
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+        if (signInError) {
+          setError(signInError.message)
+          setLoading(false)
+          return
+        }
+        await refreshProfile()
+        navigate('/minhas-reservas')
+      }
+    } catch (err) {
+      setError(authErrorMessage(err))
+    }
+
+    setLoading(false)
+  }
+
+  return (
+    <div className="mx-auto max-w-md">
+      <div className="text-center mb-8">
+        <h1 className="font-display text-4xl text-ink">
+          {mode === 'login' ? 'Entrar' : 'Criar conta'}
+        </h1>
+        <BarberPole className="mx-auto max-w-xs mt-4" />
+        <p className="text-ink-muted mt-2 text-sm">
+          Acompanhe seus agendamentos em qualquer barbearia FIND.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="rounded-lg border border-paper-dark bg-white p-6 space-y-4">
+        {mode === 'signup' && (
+          <>
+            <div>
+              <label className="block text-sm font-medium mb-1">Nome</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="w-full rounded-lg border border-paper-dark px-4 py-2 focus:border-brass focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">WhatsApp</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(formatPhone(e.target.value))}
+                className="w-full rounded-lg border border-paper-dark px-4 py-2 focus:border-brass focus:outline-none"
+              />
+            </div>
+          </>
+        )}
+
+        <div>
+          <label className="block text-sm font-medium mb-1">E-mail</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full rounded-lg border border-paper-dark px-4 py-2 focus:border-brass focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Senha</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={6}
+            className="w-full rounded-lg border border-paper-dark px-4 py-2 focus:border-brass focus:outline-none"
+          />
+        </div>
+
+        {error && <p className="text-sm text-red-600">{error}</p>}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full rounded-lg bg-brass py-3 font-semibold text-white disabled:opacity-50"
+        >
+          {loading ? 'Aguarde...' : mode === 'login' ? 'Entrar' : 'Criar conta'}
+        </button>
+      </form>
+
+      <p className="mt-4 text-center text-sm text-ink-muted">
+        {mode === 'login' ? (
+          <>
+            Não tem conta?{' '}
+            <button onClick={() => setMode('signup')} className="text-brass hover:underline">
+              Cadastre-se
+            </button>
+          </>
+        ) : (
+          <>
+            Já tem conta?{' '}
+            <button onClick={() => setMode('login')} className="text-brass hover:underline">
+              Entrar
+            </button>
+          </>
+        )}
+      </p>
+
+      <p className="mt-4 text-center">
+        <Link to="/" className="text-sm text-ink-muted hover:text-brass">
+          ← Voltar
+        </Link>
+      </p>
+    </div>
+  )
+}
