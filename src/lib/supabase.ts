@@ -23,8 +23,8 @@ export const supabase = createClient(
 )
 
 export function authErrorMessage(err: unknown): string {
-  if (err instanceof TypeError && /fetch/i.test(err.message)) {
-    return 'Não foi possível conectar ao Supabase. Verifique o arquivo .env e reinicie o servidor (npm run dev).'
+  if (err instanceof TypeError && /fetch|load failed|network/i.test(err.message)) {
+    return 'Não foi possível conectar ao servidor. Verifique sua conexão com a internet e tente novamente.'
   }
   if (err instanceof Error) return err.message
   return 'Erro inesperado. Tente novamente.'
