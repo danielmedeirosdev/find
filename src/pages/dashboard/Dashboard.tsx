@@ -9,6 +9,8 @@ import { ShopInfoTab } from './tabs/ShopInfo'
 import { TeamScheduleTab } from './tabs/TeamSchedule'
 import { ServicesTab } from './tabs/Services'
 import { AgendaTab } from './tabs/Agenda'
+import { CashFlowTab } from './tabs/CashFlow'
+import { ReportsTab } from './tabs/Reports'
 import { SubscriptionTab } from './tabs/Subscription'
 
 const TABS = [
@@ -16,6 +18,8 @@ const TABS = [
   { id: 'team', label: 'Equipe e horários' },
   { id: 'services', label: 'Serviços' },
   { id: 'agenda', label: 'Agenda' },
+  { id: 'cashflow', label: 'Fluxo de Caixa' },
+  { id: 'reports', label: 'Relatórios' },
   { id: 'subscription', label: 'Assinatura' },
 ] as const
 
@@ -38,7 +42,23 @@ export function Dashboard() {
       .select('*')
       .eq('owner_user_id', user.id)
       .maybeSingle()
-    setShop(data)
+
+    if (
+      data &&
+      data.subscription_status === 'trial' &&
+      data.trial_ends_at &&
+      new Date(data.trial_ends_at) <= new Date()
+    ) {
+      const { data: updated } = await supabase
+        .from('shops')
+        .update({ subscription_status: 'blocked' })
+        .eq('id', data.id)
+        .select('*')
+        .single()
+      setShop(updated || { ...data, subscription_status: 'blocked' })
+    } else {
+      setShop(data)
+    }
     setLoading(false)
   }
 
@@ -82,9 +102,11 @@ export function Dashboard() {
   if (!shop) return <Navigate to="/painel" replace />
 
   if (shop.subscription_status === 'blocked') {
+    const blockReason = shop.asaas_customer_id ? 'payment_overdue' : 'trial_expired'
     return (
       <BlockedOverlay
         shopName={shop.name}
+        blockReason={blockReason}
         onSubscribe={handleSubscribe}
         loading={subscribing}
         error={subscribeError}
@@ -119,6 +141,8 @@ export function Dashboard() {
       {activeTab === 'team' && <TeamScheduleTab shopId={shop.id} />}
       {activeTab === 'services' && <ServicesTab shopId={shop.id} />}
       {activeTab === 'agenda' && <AgendaTab shopId={shop.id} />}
+      {activeTab === 'cashflow' && <CashFlowTab shopId={shop.id} />}
+      {activeTab === 'reports' && <ReportsTab shopId={shop.id} />}
       {activeTab === 'subscription' && (
         <SubscriptionTab
           shop={shop}

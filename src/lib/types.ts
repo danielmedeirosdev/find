@@ -11,6 +11,7 @@ export interface Shop {
   cpf_cnpj: string | null
   asaas_customer_id: string | null
   subscription_status: SubscriptionStatus
+  trial_ends_at: string | null
   created_at: string
 }
 
@@ -26,7 +27,11 @@ export interface Barber {
   id: string
   shop_id: string
   name: string
+  commission_percent?: number | null
 }
+
+export type BookingStatus = 'scheduled' | 'in_progress' | 'completed' | 'no_show' | 'cancelled'
+export type PaymentMethod = 'pix' | 'cartao' | 'dinheiro'
 
 export interface BarberSchedule {
   id: string
@@ -53,7 +58,40 @@ export interface Booking {
   client_phone: string
   date: string
   time: string
+  status?: BookingStatus
+  payment_method?: PaymentMethod | null
+  completed_at?: string | null
   created_at: string
+}
+
+export interface FinancialTransaction {
+  id: string
+  shop_id: string
+  booking_id: string | null
+  type: 'entrada' | 'saida'
+  description: string
+  amount: number
+  payment_method: string | null
+  created_at: string
+}
+
+export interface PublicBookingSlot {
+  shop_id: string
+  barber_id: string
+  date: string
+  time: string
+}
+
+export interface BookingConfirmationState {
+  shopName: string
+  shopAddress: string | null
+  shopPhone: string | null
+  barberName: string
+  date: string
+  time: string
+  clientName: string
+  clientPhone: string
+  services: Service[]
 }
 
 export interface BookingService {

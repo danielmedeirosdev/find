@@ -4,26 +4,50 @@ import { BarberPole } from './BarberPole'
 import { formatPrice, subscriptionLabel } from '../lib/format'
 import { SUBSCRIPTION_PRICE, type BillingType, type SubscribeHandler } from '../lib/types'
 
+type BlockReason = 'trial_expired' | 'payment_overdue'
+
 interface BlockedOverlayProps {
   shopName: string
+  blockReason?: BlockReason
   onSubscribe: SubscribeHandler
   loading?: boolean
   error?: string
 }
 
-export function BlockedOverlay({ shopName, onSubscribe, loading, error }: BlockedOverlayProps) {
+export function BlockedOverlay({
+  shopName,
+  blockReason = 'payment_overdue',
+  onSubscribe,
+  loading,
+  error,
+}: BlockedOverlayProps) {
   const [billingType, setBillingType] = useState<BillingType>('PIX')
+  const isTrialExpired = blockReason === 'trial_expired'
+
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
       <BarberPole className="mb-6 max-w-md" height="h-2" />
-      <h2 className="font-display text-4xl text-brass mb-2">Assinatura em atraso</h2>
+      <h2 className="font-display text-4xl text-brass mb-2">
+        {isTrialExpired ? 'Seu teste grátis terminou' : 'Assinatura em atraso'}
+      </h2>
       <p className="max-w-md text-charcoal-muted mb-2">
-        A barbearia <strong className="text-white">{shopName}</strong> está temporariamente
-        bloqueada por falta de pagamento.
+        {isTrialExpired ? (
+          <>
+            O período de teste de <strong className="text-white">{shopName}</strong> acabou.
+            Assine o FIND para continuar recebendo agendamentos online.
+          </>
+        ) : (
+          <>
+            A barbearia <strong className="text-white">{shopName}</strong> está temporariamente
+            bloqueada por falta de pagamento.
+          </>
+        )}
       </p>
       <p className="max-w-md text-charcoal-muted mb-6">
         Status: <span className="text-red-400">{subscriptionLabel('blocked')}</span>.
-        Regularize para voltar a receber agendamentos online.
+        {isTrialExpired
+          ? ' Escolha um plano para reativar sua barbearia.'
+          : ' Regularize para voltar a receber agendamentos online.'}
       </p>
       <p className="font-mono text-brass text-lg mb-6">
         {formatPrice(SUBSCRIPTION_PRICE)}/mês
@@ -55,7 +79,11 @@ export function BlockedOverlay({ shopName, onSubscribe, loading, error }: Blocke
         disabled={loading}
         className="rounded bg-brass px-8 py-3 font-semibold text-charcoal hover:bg-brass-light transition-colors disabled:opacity-50"
       >
-        {loading ? 'Processando...' : `Regularizar com ${billingType === 'PIX' ? 'Pix' : 'cartão'}`}
+        {loading
+          ? 'Processando...'
+          : isTrialExpired
+            ? `Assinar com ${billingType === 'PIX' ? 'Pix' : 'cartão'}`
+            : `Regularizar com ${billingType === 'PIX' ? 'Pix' : 'cartão'}`}
       </button>
       {error && <p className="mt-4 max-w-md text-sm text-red-400">{error}</p>}
       <Link to="/painel" className="mt-4 text-sm text-charcoal-muted hover:text-brass">

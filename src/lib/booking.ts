@@ -1,5 +1,5 @@
 import { timeToMinutes, minutesToTime } from './format'
-import type { BarberSchedule, Booking, Service } from './types'
+import type { BarberSchedule, PublicBookingSlot, Service } from './types'
 
 const SLOT_INTERVAL = 15
 
@@ -34,25 +34,24 @@ function rangesOverlap(
   return startA < endB && startB < endA
 }
 
+const DEFAULT_SLOT_DURATION = 30
+
 export function getAvailableSlots(
   schedule: BarberSchedule,
-  existingBookings: Booking[],
-  bookingServices: Array<{ booking_id: string; services: Service }>,
+  occupiedSlots: PublicBookingSlot[],
   selectedServices: Service[],
   date: string
 ): string[] {
   const totalDuration = getTotalDuration(selectedServices)
   if (totalDuration === 0) return []
 
-  const dayBookings = existingBookings.filter((b) => b.date === date)
+  const daySlots = occupiedSlots.filter((s) => s.date === date)
   const workStart = timeToMinutes(schedule.start_time)
   const workEnd = timeToMinutes(schedule.end_time)
 
-  const occupied: Array<{ start: number; end: number }> = dayBookings.map((b) => {
-    const linked = bookingServices.filter((bs) => bs.booking_id === b.id)
-    const duration = linked.reduce((sum, bs) => sum + bs.services.duration_minutes, 0) || 30
-    const start = timeToMinutes(b.time)
-    return { start, end: start + duration }
+  const occupied: Array<{ start: number; end: number }> = daySlots.map((s) => {
+    const start = timeToMinutes(s.time)
+    return { start, end: start + DEFAULT_SLOT_DURATION }
   })
 
   const slots: string[] = []

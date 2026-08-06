@@ -18,10 +18,14 @@ export async function ensureBarberShop(userId: string, shopName: string) {
 
   if (existing) return existing
 
+  const trialEndsAt = new Date()
+  trialEndsAt.setDate(trialEndsAt.getDate() + 30)
+
   const { error } = await supabase.from('shops').insert({
     owner_user_id: userId,
     name: shopName,
     subscription_status: 'trial',
+    trial_ends_at: trialEndsAt.toISOString(),
   })
 
   if (error) throw error

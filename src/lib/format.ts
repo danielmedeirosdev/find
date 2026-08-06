@@ -53,3 +53,42 @@ export function subscriptionLabel(status: string): string {
       return status
   }
 }
+
+export function getTrialDaysRemaining(trialEndsAt: string | null): number | null {
+  if (!trialEndsAt) return null
+  const end = new Date(trialEndsAt)
+  const now = new Date()
+  const diffMs = end.getTime() - now.getTime()
+  if (diffMs <= 0) return 0
+  return Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+}
+
+export function bookingStatusLabel(status: string): string {
+  switch (status) {
+    case 'scheduled':
+      return 'Agendado'
+    case 'in_progress':
+      return 'Em atendimento'
+    case 'completed':
+      return 'Concluído'
+    case 'no_show':
+      return 'Não compareceu'
+    case 'cancelled':
+      return 'Cancelado'
+    default:
+      return status
+  }
+}
+
+export function paymentMethodLabel(method: string | null | undefined): string {
+  switch (method) {
+    case 'pix':
+      return 'Pix'
+    case 'cartao':
+      return 'Cartão'
+    case 'dinheiro':
+      return 'Dinheiro'
+    default:
+      return '—'
+  }
+}

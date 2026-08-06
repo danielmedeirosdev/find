@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { formatPrice, formatDate, formatTime } from '../../lib/format'
+import { formatPrice, formatDate, formatTime, bookingStatusLabel, paymentMethodLabel } from '../../lib/format'
 import type { BookingWithDetails } from '../../lib/types'
 import { BarberPole } from '../../components/BarberPole'
 import { useAuth } from '../../contexts/AuthContext'
@@ -86,6 +86,7 @@ export function MyBookings() {
 function BookingCard({ booking }: { booking: BookingWithDetails }) {
   const services = (booking.booking_services || []).map((bs) => bs.services)
   const total = services.reduce((sum, s) => sum + Number(s.price), 0)
+  const isCompleted = booking.status === 'completed'
 
   return (
     <div className="rounded-lg border border-paper-dark bg-white p-5">
@@ -93,6 +94,11 @@ function BookingCard({ booking }: { booking: BookingWithDetails }) {
         <div>
           <h3 className="font-display text-xl text-ink">{booking.shops?.name}</h3>
           <p className="text-sm text-ink-muted">{booking.barbers?.name}</p>
+          {booking.status && (
+            <span className="inline-block mt-1 rounded-full bg-paper px-2 py-0.5 text-xs text-ink-muted">
+              {bookingStatusLabel(booking.status)}
+            </span>
+          )}
         </div>
         <div className="text-right font-mono text-sm">
           <p>{formatDate(booking.date)}</p>
@@ -103,6 +109,11 @@ function BookingCard({ booking }: { booking: BookingWithDetails }) {
         {services.map((s) => s.name).join(' · ')}
       </div>
       <p className="mt-2 font-mono text-brass">{formatPrice(total)}</p>
+      {isCompleted && booking.payment_method && (
+        <p className="mt-1 text-xs text-ink-muted">
+          Pagamento: {paymentMethodLabel(booking.payment_method)}
+        </p>
+      )}
     </div>
   )
 }

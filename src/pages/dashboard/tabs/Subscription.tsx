@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../../../lib/supabase'
-import { formatPrice, subscriptionLabel } from '../../../lib/format'
+import { formatPrice, subscriptionLabel, getTrialDaysRemaining } from '../../../lib/format'
 import { SUBSCRIPTION_PRICE, type Shop, type BillingType, type SubscribeHandler } from '../../../lib/types'
 import { BarberPole } from '../../../components/BarberPole'
 
@@ -45,9 +45,35 @@ export function SubscriptionTab({ shop, onUpdate, onSubscribe, subscribing, subs
         ? 'text-red-400'
         : 'text-yellow-400'
 
+  const trialDays = shop.subscription_status === 'trial' ? getTrialDaysRemaining(shop.trial_ends_at) : null
+  const trialUrgent = trialDays !== null && trialDays <= 3
+
   return (
     <div className="max-w-lg">
       <h2 className="font-display text-2xl text-white mb-6">Assinatura</h2>
+
+      {shop.subscription_status === 'trial' && trialDays !== null && (
+        <div
+          className={`rounded-lg border p-4 mb-6 ${
+            trialUrgent
+              ? 'border-yellow-500/50 bg-yellow-500/10'
+              : 'border-charcoal-light bg-charcoal/50'
+          }`}
+        >
+          <p className={`text-sm font-medium ${trialUrgent ? 'text-yellow-300' : 'text-white'}`}>
+            {trialDays === 0
+              ? 'Seu teste grátis termina hoje!'
+              : trialDays === 1
+                ? 'Seu teste grátis termina amanhã!'
+                : `Seu teste grátis termina em ${trialDays} dias`}
+          </p>
+          {trialUrgent && (
+            <p className="text-xs text-yellow-400/80 mt-1">
+              Assine agora para não perder o acesso ao painel e aos agendamentos online.
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="rounded-lg border border-charcoal-light p-6 mb-6">
         <BarberPole className="mb-4" />

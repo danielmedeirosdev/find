@@ -11,7 +11,14 @@ import {
 } from '../../lib/booking'
 import { formatPrice, formatDuration, formatPhone } from '../../lib/format'
 import { DAY_NAMES } from '../../lib/types'
-import type { Shop, Service, Barber, BarberSchedule, Booking } from '../../lib/types'
+import type {
+  Shop,
+  Service,
+  Barber,
+  BarberSchedule,
+  PublicBookingSlot,
+  BookingConfirmationState,
+} from '../../lib/types'
 import { BarberPole } from '../../components/BarberPole'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -26,10 +33,7 @@ export function ShopBooking() {
   const [services, setServices] = useState<Service[]>([])
   const [barbers, setBarbers] = useState<Barber[]>([])
   const [schedules, setSchedules] = useState<BarberSchedule[]>([])
-  const [bookings, setBookings] = useState<Booking[]>([])
-  const [bookingServiceLinks, setBookingServiceLinks] = useState<
-    Array<{ booking_id: string; services: Service }>
-  >([])
+  const [occupiedSlots, setOccupiedSlots] = useState<PublicBookingSlot[]>([])
 
   const [step, setStep] = useState<Step>(1)
   const [selectedServiceIds, setSelectedServiceIds] = useState<Set<string>>(new Set())
@@ -80,31 +84,17 @@ export function ShopBooking() {
         sched = data || []
       }
 
-      const { data: bk } = await supabase
-        .from('bookings')
-        .select('*')
+      const { data: slots } = await supabase
+        .from('public_booking_slots')
+        .select('shop_id, barber_id, date, time')
         .eq('shop_id', shopId)
         .gte('date', new Date().toISOString().slice(0, 10))
-
-      let links: Array<{ booking_id: string; services: Service }> = []
-      if (bk && bk.length > 0) {
-        const { data: bs } = await supabase
-          .from('booking_services')
-          .select('booking_id, services(*)')
-          .in('booking_id', bk.map((b) => b.id))
-
-        links = (bs || []).map((row) => ({
-          booking_id: row.booking_id as string,
-          services: row.services as unknown as Service,
-        }))
-      }
 
       setShop(shopData)
       setServices(svc || [])
       setBarbers(barb || [])
       setSchedules(sched)
-      setBookings(bk || [])
-      setBookingServiceLinks(links)
+      setOccupiedSlots(slots || [])
       setLoading(false)
     }
     load()
@@ -125,11 +115,10 @@ export function ShopBooking() {
     selectedDay !== null ? getScheduleForDay(barberSchedules, selectedDay) : undefined
 
   const availableSlots =
-    daySchedule && selectedDate
+    daySchedule && selectedDate && selectedBarberId
       ? getAvailableSlots(
           daySchedule,
-          bookings.filter((b) => b.barber_id === selectedBarberId),
-          bookingServiceLinks,
+          occupiedSlots.filter((s) => s.barber_id === selectedBarberId),
           selectedServices,
           selectedDate
         )
@@ -187,7 +176,19 @@ export function ShopBooking() {
       return
     }
 
-    navigate(`/confirmacao/${booking.id}`)
+    const confirmationState: BookingConfirmationState = {
+      shopName: shop.name,
+      shopAddress: shop.address,
+      shopPhone: shop.phone,
+      barberName: selectedBarber?.name || '',
+      date: selectedDate,
+      time: selectedTime,
+      clientName: clientName.trim(),
+      clientPhone: clientPhone.replace(/\D/g, ''),
+      services: selectedServices,
+    }
+
+    navigate(`/confirmacao/${booking.id}`, { state: confirmationState })
   }
 
   if (loading) return <p className="text-center text-ink-muted">Carregando...</p>

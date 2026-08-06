@@ -55,6 +55,16 @@ export function TeamScheduleTab({ shopId }: Props) {
   const getSchedule = (barberId: string, day: number) =>
     schedules.find((s) => s.barber_id === barberId && s.day_of_week === day)
 
+  const updateCommission = async (barberId: string, value: string) => {
+    const pct = value === '' ? null : parseFloat(value.replace(',', '.'))
+    if (pct !== null && (isNaN(pct) || pct < 0 || pct > 100)) return
+    await supabase
+      .from('barbers')
+      .update({ commission_percent: pct })
+      .eq('id', barberId)
+    load()
+  }
+
   const updateSchedule = async (
     barberId: string,
     day: number,
@@ -106,14 +116,29 @@ export function TeamScheduleTab({ shopId }: Props) {
         <div className="space-y-8">
           {barbers.map((barber) => (
             <div key={barber.id} className="rounded-lg border border-charcoal-light p-4">
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
                 <h3 className="font-display text-xl text-brass">{barber.name}</h3>
-                <button
-                  onClick={() => removeBarber(barber.id)}
-                  className="text-sm text-red-400 hover:text-red-300"
-                >
-                  Remover
-                </button>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-sm text-charcoal-muted">
+                    Comissão %
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.5"
+                      value={barber.commission_percent ?? ''}
+                      onChange={(e) => updateCommission(barber.id, e.target.value)}
+                      placeholder="—"
+                      className="w-20 rounded border border-charcoal-light bg-charcoal px-2 py-1 font-mono text-sm text-white"
+                    />
+                  </label>
+                  <button
+                    onClick={() => removeBarber(barber.id)}
+                    className="text-sm text-red-400 hover:text-red-300"
+                  >
+                    Remover
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-3">
