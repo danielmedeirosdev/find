@@ -14,7 +14,7 @@ Plataforma multi-tenant de agendamento online para barbearias.
 ### 1. Supabase
 
 1. Crie um projeto no [Supabase](https://supabase.com)
-2. Execute as migrations em `supabase/migrations/` (em ordem) no SQL Editor — inclua `010_delete_own_shop.sql` para permitir exclusão permanente da barbearia
+2. Execute as migrations em `supabase/migrations/` (em ordem) no SQL Editor — para exclusão da barbearia rode `010_delete_own_shop.sql` e `011_fix_delete_own_shop_storage.sql`
 3. Copie a URL e a anon key para `.env`
 
 ### 2. Variáveis de ambiente

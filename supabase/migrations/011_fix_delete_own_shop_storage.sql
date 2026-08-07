@@ -1,12 +1,6 @@
--- Allow owners to permanently delete their barbershop and all related data
+-- Fix: Supabase blocks DELETE on storage.objects from SQL.
+-- Media cleanup is done via Storage API in the frontend before calling this RPC.
 
-DROP POLICY IF EXISTS "Owners can delete own shop" ON shops;
-CREATE POLICY "Owners can delete own shop"
-  ON shops FOR DELETE
-  USING (owner_user_id = auth.uid());
-
--- Cascades all shop data, then removes the owner auth account.
--- Media files are removed via Storage API in the frontend (not here).
 CREATE OR REPLACE FUNCTION public.delete_own_shop()
 RETURNS void
 LANGUAGE plpgsql
