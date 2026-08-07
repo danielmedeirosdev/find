@@ -23,6 +23,8 @@ export function AgendaTab({ shopId }: Props) {
   const [clientHistory, setClientHistory] = useState<BookingWithDetails[]>([])
   const [searching, setSearching] = useState(false)
 
+  const [actionError, setActionError] = useState('')
+
   const load = useCallback(async () => {
     const today = new Date().toISOString().slice(0, 10)
     const [{ data }, { data: svc }] = await Promise.all([
@@ -50,7 +52,15 @@ export function AgendaTab({ shopId }: Props) {
   }, [load])
 
   const updateStatus = async (bookingId: string, status: 'no_show' | 'cancelled') => {
-    await supabase.from('bookings').update({ status }).eq('id', bookingId)
+    setActionError('')
+    const { error } = await supabase.rpc('update_booking_status', {
+      p_booking_id: bookingId,
+      p_status: status,
+    })
+    if (error) {
+      setActionError(error.message)
+      return
+    }
     load()
   }
 
@@ -91,6 +101,7 @@ export function AgendaTab({ shopId }: Props) {
   return (
     <div>
       <h2 className="font-display text-2xl text-white mb-6">Agenda</h2>
+      {actionError && <p className="mb-4 text-sm text-red-400">{actionError}</p>}
 
       <div className="mb-8 rounded-lg border border-charcoal-light p-4">
         <h3 className="font-medium text-white mb-3">Histórico do cliente</h3>

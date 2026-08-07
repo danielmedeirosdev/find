@@ -52,7 +52,9 @@ BEGIN
     RAISE EXCEPTION 'Agendamento não encontrado';
   END IF;
 
-  IF NOT is_shop_owner(v_shop_id) THEN
+  IF NOT EXISTS (
+    SELECT 1 FROM shops WHERE id = v_shop_id AND owner_user_id = auth.uid()
+  ) THEN
     RAISE EXCEPTION 'Sem permissão para finalizar este atendimento';
   END IF;
 
