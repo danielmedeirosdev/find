@@ -2,8 +2,17 @@ import { supabase } from './supabase'
 
 const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_BYTES = 5 * 1024 * 1024
-const MAX_DIMENSION = 1400
-const JPEG_QUALITY = 0.82
+
+type MediaFolder = 'logo' | 'gallery' | 'barbers'
+
+const PRESETS: Record<MediaFolder, { maxDimension: number; quality: number }> = {
+  // Fotos de fachada/ambiente: prioriza nitidez
+  gallery: { maxDimension: 2560, quality: 0.92 },
+  // Logo precisa de boa definição, mas não precisa ser enorme
+  logo: { maxDimension: 1024, quality: 0.93 },
+  // Foto de perfil
+  barbers: { maxDimension: 900, quality: 0.9 },
+}
 
 export function slugify(input: string): string {
   return input
@@ -47,7 +56,21 @@ function loadImage(file: File): Promise<HTMLImageElement> {
   })
 }
 
-export async function compressImage(file: File): Promise<Blob> {
+async function blobFromCanvas(
+  canvas: HTMLCanvasElement,
+  quality: number
+): Promise<Blob> {
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, 'image/jpeg', quality)
+  )
+  if (!blob) throw new Error('Falha ao comprimir imagem.')
+  return blob
+}
+
+export async function compressImage(
+  file: File,
+  folder: MediaFolder = 'gallery'
+): Promise<Blob> {
   if (!ACCEPTED.includes(file.type)) {
     throw new Error('Use PNG, JPG ou WEBP.')
   }
@@ -55,8 +78,21 @@ export async function compressImage(file: File): Promise<Blob> {
     throw new Error('Arquivo muito grande (máx. 5 MB).')
   }
 
+  const { maxDimension, quality } = PRESETS[folder]
   const img = await loadImage(file)
-  const scale = Math.min(1, MAX_DIMENSION / Math.max(img.width, img.height))
+  const longest = Math.max(img.width, img.height)
+
+  // Já cabe no limite e é JPG pequeno: não recomprime (evita perda)
+  if (
+    longest <= maxDimension &&
+    file.type === 'image/jpeg' &&
+    file.size <= MAX_BYTES &&
+    folder === 'gallery'
+  ) {
+    return file
+  }
+
+  const scale = Math.min(1, maxDimension / longest)
   const width = Math.round(img.width * scale)
   const height = Math.round(img.height * scale)
 
@@ -65,26 +101,34 @@ export async function compressImage(file: File): Promise<Blob> {
   canvas.height = height
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('Falha ao processar imagem.')
+
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
   ctx.drawImage(img, 0, 0, width, height)
 
-  const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY)
-  )
-  if (!blob) throw new Error('Falha ao comprimir imagem.')
-  if (blob.size > MAX_BYTES) {
+  let out = await blobFromCanvas(canvas, quality)
+
+  // Se ainda passar do teto, reduz qualidade aos poucos (não o tamanho)
+  let q = quality
+  while (out.size > MAX_BYTES && q > 0.7) {
+    q -= 0.05
+    out = await blobFromCanvas(canvas, q)
+  }
+
+  if (out.size > MAX_BYTES) {
     throw new Error('Imagem ainda grande demais após compressão.')
   }
-  return blob
+  return out
 }
 
 export async function uploadShopMedia(
   shopId: string,
   file: File,
-  folder: 'logo' | 'gallery' | 'barbers',
+  folder: MediaFolder,
   onProgress?: (pct: number) => void
 ): Promise<string> {
   onProgress?.(10)
-  const blob = await compressImage(file)
+  const blob = await compressImage(file, folder)
   onProgress?.(45)
 
   const path = `${shopId}/${folder}/${crypto.randomUUID()}.jpg`
