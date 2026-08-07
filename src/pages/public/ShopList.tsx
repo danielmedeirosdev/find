@@ -64,15 +64,27 @@ export function ShopList() {
           {shops.map((shop) => (
             <Link
               key={shop.id}
-              to={`/barbearia/${shop.id}`}
+              to={shop.slug ? `/b/${shop.slug}` : `/barbearia/${shop.id}`}
               className="group rounded-lg border border-paper-dark bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
             >
-              <h2 className="font-display text-2xl text-ink group-hover:text-brass transition-colors">
-                {shop.name}
-              </h2>
-              {shop.slogan && (
-                <p className="text-sm text-ink-muted italic mt-1">{shop.slogan}</p>
-              )}
+              <div className="flex items-start gap-3">
+                {shop.logo_url && (
+                  <img
+                    src={shop.logo_url}
+                    alt=""
+                    loading="lazy"
+                    className="h-12 w-12 rounded-lg object-cover"
+                  />
+                )}
+                <div>
+                  <h2 className="font-display text-2xl text-ink group-hover:text-brass transition-colors">
+                    {shop.name}
+                  </h2>
+                  {shop.slogan && (
+                    <p className="text-sm text-ink-muted italic mt-1">{shop.slogan}</p>
+                  )}
+                </div>
+              </div>
               {shop.address && (
                 <p className="text-sm text-ink-muted mt-2">{shop.address}</p>
               )}

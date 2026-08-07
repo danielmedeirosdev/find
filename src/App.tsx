@@ -4,6 +4,7 @@ import { PublicLayout } from './components/PublicLayout'
 import { DashboardLayout } from './components/DashboardLayout'
 import { ShopList } from './pages/public/ShopList'
 import { ShopBooking } from './pages/public/ShopBooking'
+import { ShopPublic } from './pages/public/ShopPublic'
 import { BookingConfirm } from './pages/public/BookingConfirm'
 import { ClientAuth } from './pages/public/ClientAuth'
 import { MyBookings } from './pages/public/MyBookings'
@@ -17,6 +18,7 @@ export default function App() {
         <Routes>
           <Route element={<PublicLayout />}>
             <Route index element={<ShopList />} />
+            <Route path="b/:slug" element={<ShopPublic />} />
             <Route path="barbearia/:shopId" element={<ShopBooking />} />
             <Route path="confirmacao/:bookingId" element={<BookingConfirm />} />
             <Route path="entrar" element={<ClientAuth />} />

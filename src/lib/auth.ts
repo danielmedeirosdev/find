@@ -1,3 +1,4 @@
+import { ensureUniqueSlug } from './media'
 import { supabase } from './supabase'
 
 export async function ensureAuthSession(email: string, password: string) {
@@ -20,12 +21,14 @@ export async function ensureBarberShop(userId: string, shopName: string) {
 
   const trialEndsAt = new Date()
   trialEndsAt.setDate(trialEndsAt.getDate() + 30)
+  const slug = await ensureUniqueSlug(shopName)
 
   const { error } = await supabase.from('shops').insert({
     owner_user_id: userId,
     name: shopName,
     subscription_status: 'trial',
     trial_ends_at: trialEndsAt.toISOString(),
+    slug,
   })
 
   if (error) throw error

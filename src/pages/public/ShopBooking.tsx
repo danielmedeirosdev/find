@@ -18,8 +18,10 @@ import type {
   BarberSchedule,
   PublicBookingSlot,
   BookingConfirmationState,
+  ShopPhoto,
 } from '../../lib/types'
 import { BarberPole } from '../../components/BarberPole'
+import { DefaultAvatar } from '../../components/MediaUI'
 import { useAuth } from '../../contexts/AuthContext'
 
 type Step = 1 | 2 | 3 | 4
@@ -34,6 +36,7 @@ export function ShopBooking() {
   const [barbers, setBarbers] = useState<Barber[]>([])
   const [schedules, setSchedules] = useState<BarberSchedule[]>([])
   const [occupiedSlots, setOccupiedSlots] = useState<PublicBookingSlot[]>([])
+  const [photos, setPhotos] = useState<ShopPhoto[]>([])
 
   const [step, setStep] = useState<Step>(1)
   const [selectedServiceIds, setSelectedServiceIds] = useState<Set<string>>(new Set())
@@ -69,9 +72,15 @@ export function ShopBooking() {
         return
       }
 
-      const [{ data: svc }, { data: barb }] = await Promise.all([
+      const [{ data: svc }, { data: barb }, { data: ph }] = await Promise.all([
         supabase.from('services').select('*').eq('shop_id', shopId).order('name'),
         supabase.from('barbers').select('*').eq('shop_id', shopId).order('name'),
+        supabase
+          .from('shop_photos')
+          .select('*')
+          .eq('shop_id', shopId)
+          .order('sort_order')
+          .limit(6),
       ])
 
       const barberIds = (barb || []).map((b) => b.id)
@@ -95,6 +104,7 @@ export function ShopBooking() {
       setBarbers(barb || [])
       setSchedules(sched)
       setOccupiedSlots(slots || [])
+      setPhotos((ph as ShopPhoto[]) || [])
       setLoading(false)
     }
     load()
@@ -204,13 +214,37 @@ export function ShopBooking() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="font-display text-4xl text-ink">{shop.name}</h1>
-        {shop.slogan && <p className="text-ink-muted italic">{shop.slogan}</p>}
-        {shop.address && <p className="text-sm text-ink-muted mt-1">{shop.address}</p>}
-        {shop.hours_text && (
-          <p className="text-sm font-mono text-ink-muted mt-1">{shop.hours_text}</p>
+        <div className="mb-4 flex items-start gap-4">
+          {shop.logo_url && (
+            <img
+              src={shop.logo_url}
+              alt=""
+              className="h-16 w-16 rounded-xl object-cover border border-paper-dark"
+            />
+          )}
+          <div>
+            <h1 className="font-display text-4xl text-ink">{shop.name}</h1>
+            {shop.slogan && <p className="text-ink-muted italic">{shop.slogan}</p>}
+            {shop.address && <p className="text-sm text-ink-muted mt-1">{shop.address}</p>}
+            {shop.hours_text && (
+              <p className="text-sm font-mono text-ink-muted mt-1">{shop.hours_text}</p>
+            )}
+          </div>
+        </div>
+        {photos.length > 0 && (
+          <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+            {photos.map((p) => (
+              <img
+                key={p.id}
+                src={p.url}
+                alt=""
+                loading="lazy"
+                className="h-20 w-28 shrink-0 rounded-lg object-cover"
+              />
+            ))}
+          </div>
         )}
-        <BarberPole className="mt-4 max-w-md" />
+        <BarberPole className="mt-2 max-w-md" />
       </div>
 
       <div className="mb-8 flex gap-2">
@@ -299,9 +333,23 @@ export function ShopBooking() {
                         : 'border-paper-dark hover:border-brass/50'
                     }`}
                   >
-                    <div className="font-medium">{b.name}</div>
-                    <div className="text-sm text-ink-muted mt-1">
-                      Atende: {days.map((d) => DAY_NAMES[d].slice(0, 3)).join(', ') || '—'}
+                    <div className="flex items-center gap-3">
+                      {b.photo_url ? (
+                        <img
+                          src={b.photo_url}
+                          alt=""
+                          className="h-12 w-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <DefaultAvatar name={b.name} className="h-12 w-12 text-lg" />
+                      )}
+                      <div>
+                        <div className="font-medium">{b.name}</div>
+                        {b.role && <div className="text-xs text-ink-muted">{b.role}</div>}
+                        <div className="text-sm text-ink-muted mt-1">
+                          Atende: {days.map((d) => DAY_NAMES[d].slice(0, 3)).join(', ') || '—'}
+                        </div>
+                      </div>
                     </div>
                   </button>
                 )

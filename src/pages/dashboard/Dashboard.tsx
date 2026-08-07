@@ -12,6 +12,7 @@ import { AgendaTab } from './tabs/Agenda'
 import { CashFlowTab } from './tabs/CashFlow'
 import { ReportsTab } from './tabs/Reports'
 import { SubscriptionTab } from './tabs/Subscription'
+import { ShopLinkTab } from './tabs/ShopLink'
 
 const TABS = [
   { id: 'info', label: 'Informações' },
@@ -20,6 +21,7 @@ const TABS = [
   { id: 'agenda', label: 'Agenda' },
   { id: 'cashflow', label: 'Fluxo de Caixa' },
   { id: 'reports', label: 'Relatórios' },
+  { id: 'link', label: 'Link da Barbearia' },
   { id: 'subscription', label: 'Assinatura' },
 ] as const
 
@@ -116,9 +118,18 @@ export function Dashboard() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="font-display text-4xl text-brass">{shop.name}</h1>
-        <p className="text-charcoal-muted text-sm mt-1">Painel de gestão</p>
+      <div className="mb-8 flex items-center gap-4">
+        {shop.logo_url ? (
+          <img
+            src={shop.logo_url}
+            alt=""
+            className="h-14 w-14 rounded-xl object-cover border border-charcoal-light"
+          />
+        ) : null}
+        <div>
+          <h1 className="font-display text-4xl text-brass">{shop.name}</h1>
+          <p className="text-charcoal-muted text-sm mt-1">Painel de gestão</p>
+        </div>
       </div>
 
       <nav className="mb-8 flex flex-wrap gap-2 border-b border-charcoal-light pb-4">
@@ -143,6 +154,7 @@ export function Dashboard() {
       {activeTab === 'agenda' && <AgendaTab shopId={shop.id} />}
       {activeTab === 'cashflow' && <CashFlowTab shopId={shop.id} />}
       {activeTab === 'reports' && <ReportsTab shopId={shop.id} />}
+      {activeTab === 'link' && <ShopLinkTab shop={shop} onUpdate={loadShop} />}
       {activeTab === 'subscription' && (
         <SubscriptionTab
           shop={shop}

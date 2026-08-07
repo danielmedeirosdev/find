@@ -12,6 +12,17 @@ export interface Shop {
   asaas_customer_id: string | null
   subscription_status: SubscriptionStatus
   trial_ends_at: string | null
+  logo_url?: string | null
+  banner_url?: string | null
+  slug?: string | null
+  created_at: string
+}
+
+export interface ShopPhoto {
+  id: string
+  shop_id: string
+  url: string
+  sort_order: number
   created_at: string
 }
 
@@ -27,6 +38,8 @@ export interface Barber {
   id: string
   shop_id: string
   name: string
+  photo_url?: string | null
+  role?: string | null
   commission_percent?: number | null
 }
 
