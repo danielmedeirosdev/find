@@ -5,13 +5,14 @@ const MAX_BYTES = 5 * 1024 * 1024
 
 type MediaFolder = 'logo' | 'gallery' | 'barbers'
 
-const PRESETS: Record<MediaFolder, { maxDimension: number; quality: number }> = {
-  // Fotos de fachada/ambiente: prioriza nitidez
-  gallery: { maxDimension: 2560, quality: 0.92 },
-  // Logo precisa de boa definição, mas não precisa ser enorme
-  logo: { maxDimension: 1024, quality: 0.93 },
-  // Foto de perfil
-  barbers: { maxDimension: 900, quality: 0.9 },
+/** Só redimensiona/comprime quando realmente precisa. */
+const PRESETS: Record<
+  MediaFolder,
+  { maxDimension: number; quality: number; skipBelowBytes: number }
+> = {
+  gallery: { maxDimension: 3200, quality: 0.95, skipBelowBytes: 3.5 * 1024 * 1024 },
+  logo: { maxDimension: 1200, quality: 0.95, skipBelowBytes: 800 * 1024 },
+  barbers: { maxDimension: 1200, quality: 0.93, skipBelowBytes: 1 * 1024 * 1024 },
 }
 
 export function slugify(input: string): string {
@@ -56,10 +57,13 @@ function loadImage(file: File): Promise<HTMLImageElement> {
   })
 }
 
-async function blobFromCanvas(
-  canvas: HTMLCanvasElement,
-  quality: number
-): Promise<Blob> {
+function extFor(file: File): { contentType: string; ext: string } {
+  if (file.type === 'image/png') return { contentType: 'image/png', ext: 'png' }
+  if (file.type === 'image/webp') return { contentType: 'image/webp', ext: 'webp' }
+  return { contentType: 'image/jpeg', ext: 'jpg' }
+}
+
+async function canvasToJpeg(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
   const blob = await new Promise<Blob | null>((resolve) =>
     canvas.toBlob(resolve, 'image/jpeg', quality)
   )
@@ -67,32 +71,39 @@ async function blobFromCanvas(
   return blob
 }
 
-export async function compressImage(
+/**
+ * Galeria: preserva o arquivo original sempre que couber no limite.
+ * Só redimensiona se for maior que maxDimension OU passar do tamanho do bucket.
+ */
+export async function prepareImage(
   file: File,
-  folder: MediaFolder = 'gallery'
-): Promise<Blob> {
+  folder: MediaFolder
+): Promise<{ blob: Blob; contentType: string; ext: string }> {
   if (!ACCEPTED.includes(file.type)) {
     throw new Error('Use PNG, JPG ou WEBP.')
   }
-  if (file.size > MAX_BYTES * 2) {
-    throw new Error('Arquivo muito grande (máx. 5 MB).')
+  if (file.size > MAX_BYTES * 3) {
+    throw new Error('Arquivo muito grande. Use uma imagem de até ~10 MB.')
   }
 
-  const { maxDimension, quality } = PRESETS[folder]
+  const preset = PRESETS[folder]
   const img = await loadImage(file)
   const longest = Math.max(img.width, img.height)
+  const needsResize = longest > preset.maxDimension
+  const needsShrink = file.size > MAX_BYTES
 
-  // Já cabe no limite e é JPG pequeno: não recomprime (evita perda)
-  if (
-    longest <= maxDimension &&
-    file.type === 'image/jpeg' &&
-    file.size <= MAX_BYTES &&
-    folder === 'gallery'
-  ) {
-    return file
+  // Mantém original (sem passar pelo canvas = sem perda)
+  if (!needsResize && !needsShrink && file.size <= preset.skipBelowBytes) {
+    const { contentType, ext } = extFor(file)
+    return { blob: file, contentType, ext }
   }
 
-  const scale = Math.min(1, maxDimension / longest)
+  // JPG original já no tamanho certo, só um pouco acima do skip — ainda assim evita canvas
+  if (!needsResize && file.type === 'image/jpeg' && file.size <= MAX_BYTES) {
+    return { blob: file, contentType: 'image/jpeg', ext: 'jpg' }
+  }
+
+  const scale = needsResize ? preset.maxDimension / longest : 1
   const width = Math.round(img.width * scale)
   const height = Math.round(img.height * scale)
 
@@ -106,19 +117,18 @@ export async function compressImage(
   ctx.imageSmoothingQuality = 'high'
   ctx.drawImage(img, 0, 0, width, height)
 
-  let out = await blobFromCanvas(canvas, quality)
-
-  // Se ainda passar do teto, reduz qualidade aos poucos (não o tamanho)
-  let q = quality
-  while (out.size > MAX_BYTES && q > 0.7) {
-    q -= 0.05
-    out = await blobFromCanvas(canvas, q)
+  let q = preset.quality
+  let out = await canvasToJpeg(canvas, q)
+  while (out.size > MAX_BYTES && q > 0.8) {
+    q -= 0.03
+    out = await canvasToJpeg(canvas, q)
   }
 
   if (out.size > MAX_BYTES) {
-    throw new Error('Imagem ainda grande demais após compressão.')
+    throw new Error('Imagem ainda grande demais. Tente outra com resolução um pouco menor.')
   }
-  return out
+
+  return { blob: out, contentType: 'image/jpeg', ext: 'jpg' }
 }
 
 export async function uploadShopMedia(
@@ -128,12 +138,12 @@ export async function uploadShopMedia(
   onProgress?: (pct: number) => void
 ): Promise<string> {
   onProgress?.(10)
-  const blob = await compressImage(file, folder)
+  const { blob, contentType, ext } = await prepareImage(file, folder)
   onProgress?.(45)
 
-  const path = `${shopId}/${folder}/${crypto.randomUUID()}.jpg`
+  const path = `${shopId}/${folder}/${crypto.randomUUID()}.${ext}`
   const { error } = await supabase.storage.from('shop-media').upload(path, blob, {
-    contentType: 'image/jpeg',
+    contentType,
     upsert: false,
   })
   if (error) throw error

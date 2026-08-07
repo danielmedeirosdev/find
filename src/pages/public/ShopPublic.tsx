@@ -66,31 +66,34 @@ export function ShopPublic() {
 
   return (
     <div>
-      <div className="relative mb-8 overflow-hidden rounded-xl">
+      <div className="relative mb-8 overflow-hidden rounded-xl bg-paper-dark">
         {hero ? (
           <img
             src={hero}
             alt=""
-            className="h-56 w-full object-cover sm:h-72"
+            className="max-h-[28rem] min-h-[16rem] w-full object-cover object-center sm:min-h-[20rem]"
             loading="eager"
+            decoding="async"
+            fetchPriority="high"
+            sizes="(max-width: 768px) 100vw, 960px"
           />
         ) : (
           <div className="flex h-40 items-center justify-center bg-paper-dark">
             <BarberPole className="max-w-xs" />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        <div className="absolute bottom-4 left-4 flex items-end gap-3">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+        <div className="absolute bottom-4 left-4 right-4 flex items-end gap-3">
           {shop.logo_url && (
             <img
               src={shop.logo_url}
               alt={shop.name}
-              className="h-16 w-16 rounded-xl border-2 border-white object-cover shadow"
+              className="h-16 w-16 shrink-0 rounded-xl border-2 border-white object-cover shadow"
             />
           )}
-          <div className="text-white drop-shadow">
+          <div className="text-white drop-shadow-md">
             <h1 className="font-display text-3xl sm:text-4xl">{shop.name}</h1>
-            {shop.slogan && <p className="text-sm italic opacity-90">{shop.slogan}</p>}
+            {shop.slogan && <p className="text-sm italic opacity-95">{shop.slogan}</p>}
           </div>
         </div>
       </div>

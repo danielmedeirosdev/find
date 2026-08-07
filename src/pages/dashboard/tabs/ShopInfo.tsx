@@ -222,7 +222,11 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
               <span className="text-[10px] text-charcoal-muted">Adicionar</span>
             </ImageDropzone>
           </div>
-          <p className="text-xs text-charcoal-muted">Arraste para reordenar · fachada, ambiente, cadeiras…</p>
+          <p className="text-xs text-charcoal-muted">
+            Arraste para reordenar · fachada, ambiente, cadeiras…
+            <br />
+            Dica: fotos já enviadas antes ficaram comprimidas — exclua e envie de novo para nitidez total.
+          </p>
         </div>
 
         <div>
