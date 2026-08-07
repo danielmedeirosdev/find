@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BarberPole } from './BarberPole'
+import { DeleteShopControl } from './DeleteShopControl'
 import { formatPrice, subscriptionLabel } from '../lib/format'
 import { SUBSCRIPTION_PRICE, type BillingType, type SubscribeHandler } from '../lib/types'
 
@@ -89,6 +90,7 @@ export function BlockedOverlay({
       <Link to="/painel" className="mt-4 text-sm text-charcoal-muted hover:text-brass">
         Voltar ao painel
       </Link>
+      <DeleteShopControl shopName={shopName} variant="inline" />
     </div>
   )
 }

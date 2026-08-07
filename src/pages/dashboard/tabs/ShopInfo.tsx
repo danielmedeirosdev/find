@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { deleteShopMedia, uploadShopMedia } from '../../../lib/media'
 import { ImageDropzone, ProgressBar, Toast } from '../../../components/MediaUI'
+import { DeleteShopControl } from '../../../components/DeleteShopControl'
 import { FieldHint, FieldLabel } from '../../../components/FormHints'
 import type { Shop, ShopPhoto } from '../../../lib/types'
 
@@ -312,6 +313,8 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
           {saving ? 'Salvando...' : 'Salvar'}
         </button>
       </form>
+
+      <DeleteShopControl shopName={shop.name} />
     </div>
   )
 }
