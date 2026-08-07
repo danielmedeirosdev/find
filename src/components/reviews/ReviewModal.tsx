@@ -86,7 +86,7 @@ export function ReviewModal({
             <StarPicker value={rating} onChange={setRating} disabled={submitting} />
 
             <div>
-              <FieldLabel>Quer contar como foi sua experiência?</FieldLabel>
+              <FieldLabel tone="light">Quer contar como foi sua experiência?</FieldLabel>
               <textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
