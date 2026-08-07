@@ -52,3 +52,23 @@ body {
     transform: translate(-50%, 0);
   }
 }
+
+@keyframes reviewSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.star-pick.star-hover-on {
+  color: var(--color-brass);
+  transform: scale(1.2);
+}
+
+.star-glyph {
+  display: inline-block;
+}

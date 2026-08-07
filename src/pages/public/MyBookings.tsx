@@ -4,31 +4,35 @@ import { supabase } from '../../lib/supabase'
 import { formatPrice, formatDate, formatTime, bookingStatusLabel, paymentMethodLabel } from '../../lib/format'
 import type { BookingWithDetails } from '../../lib/types'
 import { BarberPole } from '../../components/BarberPole'
+import { ReviewModal } from '../../components/reviews/ReviewModal'
 import { useAuth } from '../../contexts/AuthContext'
 
 export function MyBookings() {
   const { user, loading: authLoading } = useAuth()
   const [bookings, setBookings] = useState<BookingWithDetails[]>([])
   const [loading, setLoading] = useState(true)
+  const [reviewBooking, setReviewBooking] = useState<BookingWithDetails | null>(null)
+
+  const load = async () => {
+    if (!user) return
+    const { data } = await supabase
+      .from('bookings')
+      .select(`
+        *,
+        shops(name, address),
+        barbers(name),
+        booking_services(service_id, services(name, price))
+      `)
+      .eq('client_id', user.id)
+      .order('date', { ascending: true })
+      .order('time', { ascending: true })
+
+    setBookings((data as BookingWithDetails[]) || [])
+    setLoading(false)
+  }
 
   useEffect(() => {
     if (!user) return
-    async function load() {
-      const { data } = await supabase
-        .from('bookings')
-        .select(`
-          *,
-          shops(name, address),
-          barbers(name),
-          booking_services(service_id, services(name, price))
-        `)
-        .eq('client_id', user!.id)
-        .order('date', { ascending: true })
-        .order('time', { ascending: true })
-
-      setBookings((data as BookingWithDetails[]) || [])
-      setLoading(false)
-    }
     load()
   }, [user])
 
@@ -36,8 +40,17 @@ export function MyBookings() {
   if (!user) return <Navigate to="/entrar" replace />
 
   const today = new Date().toISOString().slice(0, 10)
-  const upcoming = bookings.filter((b) => b.date >= today)
-  const past = bookings.filter((b) => b.date < today)
+  const awaitingReview = bookings.filter(
+    (b) => b.status === 'completed' && b.review_status === 'awaiting'
+  )
+  const upcoming = bookings.filter(
+    (b) => b.date >= today && b.status !== 'completed' && b.status !== 'cancelled' && b.status !== 'no_show'
+  )
+  const past = bookings.filter(
+    (b) =>
+      !(b.date >= today && b.status !== 'completed' && b.status !== 'cancelled' && b.status !== 'no_show') &&
+      !(b.status === 'completed' && b.review_status === 'awaiting')
+  )
 
   return (
     <div>
@@ -57,6 +70,26 @@ export function MyBookings() {
         </div>
       ) : (
         <div className="space-y-8">
+          {awaitingReview.length > 0 && (
+            <section>
+              <h2 className="font-display text-2xl text-ink mb-2">Como foi seu atendimento?</h2>
+              <p className="text-sm text-ink-muted mb-4">
+                Sua opinião ajuda outras pessoas a escolherem um barbeiro e ajuda o profissional a
+                melhorar.
+              </p>
+              <div className="space-y-4">
+                {awaitingReview.map((b) => (
+                  <BookingCard
+                    key={b.id}
+                    booking={b}
+                    onReview={() => setReviewBooking(b)}
+                    highlightReview
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
           {upcoming.length > 0 && (
             <section>
               <h2 className="font-display text-2xl text-ink mb-4">Próximas</h2>
@@ -67,29 +100,68 @@ export function MyBookings() {
               </div>
             </section>
           )}
+
           {past.length > 0 && (
             <section>
               <h2 className="font-display text-2xl text-ink-muted mb-4">Anteriores</h2>
-              <div className="space-y-4 opacity-70">
+              <div className="space-y-4 opacity-80">
                 {past.map((b) => (
-                  <BookingCard key={b.id} booking={b} />
+                  <BookingCard
+                    key={b.id}
+                    booking={b}
+                    onReview={
+                      b.status === 'completed' && b.review_status === 'awaiting'
+                        ? () => setReviewBooking(b)
+                        : undefined
+                    }
+                  />
                 ))}
               </div>
             </section>
           )}
         </div>
       )}
+
+      {reviewBooking && (
+        <ReviewModal
+          bookingId={reviewBooking.id}
+          shopName={reviewBooking.shops?.name || 'Barbearia'}
+          barberName={reviewBooking.barbers?.name}
+          onClose={() => setReviewBooking(null)}
+          onSubmitted={() => {
+            setBookings((prev) =>
+              prev.map((b) =>
+                b.id === reviewBooking.id ? { ...b, review_status: 'reviewed' as const } : b
+              )
+            )
+          }}
+        />
+      )}
     </div>
   )
 }
 
-function BookingCard({ booking }: { booking: BookingWithDetails }) {
+function BookingCard({
+  booking,
+  onReview,
+  highlightReview,
+}: {
+  booking: BookingWithDetails
+  onReview?: () => void
+  highlightReview?: boolean
+}) {
   const services = (booking.booking_services || []).map((bs) => bs.services)
   const total = services.reduce((sum, s) => sum + Number(s.price), 0)
   const isCompleted = booking.status === 'completed'
+  const canReview = isCompleted && booking.review_status === 'awaiting' && onReview
+  const reviewed = booking.review_status === 'reviewed'
 
   return (
-    <div className="rounded-lg border border-paper-dark bg-white p-5">
+    <div
+      className={`rounded-lg border bg-white p-5 ${
+        highlightReview ? 'border-brass shadow-sm ring-1 ring-brass/20' : 'border-paper-dark'
+      }`}
+    >
       <div className="flex justify-between items-start">
         <div>
           <h3 className="font-display text-xl text-ink">{booking.shops?.name}</h3>
@@ -113,6 +185,18 @@ function BookingCard({ booking }: { booking: BookingWithDetails }) {
         <p className="mt-1 text-xs text-ink-muted">
           Pagamento: {paymentMethodLabel(booking.payment_method)}
         </p>
+      )}
+      {reviewed && (
+        <p className="mt-3 text-xs font-medium text-brass">✓ Você já avaliou este atendimento</p>
+      )}
+      {canReview && (
+        <button
+          type="button"
+          onClick={onReview}
+          className="mt-4 w-full rounded-lg bg-brass py-2.5 text-sm font-semibold text-charcoal hover:bg-brass-light transition-colors"
+        >
+          Avaliar atendimento
+        </button>
       )}
     </div>
   )
