@@ -51,7 +51,7 @@ export function ShopPublic() {
   if (loading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-20 w-20 rounded-xl" />
         <Skeleton className="h-8 w-2/3" />
         <Skeleton className="h-4 w-1/2" />
       </div>
@@ -62,60 +62,49 @@ export function ShopPublic() {
     return <p className="text-center text-ink-muted">Barbearia não encontrada.</p>
   }
 
-  const hero = photos[0]?.url || shop.logo_url
-
   return (
     <div>
-      <div className="relative mb-8 overflow-hidden rounded-xl bg-paper-dark">
-        {hero ? (
-          <img
-            src={hero}
-            alt=""
-            className="max-h-[28rem] min-h-[16rem] w-full object-cover object-center sm:min-h-[20rem]"
-            loading="eager"
-            decoding="async"
-            fetchPriority="high"
-            sizes="(max-width: 768px) 100vw, 960px"
-          />
-        ) : (
-          <div className="flex h-40 items-center justify-center bg-paper-dark">
-            <BarberPole className="max-w-xs" />
-          </div>
-        )}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-        <div className="absolute bottom-4 left-4 right-4 flex items-end gap-3">
-          {shop.logo_url && (
+      <header className="mb-8">
+        <div className="flex flex-wrap items-start gap-4">
+          {shop.logo_url ? (
             <img
               src={shop.logo_url}
               alt={shop.name}
-              className="h-16 w-16 shrink-0 rounded-xl border-2 border-white object-cover shadow"
+              className="h-20 w-20 shrink-0 rounded-xl border border-paper-dark object-cover"
             />
+          ) : (
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border border-paper-dark bg-white font-display text-2xl text-brass">
+              {shop.name.trim()[0]?.toUpperCase() || 'B'}
+            </div>
           )}
-          <div className="text-white drop-shadow-md">
-            <h1 className="font-display text-3xl sm:text-4xl">{shop.name}</h1>
-            {shop.slogan && <p className="text-sm italic opacity-95">{shop.slogan}</p>}
+          <div className="min-w-0 flex-1">
+            <h1 className="font-display text-3xl text-ink sm:text-4xl">{shop.name}</h1>
+            {shop.slogan && (
+              <p className="mt-1 text-ink-muted italic">{shop.slogan}</p>
+            )}
+            <BarberPole className="mt-4 max-w-xs" height="h-1.5" />
           </div>
         </div>
-      </div>
 
-      <div className="mb-8 flex flex-wrap gap-3">
-        <Link
-          to={`/barbearia/${shop.id}`}
-          className="rounded-lg bg-brass px-6 py-3 font-semibold text-charcoal hover:bg-brass-light transition-colors"
-        >
-          Agendar horário
-        </Link>
-        {shop.phone && (
-          <a
-            href={`https://wa.me/55${shop.phone.replace(/\D/g, '')}`}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-lg border border-paper-dark px-6 py-3 text-ink hover:border-brass transition-colors"
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link
+            to={`/barbearia/${shop.id}`}
+            className="rounded-lg bg-brass px-6 py-3 font-semibold text-charcoal hover:bg-brass-light transition-colors"
           >
-            WhatsApp
-          </a>
-        )}
-      </div>
+            Agendar horário
+          </Link>
+          {shop.phone && (
+            <a
+              href={`https://wa.me/55${shop.phone.replace(/\D/g, '')}`}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-lg border border-paper-dark px-6 py-3 text-ink hover:border-brass transition-colors"
+            >
+              WhatsApp
+            </a>
+          )}
+        </div>
+      </header>
 
       {(shop.address || shop.hours_text || shop.phone) && (
         <div className="mb-10 rounded-lg border border-paper-dark bg-white p-5 text-sm text-ink-muted space-y-1">
@@ -125,7 +114,7 @@ export function ShopPublic() {
         </div>
       )}
 
-      {photos.length > 1 && (
+      {photos.length > 0 && (
         <section className="mb-10">
           <h2 className="font-display text-2xl text-ink mb-4">Ambiente</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -135,7 +124,8 @@ export function ShopPublic() {
                 src={p.url}
                 alt=""
                 loading="lazy"
-                className="aspect-square rounded-lg object-cover transition-transform hover:scale-[1.02]"
+                decoding="async"
+                className="aspect-[4/3] w-full rounded-lg object-cover"
               />
             ))}
           </div>

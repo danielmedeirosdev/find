@@ -234,7 +234,7 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
             </ImageDropzone>
           </div>
           <p className="text-xs text-charcoal-muted">
-            Arraste para reordenar. A primeira foto vira destaque na página pública.
+            Arraste para reordenar. As fotos aparecem em grade na página pública (sem esticar).
           </p>
         </div>
 

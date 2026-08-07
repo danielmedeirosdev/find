@@ -185,29 +185,38 @@ export function ShopLinkTab({ shop, onUpdate }: Props) {
       <div className="rounded-lg border border-charcoal-light p-6">
         <h3 className="font-medium text-white mb-4">Preview da página pública</h3>
         <div className="mx-auto max-w-xs overflow-hidden rounded-xl border border-charcoal-light bg-paper text-ink shadow-lg">
-          {photos[0] || shop.logo_url ? (
-            <div className="relative h-36 bg-paper-dark">
-              <img
-                src={photos[0]?.url || shop.logo_url || ''}
-                alt=""
-                className="h-full w-full object-cover"
-              />
-              {shop.logo_url && (
+          <div className="p-4">
+            <div className="flex items-start gap-3">
+              {shop.logo_url ? (
                 <img
                   src={shop.logo_url}
                   alt=""
-                  className="absolute bottom-2 left-2 h-12 w-12 rounded-lg border-2 border-white object-cover"
+                  className="h-12 w-12 rounded-lg object-cover border border-paper-dark"
                 />
+              ) : (
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-brass/15 font-display text-brass">
+                  {shop.name[0]}
+                </div>
               )}
+              <div>
+                <p className="font-display text-lg leading-tight">{shop.name}</p>
+                {shop.slogan && (
+                  <p className="text-xs text-ink-muted italic mt-0.5">{shop.slogan}</p>
+                )}
+              </div>
             </div>
-          ) : (
-            <div className="flex h-36 items-center justify-center bg-paper-dark text-ink-muted text-sm">
-              Sem fotos ainda
-            </div>
-          )}
-          <div className="p-4">
-            <p className="font-display text-xl leading-tight">{shop.name}</p>
-            {shop.slogan && <p className="text-xs text-ink-muted italic mt-1">{shop.slogan}</p>}
+            {photos.length > 0 && (
+              <div className="mt-3 grid grid-cols-3 gap-1.5">
+                {photos.slice(0, 3).map((p) => (
+                  <img
+                    key={p.id}
+                    src={p.url}
+                    alt=""
+                    className="aspect-[4/3] w-full rounded object-cover"
+                  />
+                ))}
+              </div>
+            )}
             {barbers.length > 0 && (
               <div className="mt-3 flex -space-x-2">
                 {barbers.map((b) =>
