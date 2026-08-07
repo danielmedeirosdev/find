@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { formatPrice, formatDuration } from '../../../lib/format'
+import { FieldHint, FieldLabel } from '../../../components/FormHints'
 import type { Service } from '../../../lib/types'
 
 interface Props {
@@ -33,7 +34,7 @@ export function ServicesTab({ shopId }: Props) {
     await supabase.from('services').insert({
       shop_id: shopId,
       name: name.trim(),
-      price: parseFloat(price),
+      price: parseFloat(price.replace(',', '.')),
       duration_minutes: parseInt(duration, 10),
     })
     setName('')
@@ -52,43 +53,58 @@ export function ServicesTab({ shopId }: Props) {
 
   return (
     <div>
-      <h2 className="font-display text-2xl text-white mb-6">Serviços e preços</h2>
+      <h2 className="font-display text-2xl text-white mb-2">Serviços e preços</h2>
+      <p className="text-sm text-charcoal-muted mb-6">
+        Cadastre todos os serviços que podem ser agendados pelos clientes.
+      </p>
 
       <div className="mb-8 grid gap-3 sm:grid-cols-4">
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Nome do serviço"
-          className="rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white focus:border-brass focus:outline-none"
-        />
-        <input
-          type="number"
-          step="0.01"
-          min="0"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          placeholder="Preço (R$)"
-          className="rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 font-mono text-white focus:border-brass focus:outline-none"
-        />
-        <input
-          type="number"
-          min="5"
-          step="5"
-          value={duration}
-          onChange={(e) => setDuration(e.target.value)}
-          placeholder="Duração (min)"
-          className="rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 font-mono text-white focus:border-brass focus:outline-none"
-        />
-        <button
-          onClick={addService}
-          className="rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal"
-        >
-          Adicionar
-        </button>
+        <div className="sm:col-span-1">
+          <FieldLabel>Nome do serviço</FieldLabel>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Ex: Corte Masculino"
+            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
+          />
+        </div>
+        <div>
+          <FieldLabel>Preço</FieldLabel>
+          <input
+            type="text"
+            inputMode="decimal"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            placeholder="Ex: 45,00"
+            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 font-mono text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
+          />
+          <FieldHint>Informe apenas números. Ex: 45,00</FieldHint>
+        </div>
+        <div>
+          <FieldLabel>Duração</FieldLabel>
+          <input
+            type="number"
+            min="5"
+            step="5"
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            placeholder="Ex: 45"
+            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 font-mono text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
+          />
+          <FieldHint>Tempo médio do atendimento, em minutos.</FieldHint>
+        </div>
+        <div className="flex items-end">
+          <button
+            onClick={addService}
+            className="w-full rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal"
+          >
+            Adicionar
+          </button>
+        </div>
       </div>
 
       {services.length === 0 ? (
-        <p className="text-charcoal-muted">Nenhum serviço cadastrado.</p>
+        <p className="text-charcoal-muted">Nenhum serviço cadastrado ainda.</p>
       ) : (
         <div className="space-y-2">
           {services.map((s) => (

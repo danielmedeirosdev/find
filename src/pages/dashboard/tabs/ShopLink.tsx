@@ -8,6 +8,7 @@ import {
   slugify,
 } from '../../../lib/media'
 import { Toast } from '../../../components/MediaUI'
+import { FieldHint } from '../../../components/FormHints'
 import type { Barber, Shop, ShopPhoto } from '../../../lib/types'
 
 interface Props {
@@ -107,14 +108,20 @@ export function ShopLinkTab({ shop, onUpdate }: Props) {
       </div>
 
       <div className="rounded-lg border border-charcoal-light p-6 space-y-4">
-        <p className="text-sm text-charcoal-muted">Seu link</p>
-        <div className="flex flex-wrap items-center gap-2 font-mono text-sm">
+        <p className="text-sm text-white">Endereço público (slug)</p>
+        <FieldHint>
+          Endereço que será usado no link público. Use só letras minúsculas, números e hífen.
+          <br />
+          Exemplo: {displayHost}/b/barbearia-black-crown
+        </FieldHint>
+        <div className="flex flex-wrap items-center gap-2 font-mono text-sm pt-1">
           <span className="text-charcoal-muted">{displayHost}/b/</span>
           {editing ? (
             <input
               value={slug}
               onChange={(e) => setSlug(e.target.value.toLowerCase())}
-              className="min-w-[12rem] flex-1 rounded-lg border border-brass bg-charcoal px-3 py-2 text-white focus:outline-none"
+              placeholder="barbearia-black-crown"
+              className="min-w-[12rem] flex-1 rounded-lg border border-brass bg-charcoal px-3 py-2 text-white placeholder:text-charcoal-muted/60 focus:outline-none"
             />
           ) : (
             <span className="text-brass text-base">{shop.slug || slug}</span>

@@ -135,20 +135,24 @@ export function TeamScheduleTab({ shopId }: Props) {
   return (
     <div>
       <Toast message={toast} onClose={() => setToast(null)} />
-      <h2 className="font-display text-2xl text-white mb-6">Equipe e horários</h2>
+      <h2 className="font-display text-2xl text-white mb-2">Equipe e horários</h2>
+      <p className="text-sm text-charcoal-muted mb-6">
+        Cada funcionário pode ter foto, cargo e horários próprios. No futuro, cada um terá agenda
+        individual.
+      </p>
 
       <div className="mb-8 flex flex-wrap gap-2">
         <input
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
-          placeholder="Nome do funcionário"
-          className="min-w-[12rem] flex-1 rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white focus:border-brass focus:outline-none"
+          placeholder="Ex: Lucas Andrade"
+          className="min-w-[12rem] flex-1 rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
         />
         <input
           value={newRole}
           onChange={(e) => setNewRole(e.target.value)}
-          placeholder="Cargo (opcional)"
-          className="w-40 rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white focus:border-brass focus:outline-none"
+          placeholder="Cargo (ex: Barbeiro Sênior)"
+          className="w-48 rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
         />
         <button
           onClick={addBarber}

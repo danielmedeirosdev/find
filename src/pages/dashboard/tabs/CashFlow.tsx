@@ -78,7 +78,12 @@ export function CashFlowTab({ shopId }: Props) {
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <h2 className="font-display text-2xl text-white">Fluxo de Caixa</h2>
+        <div>
+          <h2 className="font-display text-2xl text-white">Fluxo de Caixa</h2>
+          <p className="text-sm text-charcoal-muted mt-1">
+            Entradas dos atendimentos finalizados e despesas manuais (aluguel, produtos, etc.).
+          </p>
+        </div>
         <button
           onClick={() => setShowForm(true)}
           className="rounded-lg bg-brass px-4 py-2 text-sm font-semibold text-charcoal"

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { deleteShopMedia, uploadShopMedia } from '../../../lib/media'
 import { ImageDropzone, ProgressBar, Toast } from '../../../components/MediaUI'
+import { FieldHint, FieldLabel } from '../../../components/FormHints'
 import type { Shop, ShopPhoto } from '../../../lib/types'
 
 interface Props {
@@ -154,10 +155,16 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
 
       <form onSubmit={handleSave} className="space-y-4">
         <h2 className="font-display text-2xl text-white">Informações da loja</h2>
+        <p className="text-sm text-charcoal-muted -mt-2 mb-2">
+          Esses dados aparecem na página pública e no fluxo de agendamento.
+        </p>
 
         <div className="rounded-lg border border-charcoal-light p-5">
-          <h3 className="font-medium text-white mb-3">Logo da Barbearia</h3>
-          <div className="flex flex-wrap items-start gap-4">
+          <h3 className="font-medium text-white mb-1">Logo da Barbearia</h3>
+          <FieldHint>
+            Será exibida no site público, agendamentos e futuras notificações.
+          </FieldHint>
+          <div className="mt-3 flex flex-wrap items-start gap-4">
             {logoUrl ? (
               <div className="relative">
                 <img
@@ -191,8 +198,12 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
         </div>
 
         <div className="rounded-lg border border-charcoal-light p-5">
-          <h3 className="font-medium text-white mb-3">Fotos da Barbearia</h3>
-          <div className="flex flex-wrap gap-3 mb-4">
+          <h3 className="font-medium text-white mb-1">Fotos da Barbearia</h3>
+          <FieldHint>
+            Adicione fotos da fachada, ambiente e estrutura para transmitir mais confiança aos
+            clientes.
+          </FieldHint>
+          <div className="mt-3 flex flex-wrap gap-3 mb-4">
             {photos.map((photo) => (
               <div
                 key={photo.id}
@@ -223,58 +234,68 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
             </ImageDropzone>
           </div>
           <p className="text-xs text-charcoal-muted">
-            Arraste para reordenar · fachada, ambiente, cadeiras…
-            <br />
-            Dica: fotos já enviadas antes ficaram comprimidas — exclua e envie de novo para nitidez total.
+            Arraste para reordenar. A primeira foto vira destaque na página pública.
           </p>
         </div>
 
         <div>
-          <label className="block text-sm text-charcoal-muted mb-1">Nome</label>
+          <FieldLabel>Nome</FieldLabel>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white focus:border-brass focus:outline-none"
+            placeholder="Ex: Barbearia Black Crown"
+            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
         </div>
 
         <div>
-          <label className="block text-sm text-charcoal-muted mb-1">Slogan</label>
+          <FieldLabel>Slogan</FieldLabel>
           <input
             value={slogan}
             onChange={(e) => setSlogan(e.target.value)}
-            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white focus:border-brass focus:outline-none"
+            placeholder="Ex: Estilo, precisão e tradição."
+            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
+          <FieldHint>Frase curta que aparece sob o nome na página pública.</FieldHint>
         </div>
 
         <div>
-          <label className="block text-sm text-charcoal-muted mb-1">Endereço</label>
+          <FieldLabel>Endereço</FieldLabel>
           <input
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white focus:border-brass focus:outline-none"
+            placeholder="Ex: Rua das Palmeiras, 482 - Centro"
+            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
         </div>
 
         <div>
-          <label className="block text-sm text-charcoal-muted mb-1">Telefone</label>
+          <FieldLabel>Telefone</FieldLabel>
           <input
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white focus:border-brass focus:outline-none"
+            placeholder="Ex: (11) 99999-9999"
+            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
+          <FieldHint>
+            Utilizado para contato dos clientes e integração futura com WhatsApp.
+          </FieldHint>
         </div>
 
         <div>
-          <label className="block text-sm text-charcoal-muted mb-1">Horário de funcionamento</label>
+          <FieldLabel>Horário de funcionamento</FieldLabel>
           <textarea
             value={hoursText}
             onChange={(e) => setHoursText(e.target.value)}
             rows={3}
             placeholder="Ex: Seg-Sex 9h-19h, Sáb 9h-14h"
-            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white focus:border-brass focus:outline-none"
+            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
+          <FieldHint>
+            Informe os horários gerais da barbearia. Os horários individuais dos funcionários são
+            configurados em Equipe e horários.
+          </FieldHint>
         </div>
 
         {message && (

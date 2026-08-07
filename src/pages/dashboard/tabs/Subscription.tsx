@@ -94,11 +94,14 @@ export function SubscriptionTab({ shop, onUpdate, onSubscribe, subscribing, subs
 
       <div className="rounded-lg border border-charcoal-light p-6 mb-6 space-y-4">
         <h3 className="font-medium text-white">CPF ou CNPJ (obrigatório para assinar)</h3>
+        <p className="text-xs text-charcoal-muted">
+          Necessário para emitir cobranças no Asaas. Use apenas números ou com pontuação.
+        </p>
         <input
           value={cpfCnpj}
           onChange={(e) => setCpfCnpj(e.target.value)}
-          placeholder="000.000.000-00 ou 00.000.000/0000-00"
-          className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white focus:border-brass focus:outline-none"
+          placeholder="Ex: 000.000.000-00 ou 00.000.000/0000-00"
+          className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
         />
         <button
           onClick={saveCpfCnpj}

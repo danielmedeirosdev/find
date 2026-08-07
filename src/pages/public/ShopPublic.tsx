@@ -62,7 +62,7 @@ export function ShopPublic() {
     return <p className="text-center text-ink-muted">Barbearia não encontrada.</p>
   }
 
-  const hero = photos[0]?.url || shop.banner_url || shop.logo_url
+  const hero = photos[0]?.url || shop.logo_url
 
   return (
     <div>

@@ -4,6 +4,12 @@ import { supabase, authErrorMessage, isSupabaseConfigured } from '../../lib/supa
 import { ensureAuthSession } from '../../lib/auth'
 import { formatPhone } from '../../lib/format'
 import { BarberPole } from '../../components/BarberPole'
+import {
+  FieldHint,
+  FieldLabel,
+  PasswordRequirements,
+  isPasswordStrong,
+} from '../../components/FormHints'
 import { useAuth } from '../../contexts/AuthContext'
 
 export function ClientAuth() {
@@ -33,6 +39,12 @@ export function ClientAuth() {
 
     try {
       if (mode === 'signup') {
+        if (!isPasswordStrong(password)) {
+          setError('A senha ainda não atende a todos os requisitos.')
+          setLoading(false)
+          return
+        }
+
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
@@ -119,55 +131,63 @@ export function ClientAuth() {
         {mode === 'signup' && (
           <>
             <div>
-              <label className="block text-sm font-medium mb-1">Nome</label>
+              <FieldLabel tone="light">Nome</FieldLabel>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full rounded-lg border border-paper-dark px-4 py-2 focus:border-brass focus:outline-none"
+                placeholder="Ex: Lucas Andrade"
+                className="w-full rounded-lg border border-paper-dark px-4 py-2 placeholder:text-ink-muted/50 focus:border-brass focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">WhatsApp</label>
+              <FieldLabel tone="light">WhatsApp</FieldLabel>
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(formatPhone(e.target.value))}
-                className="w-full rounded-lg border border-paper-dark px-4 py-2 focus:border-brass focus:outline-none"
+                placeholder="Ex: (11) 99999-9999"
+                className="w-full rounded-lg border border-paper-dark px-4 py-2 placeholder:text-ink-muted/50 focus:border-brass focus:outline-none"
               />
+              <FieldHint tone="light">
+                Usado pela barbearia para confirmar ou lembrar do horário.
+              </FieldHint>
             </div>
           </>
         )}
 
         <div>
-          <label className="block text-sm font-medium mb-1">E-mail</label>
+          <FieldLabel tone="light">E-mail</FieldLabel>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full rounded-lg border border-paper-dark px-4 py-2 focus:border-brass focus:outline-none"
+            placeholder="Ex: seuemail@gmail.com"
+            className="w-full rounded-lg border border-paper-dark px-4 py-2 placeholder:text-ink-muted/50 focus:border-brass focus:outline-none"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Senha</label>
+          <FieldLabel tone="light">Senha</FieldLabel>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            minLength={6}
-            className="w-full rounded-lg border border-paper-dark px-4 py-2 focus:border-brass focus:outline-none"
+            minLength={mode === 'signup' ? 8 : 6}
+            placeholder={mode === 'signup' ? 'Crie uma senha forte' : 'Sua senha'}
+            className="w-full rounded-lg border border-paper-dark px-4 py-2 placeholder:text-ink-muted/50 focus:border-brass focus:outline-none"
           />
+          {mode === 'signup' && <PasswordRequirements password={password} tone="light" />}
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || (mode === 'signup' && !isPasswordStrong(password))}
           className="w-full rounded-lg bg-brass py-3 font-semibold text-white disabled:opacity-50"
         >
           {loading ? 'Aguarde...' : mode === 'login' ? 'Entrar' : 'Criar conta'}
@@ -178,14 +198,28 @@ export function ClientAuth() {
         {mode === 'login' ? (
           <>
             Não tem conta?{' '}
-            <button onClick={() => setMode('signup')} className="text-brass hover:underline">
+            <button
+              type="button"
+              onClick={() => {
+                setMode('signup')
+                setError('')
+              }}
+              className="text-brass hover:underline"
+            >
               Cadastre-se
             </button>
           </>
         ) : (
           <>
             Já tem conta?{' '}
-            <button onClick={() => setMode('login')} className="text-brass hover:underline">
+            <button
+              type="button"
+              onClick={() => {
+                setMode('login')
+                setError('')
+              }}
+              className="text-brass hover:underline"
+            >
               Entrar
             </button>
           </>

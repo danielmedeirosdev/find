@@ -100,7 +100,11 @@ export function AgendaTab({ shopId }: Props) {
 
   return (
     <div>
-      <h2 className="font-display text-2xl text-white mb-6">Agenda</h2>
+      <h2 className="font-display text-2xl text-white mb-2">Agenda</h2>
+      <p className="text-sm text-charcoal-muted mb-4">
+        Finalize o atendimento para registrar o pagamento no caixa. Use “Não compareceu” ou
+        “Cancelado” quando o horário não for realizado.
+      </p>
       {actionError && <p className="mb-4 text-sm text-red-400">{actionError}</p>}
 
       <div className="mb-8 rounded-lg border border-charcoal-light p-4">

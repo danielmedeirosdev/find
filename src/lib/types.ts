@@ -13,7 +13,6 @@ export interface Shop {
   subscription_status: SubscriptionStatus
   trial_ends_at: string | null
   logo_url?: string | null
-  banner_url?: string | null
   slug?: string | null
   created_at: string
 }

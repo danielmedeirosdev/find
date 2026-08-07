@@ -3,6 +3,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase, authErrorMessage, isSupabaseConfigured } from '../../lib/supabase'
 import { ensureAuthSession, ensureBarberShop } from '../../lib/auth'
 import { BarberPole } from '../../components/BarberPole'
+import {
+  FieldHint,
+  FieldLabel,
+  PasswordRequirements,
+  isPasswordStrong,
+} from '../../components/FormHints'
 
 export function BarberAuth() {
   const navigate = useNavigate()
@@ -26,6 +32,12 @@ export function BarberAuth() {
 
     try {
       if (mode === 'signup') {
+        if (!isPasswordStrong(password)) {
+          setError('A senha ainda não atende a todos os requisitos.')
+          setLoading(false)
+          return
+        }
+
         const shopNameValue = shopName.trim() || 'Minha Barbearia'
 
         const { data, error: signUpError } = await supabase.auth.signUp({
@@ -79,7 +91,9 @@ export function BarberAuth() {
           setLoading(false)
           return
         }
-        const { data: { user } } = await supabase.auth.getUser()
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
         if (user) {
           const { data: shop } = await supabase
             .from('shops')
@@ -111,48 +125,57 @@ export function BarberAuth() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="rounded-lg border border-charcoal-light bg-charcoal-light/30 p-6 space-y-4">
+      <form
+        onSubmit={handleSubmit}
+        className="rounded-lg border border-charcoal-light bg-charcoal-light/30 p-6 space-y-4"
+      >
         {mode === 'signup' && (
           <div>
-            <label className="block text-sm font-medium mb-1 text-charcoal-muted">Nome da barbearia</label>
+            <FieldLabel>Nome da barbearia</FieldLabel>
             <input
               type="text"
               value={shopName}
               onChange={(e) => setShopName(e.target.value)}
               required
-              className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white focus:border-brass focus:outline-none"
+              placeholder="Ex: Barbearia Black Crown"
+              className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
             />
+            <FieldHint>Aparece no painel e na página pública dos clientes.</FieldHint>
           </div>
         )}
 
         <div>
-          <label className="block text-sm font-medium mb-1 text-charcoal-muted">E-mail</label>
+          <FieldLabel>E-mail</FieldLabel>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white focus:border-brass focus:outline-none"
+            placeholder="Ex: contato@barbearia.com"
+            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
+          <FieldHint>Usado para entrar no painel e receber avisos da assinatura.</FieldHint>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1 text-charcoal-muted">Senha</label>
+          <FieldLabel>Senha</FieldLabel>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            minLength={6}
-            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white focus:border-brass focus:outline-none"
+            minLength={mode === 'signup' ? 8 : 6}
+            placeholder={mode === 'signup' ? 'Crie uma senha forte' : 'Sua senha'}
+            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
+          {mode === 'signup' && <PasswordRequirements password={password} />}
         </div>
 
         {error && <p className="text-sm text-red-400">{error}</p>}
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || (mode === 'signup' && !isPasswordStrong(password))}
           className="w-full rounded-lg bg-brass py-3 font-semibold text-charcoal disabled:opacity-50"
         >
           {loading ? 'Aguarde...' : mode === 'login' ? 'Entrar' : 'Criar barbearia'}
@@ -163,14 +186,28 @@ export function BarberAuth() {
         {mode === 'login' ? (
           <>
             Primeira vez?{' '}
-            <button onClick={() => setMode('signup')} className="text-brass hover:underline">
+            <button
+              type="button"
+              onClick={() => {
+                setMode('signup')
+                setError('')
+              }}
+              className="text-brass hover:underline"
+            >
               Cadastre sua barbearia
             </button>
           </>
         ) : (
           <>
             Já tem conta?{' '}
-            <button onClick={() => setMode('login')} className="text-brass hover:underline">
+            <button
+              type="button"
+              onClick={() => {
+                setMode('login')
+                setError('')
+              }}
+              className="text-brass hover:underline"
+            >
               Entrar
             </button>
           </>
