@@ -22,7 +22,13 @@ import type {
 } from '../../lib/types'
 import { BarberPole } from '../../components/BarberPole'
 import { DefaultAvatar } from '../../components/MediaUI'
+import { RatingBadge } from '../../components/reviews/StarRating'
 import { useAuth } from '../../contexts/AuthContext'
+import {
+  fetchBarberRatingStatsMap,
+  fetchShopRatingStats,
+} from '../../lib/reviews'
+import type { BarberRatingStats, RatingStats } from '../../lib/types'
 
 type Step = 1 | 2 | 3 | 4
 
@@ -37,6 +43,8 @@ export function ShopBooking() {
   const [schedules, setSchedules] = useState<BarberSchedule[]>([])
   const [occupiedSlots, setOccupiedSlots] = useState<PublicBookingSlot[]>([])
   const [photos, setPhotos] = useState<ShopPhoto[]>([])
+  const [shopStats, setShopStats] = useState<RatingStats | null>(null)
+  const [barberStats, setBarberStats] = useState<Record<string, BarberRatingStats>>({})
 
   const [step, setStep] = useState<Step>(1)
   const [selectedServiceIds, setSelectedServiceIds] = useState<Set<string>>(new Set())
@@ -72,7 +80,7 @@ export function ShopBooking() {
         return
       }
 
-      const [{ data: svc }, { data: barb }, { data: ph }] = await Promise.all([
+      const [{ data: svc }, { data: barb }, { data: ph }, stats, bStats] = await Promise.all([
         supabase.from('services').select('*').eq('shop_id', shopId).order('name'),
         supabase.from('barbers').select('*').eq('shop_id', shopId).order('name'),
         supabase
@@ -81,6 +89,8 @@ export function ShopBooking() {
           .eq('shop_id', shopId)
           .order('sort_order')
           .limit(6),
+        fetchShopRatingStats(shopId!),
+        fetchBarberRatingStatsMap(shopId!),
       ])
 
       const barberIds = (barb || []).map((b) => b.id)
@@ -105,6 +115,8 @@ export function ShopBooking() {
       setSchedules(sched)
       setOccupiedSlots(slots || [])
       setPhotos((ph as ShopPhoto[]) || [])
+      setShopStats(stats)
+      setBarberStats(bStats)
       setLoading(false)
     }
     load()
@@ -225,6 +237,13 @@ export function ShopBooking() {
           <div>
             <h1 className="font-display text-4xl text-ink">{shop.name}</h1>
             {shop.slogan && <p className="text-ink-muted italic">{shop.slogan}</p>}
+            {shopStats && shopStats.review_count > 0 && (
+              <RatingBadge
+                avg={Number(shopStats.avg_rating)}
+                count={shopStats.review_count}
+                className="mt-2"
+              />
+            )}
             {shop.address && <p className="text-sm text-ink-muted mt-1">{shop.address}</p>}
             {shop.hours_text && (
               <p className="text-sm font-mono text-ink-muted mt-1">{shop.hours_text}</p>
@@ -318,6 +337,7 @@ export function ShopBooking() {
             <div className="space-y-3">
               {barbers.map((b) => {
                 const days = getActiveDays(schedules.filter((s) => s.barber_id === b.id))
+                const stats = barberStats[b.id]
                 return (
                   <button
                     key={b.id}
@@ -346,6 +366,13 @@ export function ShopBooking() {
                       <div>
                         <div className="font-medium">{b.name}</div>
                         {b.role && <div className="text-xs text-ink-muted">{b.role}</div>}
+                        {stats && stats.review_count > 0 && (
+                          <RatingBadge
+                            avg={Number(stats.avg_rating)}
+                            count={stats.review_count}
+                            className="mt-1"
+                          />
+                        )}
                         <div className="text-sm text-ink-muted mt-1">
                           Atende: {days.map((d) => DAY_NAMES[d].slice(0, 3)).join(', ') || '—'}
                         </div>

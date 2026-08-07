@@ -92,3 +92,21 @@ export function paymentMethodLabel(method: string | null | undefined): string {
       return '—'
   }
 }
+
+/** Ex.: "há 2 dias", "há 3 horas", "agora" */
+export function formatRelativeTime(iso: string): string {
+  const then = new Date(iso).getTime()
+  const now = Date.now()
+  const diffSec = Math.round((now - then) / 1000)
+  if (diffSec < 45) return 'agora'
+  const diffMin = Math.round(diffSec / 60)
+  if (diffMin < 60) return diffMin === 1 ? 'há 1 minuto' : `há ${diffMin} minutos`
+  const diffHour = Math.round(diffMin / 60)
+  if (diffHour < 24) return diffHour === 1 ? 'há 1 hora' : `há ${diffHour} horas`
+  const diffDay = Math.round(diffHour / 24)
+  if (diffDay < 30) return diffDay === 1 ? 'há 1 dia' : `há ${diffDay} dias`
+  const diffMonth = Math.round(diffDay / 30)
+  if (diffMonth < 12) return diffMonth === 1 ? 'há 1 mês' : `há ${diffMonth} meses`
+  const diffYear = Math.round(diffMonth / 12)
+  return diffYear === 1 ? 'há 1 ano' : `há ${diffYear} anos`
+}

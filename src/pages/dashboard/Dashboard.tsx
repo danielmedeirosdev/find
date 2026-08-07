@@ -13,6 +13,7 @@ import { CashFlowTab } from './tabs/CashFlow'
 import { ReportsTab } from './tabs/Reports'
 import { SubscriptionTab } from './tabs/Subscription'
 import { ShopLinkTab } from './tabs/ShopLink'
+import { ReviewsTab } from './tabs/Reviews'
 
 const TABS = [
   { id: 'info', label: 'Informações' },
@@ -21,6 +22,7 @@ const TABS = [
   { id: 'agenda', label: 'Agenda' },
   { id: 'cashflow', label: 'Fluxo de Caixa' },
   { id: 'reports', label: 'Relatórios' },
+  { id: 'reviews', label: 'Avaliações' },
   { id: 'link', label: 'Link da Barbearia' },
   { id: 'subscription', label: 'Assinatura' },
 ] as const
@@ -154,6 +156,7 @@ export function Dashboard() {
       {activeTab === 'agenda' && <AgendaTab shopId={shop.id} />}
       {activeTab === 'cashflow' && <CashFlowTab shopId={shop.id} />}
       {activeTab === 'reports' && <ReportsTab shopId={shop.id} />}
+      {activeTab === 'reviews' && <ReviewsTab shopId={shop.id} />}
       {activeTab === 'link' && <ShopLinkTab shop={shop} onUpdate={loadShop} />}
       {activeTab === 'subscription' && (
         <SubscriptionTab

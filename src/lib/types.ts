@@ -61,6 +61,8 @@ export interface Client {
   created_at: string
 }
 
+export type ReviewStatus = 'awaiting' | 'reviewed' | 'unavailable'
+
 export interface Booking {
   id: string
   shop_id: string
@@ -73,7 +75,43 @@ export interface Booking {
   status?: BookingStatus
   payment_method?: PaymentMethod | null
   completed_at?: string | null
+  review_status?: ReviewStatus | null
   created_at: string
+}
+
+export interface Review {
+  id: string
+  booking_id: string
+  shop_id: string
+  barber_id: string
+  client_id: string
+  rating: number
+  comment: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface RatingStats {
+  avg_rating: number
+  review_count: number
+  star_5: number
+  star_4: number
+  star_3: number
+  star_2: number
+  star_1: number
+}
+
+export interface BarberRatingStats extends RatingStats {
+  barber_id: string
+  shop_id: string
+}
+
+export interface ShopRatingStats extends RatingStats {
+  shop_id: string
+}
+
+export interface ReviewPublic extends Review {
+  barbers?: Pick<Barber, 'id' | 'name' | 'photo_url'> | null
 }
 
 export interface FinancialTransaction {

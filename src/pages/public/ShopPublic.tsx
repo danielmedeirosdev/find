@@ -2,9 +2,25 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { formatPrice } from '../../lib/format'
+import {
+  emptyRatingStats,
+  fetchBarberRatingStatsMap,
+  fetchShopRatingStats,
+  fetchShopReviews,
+} from '../../lib/reviews'
 import { DefaultAvatar, Skeleton } from '../../components/MediaUI'
 import { BarberPole } from '../../components/BarberPole'
-import type { Barber, Service, Shop, ShopPhoto } from '../../lib/types'
+import { RatingBadge } from '../../components/reviews/StarRating'
+import { ReviewsSection } from '../../components/reviews/ReviewsSection'
+import type {
+  Barber,
+  BarberRatingStats,
+  RatingStats,
+  ReviewPublic,
+  Service,
+  Shop,
+  ShopPhoto,
+} from '../../lib/types'
 
 export function ShopPublic() {
   const { slug } = useParams<{ slug: string }>()
@@ -12,6 +28,9 @@ export function ShopPublic() {
   const [photos, setPhotos] = useState<ShopPhoto[]>([])
   const [barbers, setBarbers] = useState<Barber[]>([])
   const [services, setServices] = useState<Service[]>([])
+  const [shopStats, setShopStats] = useState<RatingStats | null>(null)
+  const [barberStats, setBarberStats] = useState<Record<string, BarberRatingStats>>({})
+  const [reviews, setReviews] = useState<ReviewPublic[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -29,7 +48,7 @@ export function ShopPublic() {
         return
       }
 
-      const [{ data: ph }, { data: barb }, { data: svc }] = await Promise.all([
+      const [{ data: ph }, { data: barb }, { data: svc }, stats, bStats, rev] = await Promise.all([
         supabase
           .from('shop_photos')
           .select('*')
@@ -37,12 +56,18 @@ export function ShopPublic() {
           .order('sort_order'),
         supabase.from('barbers').select('*').eq('shop_id', shopData.id).order('name'),
         supabase.from('services').select('*').eq('shop_id', shopData.id).order('name'),
+        fetchShopRatingStats(shopData.id),
+        fetchBarberRatingStatsMap(shopData.id),
+        fetchShopReviews(shopData.id, 12),
       ])
 
       setShop(shopData)
       setPhotos((ph as ShopPhoto[]) || [])
       setBarbers(barb || [])
       setServices(svc || [])
+      setShopStats(stats)
+      setBarberStats(bStats)
+      setReviews(rev)
       setLoading(false)
     }
     load()
@@ -81,6 +106,14 @@ export function ShopPublic() {
             <h1 className="font-display text-3xl text-ink sm:text-4xl">{shop.name}</h1>
             {shop.slogan && (
               <p className="mt-1 text-ink-muted italic">{shop.slogan}</p>
+            )}
+            {shopStats && shopStats.review_count > 0 && (
+              <RatingBadge
+                avg={Number(shopStats.avg_rating)}
+                count={shopStats.review_count}
+                size="md"
+                className="mt-2"
+              />
             )}
             <BarberPole className="mt-4 max-w-xs" height="h-1.5" />
           </div>
@@ -136,27 +169,37 @@ export function ShopPublic() {
         <section className="mb-10">
           <h2 className="font-display text-2xl text-ink mb-4">Equipe</h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            {barbers.map((b) => (
-              <div
-                key={b.id}
-                className="flex items-center gap-3 rounded-lg border border-paper-dark bg-white p-4"
-              >
-                {b.photo_url ? (
-                  <img
-                    src={b.photo_url}
-                    alt={b.name}
-                    loading="lazy"
-                    className="h-14 w-14 rounded-full object-cover"
-                  />
-                ) : (
-                  <DefaultAvatar name={b.name} className="h-14 w-14 text-xl" />
-                )}
-                <div>
-                  <p className="font-medium text-ink">{b.name}</p>
-                  {b.role && <p className="text-sm text-ink-muted">{b.role}</p>}
+            {barbers.map((b) => {
+              const stats = barberStats[b.id]
+              return (
+                <div
+                  key={b.id}
+                  className="flex items-center gap-3 rounded-lg border border-paper-dark bg-white p-4"
+                >
+                  {b.photo_url ? (
+                    <img
+                      src={b.photo_url}
+                      alt={b.name}
+                      loading="lazy"
+                      className="h-14 w-14 rounded-full object-cover"
+                    />
+                  ) : (
+                    <DefaultAvatar name={b.name} className="h-14 w-14 text-xl" />
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-medium text-ink">{b.name}</p>
+                    {b.role && <p className="text-sm text-ink-muted">{b.role}</p>}
+                    {stats && stats.review_count > 0 && (
+                      <RatingBadge
+                        avg={Number(stats.avg_rating)}
+                        count={stats.review_count}
+                        className="mt-1"
+                      />
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </section>
       )}
@@ -183,6 +226,13 @@ export function ShopPublic() {
           </Link>
         </section>
       )}
+
+      <ReviewsSection
+        stats={shopStats || emptyRatingStats()}
+        reviews={reviews}
+        showBarberName
+        className="mb-10"
+      />
     </div>
   )
 }

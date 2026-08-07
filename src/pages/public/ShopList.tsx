@@ -2,11 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { formatPrice } from '../../lib/format'
-import type { Shop, Service } from '../../lib/types'
+import { fetchShopRatingStatsMap } from '../../lib/reviews'
+import type { Shop, Service, ShopRatingStats } from '../../lib/types'
 import { BarberPole } from '../../components/BarberPole'
+import { RatingBadge } from '../../components/reviews/StarRating'
 
 interface ShopWithServices extends Shop {
   services: Service[]
+  rating?: ShopRatingStats | null
 }
 
 export function ShopList() {
@@ -26,6 +29,8 @@ export function ShopList() {
         return
       }
 
+      const ratingMap = await fetchShopRatingStatsMap(shopsData.map((s) => s.id))
+
       const withServices = await Promise.all(
         shopsData.map(async (shop) => {
           const { data: services } = await supabase
@@ -33,7 +38,11 @@ export function ShopList() {
             .select('*')
             .eq('shop_id', shop.id)
             .limit(3)
-          return { ...shop, services: services || [] }
+          return {
+            ...shop,
+            services: services || [],
+            rating: ratingMap[shop.id] || null,
+          }
         })
       )
 
@@ -76,12 +85,19 @@ export function ShopList() {
                     className="h-12 w-12 rounded-lg object-cover"
                   />
                 )}
-                <div>
+                <div className="min-w-0">
                   <h2 className="font-display text-2xl text-ink group-hover:text-brass transition-colors">
                     {shop.name}
                   </h2>
                   {shop.slogan && (
                     <p className="text-sm text-ink-muted italic mt-1">{shop.slogan}</p>
+                  )}
+                  {shop.rating && shop.rating.review_count > 0 && (
+                    <RatingBadge
+                      avg={Number(shop.rating.avg_rating)}
+                      count={shop.rating.review_count}
+                      className="mt-2"
+                    />
                   )}
                 </div>
               </div>
