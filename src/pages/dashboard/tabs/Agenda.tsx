@@ -138,7 +138,11 @@ export function AgendaTab({ shopId }: Props) {
       ) : (
         <div className="space-y-4">
           {activeBookings.map((b) => {
-            const services = (b.booking_services || []).map((bs) => bs.services)
+            const services = Array.from(
+              new Map(
+                (b.booking_services || []).map((bs) => [bs.service_id, bs.services])
+              ).values()
+            )
             const total = services.reduce((sum, s) => sum + Number(s.price), 0)
             const status = b.status || 'scheduled'
             return (

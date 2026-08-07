@@ -42,49 +42,15 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
     setSubmitting(true)
     setError('')
 
-    const now = new Date().toISOString()
-
-    const { error: updateError } = await supabase
-      .from('bookings')
-      .update({
-        status: 'completed',
-        payment_method: paymentMethod,
-        completed_at: now,
-      })
-      .eq('id', booking.id)
-
-    if (updateError) {
-      setError(updateError.message)
-      setSubmitting(false)
-      return
-    }
-
-    await supabase.from('booking_services').delete().eq('booking_id', booking.id)
-
-    const { error: servicesError } = await supabase.from('booking_services').insert(
-      selectedServices.map((s) => ({
-        booking_id: booking.id,
-        service_id: s.id,
-      }))
-    )
-
-    if (servicesError) {
-      setError(servicesError.message)
-      setSubmitting(false)
-      return
-    }
-
-    const { error: txError } = await supabase.from('financial_transactions').insert({
-      shop_id: booking.shop_id,
-      booking_id: booking.id,
-      type: 'entrada',
-      description: `Atendimento - ${booking.client_name}`,
-      amount: total,
-      payment_method: paymentMethod,
+    const { error: rpcError } = await supabase.rpc('complete_booking', {
+      p_booking_id: booking.id,
+      p_service_ids: selectedServices.map((s) => s.id),
+      p_payment_method: paymentMethod,
+      p_amount: total,
     })
 
-    if (txError) {
-      setError(txError.message)
+    if (rpcError) {
+      setError(rpcError.message)
       setSubmitting(false)
       return
     }
