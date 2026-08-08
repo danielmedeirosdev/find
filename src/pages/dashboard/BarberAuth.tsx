@@ -30,7 +30,8 @@ export function BarberAuth() {
     }
     setGoogleLoading(true)
     try {
-      await signInWithGoogle('barber', shopName.trim() || 'Minha Barbearia')
+      const result = await signInWithGoogle('barber', shopName.trim() || 'Minha Barbearia')
+      navigate(result.redirectTo)
     } catch (err) {
       setError(authErrorMessage(err))
       setGoogleLoading(false)

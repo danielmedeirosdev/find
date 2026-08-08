@@ -49,18 +49,17 @@ https://xxx.supabase.co/functions/v1/asaas-webhook
 
 ### 4. Login com Google
 
-1. No [Google Cloud Console](https://console.cloud.google.com/auth/clients/create), crie um OAuth Client ID do tipo **Web application**
-2. Em **Authorized JavaScript origins**, adicione:
-   - `http://localhost:5173` (dev)
-   - a URL de produção (ex.: `https://seu-dominio.vercel.app`)
-3. Em **Authorized redirect URIs**, adicione a callback do Supabase (em Authentication → Providers → Google), no formato:
-   - `https://<project-ref>.supabase.co/auth/v1/callback`
-4. No Supabase Dashboard → **Authentication → Providers → Google**, ative o provider e cole Client ID + Client Secret
-5. Em **Authentication → URL Configuration**, adicione nas Redirect URLs:
-   - `http://localhost:5173/auth/callback`
-   - `https://seu-dominio.vercel.app/auth/callback`
+O app usa Google Identity Services (popup) + `signInWithIdToken` do Supabase.  
+No Google Cloud você só precisa de **Authorized JavaScript origins** (sem caminho `/`):
 
-O app redireciona para `/auth/callback` e cria o perfil de cliente ou a barbearia conforme a tela de origem.
+1. No [Google Cloud Console](https://console.cloud.google.com/auth/clients), abra o cliente Web
+2. Em **Authorized JavaScript origins**, adicione só o domínio:
+   - `https://find-onefind.vercel.app`
+   - `http://localhost:5173` (dev)
+3. No Supabase → **Authentication → Providers → Google**, ative e cole Client ID + Client Secret
+4. (Opcional) `VITE_GOOGLE_CLIENT_ID` no `.env` / Vercel — já há fallback no código
+
+Não é necessário colar URL com `/auth/...` no Google para este fluxo.
 
 ### 5. Desenvolvimento local
 
