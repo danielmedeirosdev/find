@@ -165,6 +165,27 @@ export function ShopBooking() {
     setSubmitting(true)
     setError('')
 
+    // Garante perfil em clients quando o usuário está logado (necessário para FK e avaliações)
+    if (user) {
+      const { data: existingClient } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle()
+      if (!existingClient) {
+        const { error: clientError } = await supabase.from('clients').insert({
+          id: user.id,
+          name: clientName.trim() || 'Cliente',
+          phone: clientPhone.replace(/\D/g, '') || null,
+        })
+        if (clientError) {
+          setError(clientError.message)
+          setSubmitting(false)
+          return
+        }
+      }
+    }
+
     const { data: booking, error: bkError } = await supabase
       .from('bookings')
       .insert({

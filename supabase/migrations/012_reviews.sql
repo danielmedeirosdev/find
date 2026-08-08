@@ -220,6 +220,8 @@ BEGIN
     b.shop_id,
     b.barber_id,
     b.client_id,
+    b.client_name,
+    b.client_phone,
     b.status,
     b.review_status
   INTO v_booking
@@ -246,6 +248,15 @@ BEGIN
   IF v_booking.review_status = 'reviewed' THEN
     RAISE EXCEPTION 'Este atendimento já foi avaliado';
   END IF;
+
+  -- Garante perfil em clients (FK de reviews.client_id)
+  INSERT INTO clients (id, name, phone)
+  VALUES (
+    v_user_id,
+    COALESCE(NULLIF(TRIM(v_booking.client_name), ''), 'Cliente'),
+    NULLIF(TRIM(v_booking.client_phone), '')
+  )
+  ON CONFLICT (id) DO NOTHING;
 
   INSERT INTO reviews (
     booking_id,
