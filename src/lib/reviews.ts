@@ -129,7 +129,7 @@ export async function submitReview(
   if (error) {
     if (error.code === 'PGRST202' || /could not find the function/i.test(error.message)) {
       throw new Error(
-        'Função de avaliação não encontrada. Execute a migration 012_reviews.sql no Supabase.'
+        'Função de avaliação não encontrada. Execute as migrations 012 e 013 no Supabase.'
       )
     }
     throw new Error(error.message)
