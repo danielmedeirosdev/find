@@ -33,7 +33,9 @@ export function ClientAuth() {
     setError('')
     setGoogleLoading(true)
     try {
-      await signInWithGoogle('client')
+      const result = await signInWithGoogle('client')
+      await refreshProfile()
+      navigate(result.redirectTo)
     } catch (err) {
       setError(authErrorMessage(err))
       setGoogleLoading(false)
