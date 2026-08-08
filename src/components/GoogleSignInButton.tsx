@@ -1,65 +1,136 @@
+import { useEffect, useRef, useState } from 'react'
+import {
+  GOOGLE_CLIENT_ID,
+  generateGoogleNonce,
+  loadGoogleIdentityServices,
+  type GoogleCredentialResponse,
+} from '../lib/google'
+
 type Tone = 'light' | 'dark'
 
 interface GoogleSignInButtonProps {
-  onClick: () => void
-  loading?: boolean
+  onCredential: (response: GoogleCredentialResponse, nonce: string) => void | Promise<void>
+  onError?: (message: string) => void
   disabled?: boolean
   tone?: Tone
-  label?: string
-}
-
-function GoogleMark() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-      <path
-        fill="#4285F4"
-        d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z"
-      />
-      <path
-        fill="#34A853"
-        d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z"
-      />
-      <path
-        fill="#EA4335"
-        d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z"
-      />
-    </svg>
-  )
 }
 
 export function GoogleSignInButton({
-  onClick,
-  loading = false,
+  onCredential,
+  onError,
   disabled = false,
   tone = 'light',
-  label = 'Entrar com Google',
 }: GoogleSignInButtonProps) {
-  const isDark = tone === 'dark'
+  const hostRef = useRef<HTMLDivElement>(null)
+  const [ready, setReady] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const callbackRef = useRef(onCredential)
+  const errorRef = useRef(onError)
+  callbackRef.current = onCredential
+  errorRef.current = onError
+
+  useEffect(() => {
+    let cancelled = false
+
+    const mount = async () => {
+      setLoading(true)
+      try {
+        await loadGoogleIdentityServices()
+        if (cancelled || !hostRef.current || !window.google?.accounts?.id) {
+          throw new Error('Google não carregou. Atualize a página.')
+        }
+
+        const [rawNonce, hashedNonce] = await generateGoogleNonce()
+        hostRef.current.innerHTML = ''
+
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: async (response: GoogleCredentialResponse) => {
+            try {
+              await callbackRef.current(response, rawNonce)
+            } catch (err) {
+              const message =
+                err instanceof Error ? err.message : 'Falha no login com Google.'
+              errorRef.current?.(message)
+            }
+          },
+          nonce: hashedNonce,
+          context: 'signin',
+          ux_mode: 'popup',
+          auto_select: false,
+          cancel_on_tap_outside: true,
+          use_fedcm_for_prompt: false,
+        })
+
+        window.google.accounts.id.renderButton(hostRef.current, {
+          type: 'standard',
+          theme: tone === 'dark' ? 'filled_black' : 'outline',
+          size: 'large',
+          text: 'continue_with',
+          shape: 'rectangular',
+          logo_alignment: 'left',
+          width: Math.min(hostRef.current.clientWidth || 320, 400),
+          locale: 'pt-BR',
+        })
+
+        if (!cancelled) {
+          setReady(true)
+          setLoading(false)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setLoading(false)
+          errorRef.current?.(
+            err instanceof Error
+              ? err.message
+              : 'Não foi possível carregar o botão do Google.'
+          )
+        }
+      }
+    }
+
+    void mount()
+    return () => {
+      cancelled = true
+      window.google?.accounts.id.cancel()
+    }
+  }, [tone])
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled || loading}
-      className={
-        isDark
-          ? 'flex w-full items-center justify-center gap-3 rounded-lg border border-charcoal-light bg-charcoal px-4 py-3 text-sm font-semibold text-white transition hover:border-brass disabled:opacity-50'
-          : 'flex w-full items-center justify-center gap-3 rounded-lg border border-paper-dark bg-white px-4 py-3 text-sm font-semibold text-ink transition hover:border-brass disabled:opacity-50'
-      }
-    >
-      <GoogleMark />
-      {loading ? 'Conectando...' : label}
-    </button>
+    <div className="w-full">
+      {loading && (
+        <p
+          className={
+            tone === 'dark'
+              ? 'text-center text-xs text-charcoal-muted mb-2'
+              : 'text-center text-xs text-ink-muted mb-2'
+          }
+        >
+          Carregando Google...
+        </p>
+      )}
+      <div
+        ref={hostRef}
+        className={`flex w-full justify-center min-h-[44px] ${disabled ? 'pointer-events-none opacity-50' : ''}`}
+        aria-hidden={!ready}
+      />
+      <p
+        className={
+          tone === 'dark'
+            ? 'mt-2 text-center text-[11px] text-charcoal-muted'
+            : 'mt-2 text-center text-[11px] text-ink-muted'
+        }
+      >
+        Se der erro, no Google Cloud → Origens JavaScript, adicione:
+        <br />
+        <span className="break-all">https://find-onefind.vercel.app</span>
+      </p>
+    </div>
   )
 }
 
 export function AuthDivider({ tone = 'light' }: { tone?: Tone }) {
-  const line =
-    tone === 'dark' ? 'border-charcoal-light' : 'border-paper-dark'
+  const line = tone === 'dark' ? 'border-charcoal-light' : 'border-paper-dark'
   const text = tone === 'dark' ? 'text-charcoal-muted' : 'text-ink-muted'
 
   return (
