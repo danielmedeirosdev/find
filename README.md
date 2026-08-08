@@ -47,14 +47,29 @@ Configure o webhook na Asaas apontando para:
 https://xxx.supabase.co/functions/v1/asaas-webhook
 ```
 
-### 4. Desenvolvimento local
+### 4. Login com Google
+
+1. No [Google Cloud Console](https://console.cloud.google.com/auth/clients/create), crie um OAuth Client ID do tipo **Web application**
+2. Em **Authorized JavaScript origins**, adicione:
+   - `http://localhost:5173` (dev)
+   - a URL de produção (ex.: `https://seu-dominio.vercel.app`)
+3. Em **Authorized redirect URIs**, adicione a callback do Supabase (em Authentication → Providers → Google), no formato:
+   - `https://<project-ref>.supabase.co/auth/v1/callback`
+4. No Supabase Dashboard → **Authentication → Providers → Google**, ative o provider e cole Client ID + Client Secret
+5. Em **Authentication → URL Configuration**, adicione nas Redirect URLs:
+   - `http://localhost:5173/auth/callback`
+   - `https://seu-dominio.vercel.app/auth/callback`
+
+O app redireciona para `/auth/callback` e cria o perfil de cliente ou a barbearia conforme a tela de origem.
+
+### 5. Desenvolvimento local
 
 ```bash
 npm install
 npm run dev
 ```
 
-### 5. Deploy na Vercel
+### 6. Deploy na Vercel
 
 1. Conecte o repositório
 2. Configure `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`

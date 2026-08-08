@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase, authErrorMessage, isSupabaseConfigured } from '../../lib/supabase'
 import { ensureAuthSession } from '../../lib/auth'
+import { signInWithGoogle } from '../../lib/oauth'
 import { formatPhone } from '../../lib/format'
 import { BarberPole } from '../../components/BarberPole'
+import { AuthDivider, GoogleSignInButton } from '../../components/GoogleSignInButton'
 import {
   FieldHint,
   FieldLabel,
@@ -25,6 +27,18 @@ export function ClientAuth() {
   const [phone, setPhone] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
+
+  const handleGoogle = async () => {
+    setError('')
+    setGoogleLoading(true)
+    try {
+      await signInWithGoogle('client')
+    } catch (err) {
+      setError(authErrorMessage(err))
+      setGoogleLoading(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -187,11 +201,21 @@ export function ClientAuth() {
 
         <button
           type="submit"
-          disabled={loading || (mode === 'signup' && !isPasswordStrong(password))}
+          disabled={loading || googleLoading || (mode === 'signup' && !isPasswordStrong(password))}
           className="w-full rounded-lg bg-brass py-3 font-semibold text-white disabled:opacity-50"
         >
           {loading ? 'Aguarde...' : mode === 'login' ? 'Entrar' : 'Criar conta'}
         </button>
+
+        <AuthDivider tone="light" />
+
+        <GoogleSignInButton
+          tone="light"
+          loading={googleLoading}
+          disabled={loading}
+          onClick={handleGoogle}
+          label={mode === 'signup' ? 'Cadastrar com Google' : 'Entrar com Google'}
+        />
       </form>
 
       <p className="mt-4 text-center text-sm text-ink-muted">
