@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase, authErrorMessage, isSupabaseConfigured } from '../../lib/supabase'
 import { ensureAuthSession, ensureBarberShop } from '../../lib/auth'
+import { signInWithGoogle } from '../../lib/oauth'
 import { BarberPole } from '../../components/BarberPole'
+import { AuthDivider, GoogleSignInButton } from '../../components/GoogleSignInButton'
 import {
   FieldHint,
   FieldLabel,
@@ -18,6 +20,22 @@ export function BarberAuth() {
   const [shopName, setShopName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
+
+  const handleGoogle = async () => {
+    setError('')
+    if (mode === 'signup' && !shopName.trim()) {
+      setError('Informe o nome da barbearia antes de continuar com Google.')
+      return
+    }
+    setGoogleLoading(true)
+    try {
+      await signInWithGoogle('barber', shopName.trim() || 'Minha Barbearia')
+    } catch (err) {
+      setError(authErrorMessage(err))
+      setGoogleLoading(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -175,11 +193,21 @@ export function BarberAuth() {
 
         <button
           type="submit"
-          disabled={loading || (mode === 'signup' && !isPasswordStrong(password))}
+          disabled={loading || googleLoading || (mode === 'signup' && !isPasswordStrong(password))}
           className="w-full rounded-lg bg-brass py-3 font-semibold text-charcoal disabled:opacity-50"
         >
           {loading ? 'Aguarde...' : mode === 'login' ? 'Entrar' : 'Criar barbearia'}
         </button>
+
+        <AuthDivider tone="dark" />
+
+        <GoogleSignInButton
+          tone="dark"
+          loading={googleLoading}
+          disabled={loading}
+          onClick={handleGoogle}
+          label={mode === 'signup' ? 'Cadastrar com Google' : 'Entrar com Google'}
+        />
       </form>
 
       <p className="mt-4 text-center text-sm text-charcoal-muted">
