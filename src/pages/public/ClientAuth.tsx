@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase, authErrorMessage, isSupabaseConfigured } from '../../lib/supabase'
 import { ensureAuthSession } from '../../lib/auth'
-import { signInWithGoogle } from '../../lib/oauth'
+import { completeGoogleCredentialLogin } from '../../lib/oauth'
 import { formatPhone } from '../../lib/format'
 import { BarberPole } from '../../components/BarberPole'
 import { AuthDivider, GoogleSignInButton } from '../../components/GoogleSignInButton'
@@ -29,11 +29,14 @@ export function ClientAuth() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
 
-  const handleGoogle = async () => {
+  const handleGoogleCredential = async (
+    response: { credential: string },
+    nonce: string
+  ) => {
     setError('')
     setGoogleLoading(true)
     try {
-      const result = await signInWithGoogle('client')
+      const result = await completeGoogleCredentialLogin('client', response, nonce)
       await refreshProfile()
       navigate(result.redirectTo)
     } catch (err) {
@@ -213,10 +216,12 @@ export function ClientAuth() {
 
         <GoogleSignInButton
           tone="light"
-          loading={googleLoading}
-          disabled={loading}
-          onClick={handleGoogle}
-          label={mode === 'signup' ? 'Cadastrar com Google' : 'Entrar com Google'}
+          disabled={loading || googleLoading}
+          onCredential={handleGoogleCredential}
+          onError={(message) => {
+            setError(message)
+            setGoogleLoading(false)
+          }}
         />
       </form>
 

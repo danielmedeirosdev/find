@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase, authErrorMessage, isSupabaseConfigured } from '../../lib/supabase'
 import { ensureAuthSession, ensureBarberShop } from '../../lib/auth'
-import { signInWithGoogle } from '../../lib/oauth'
+import { completeGoogleCredentialLogin } from '../../lib/oauth'
 import { BarberPole } from '../../components/BarberPole'
 import { AuthDivider, GoogleSignInButton } from '../../components/GoogleSignInButton'
 import {
@@ -22,7 +22,10 @@ export function BarberAuth() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
 
-  const handleGoogle = async () => {
+  const handleGoogleCredential = async (
+    response: { credential: string },
+    nonce: string
+  ) => {
     setError('')
     if (mode === 'signup' && !shopName.trim()) {
       setError('Informe o nome da barbearia antes de continuar com Google.')
@@ -30,7 +33,12 @@ export function BarberAuth() {
     }
     setGoogleLoading(true)
     try {
-      const result = await signInWithGoogle('barber', shopName.trim() || 'Minha Barbearia')
+      const result = await completeGoogleCredentialLogin(
+        'barber',
+        response,
+        nonce,
+        shopName.trim() || 'Minha Barbearia'
+      )
       navigate(result.redirectTo)
     } catch (err) {
       setError(authErrorMessage(err))
@@ -204,10 +212,12 @@ export function BarberAuth() {
 
         <GoogleSignInButton
           tone="dark"
-          loading={googleLoading}
-          disabled={loading}
-          onClick={handleGoogle}
-          label={mode === 'signup' ? 'Cadastrar com Google' : 'Entrar com Google'}
+          disabled={loading || googleLoading}
+          onCredential={handleGoogleCredential}
+          onError={(message) => {
+            setError(message)
+            setGoogleLoading(false)
+          }}
         />
       </form>
 
