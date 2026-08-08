@@ -114,17 +114,6 @@ export function GoogleSignInButton({
         className={`flex w-full justify-center min-h-[44px] ${disabled ? 'pointer-events-none opacity-50' : ''}`}
         aria-hidden={!ready}
       />
-      <p
-        className={
-          tone === 'dark'
-            ? 'mt-2 text-center text-[11px] text-charcoal-muted'
-            : 'mt-2 text-center text-[11px] text-ink-muted'
-        }
-      >
-        Se der erro, no Google Cloud → Origens JavaScript, adicione:
-        <br />
-        <span className="break-all">https://find-onefind.vercel.app</span>
-      </p>
     </div>
   )
 }

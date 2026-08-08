@@ -134,9 +134,7 @@ export async function completeGoogleCredentialLogin(
   if (error) {
     clearOAuthIntent()
     if (/origin|redirect|audience|client|unauthorized/i.test(error.message)) {
-      throw new Error(
-        'Google bloqueou o app. No Google Cloud → Origens JavaScript autorizadas, adicione exatamente: https://find-onefind.vercel.app'
-      )
+      throw new Error('Não foi possível entrar com Google. Tente novamente em instantes.')
     }
     throw error
   }
