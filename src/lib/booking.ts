@@ -1,6 +1,23 @@
 import { timeToMinutes, minutesToTime } from './format'
 import type { BarberSchedule, PublicBookingSlot, Service } from './types'
 
+export function bookingErrorMessage(err: unknown): string {
+  const message =
+    err instanceof Error
+      ? err.message
+      : typeof err === 'string'
+        ? err
+        : ''
+
+  if (/bookings_barber_id_date_time|bookings_active_slot|duplicate key|unique constraint/i.test(message)) {
+    return 'Esse horário acabou de ser reservado. Escolha outro horário.'
+  }
+
+  if (message.trim()) return message
+  return 'Erro ao criar agendamento. Tente outro horário.'
+}
+
+
 const SLOT_INTERVAL = 15
 
 export function getTotalDuration(services: Service[]): number {
