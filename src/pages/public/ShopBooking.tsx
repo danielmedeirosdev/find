@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import {
+  bookingErrorMessage,
   getTotalDuration,
   getTotalPrice,
   getActiveDays,
@@ -31,6 +32,27 @@ import {
 import type { BarberRatingStats, RatingStats } from '../../lib/types'
 
 type Step = 1 | 2 | 3 | 4
+
+async function loadOccupiedSlots(id: string): Promise<PublicBookingSlot[]> {
+  const today = new Date().toISOString().slice(0, 10)
+  const { data: fromView, error: viewError } = await supabase
+    .from('public_booking_slots')
+    .select('shop_id, barber_id, date, time')
+    .eq('shop_id', id)
+    .gte('date', today)
+
+  if (!viewError && fromView) return fromView as PublicBookingSlot[]
+
+  // Fallback se a view ainda não existir no projeto
+  const { data: fromBookings } = await supabase
+    .from('bookings')
+    .select('shop_id, barber_id, date, time')
+    .eq('shop_id', id)
+    .gte('date', today)
+    .in('status', ['scheduled', 'in_progress', 'completed'])
+
+  return (fromBookings as PublicBookingSlot[]) || []
+}
 
 export function ShopBooking() {
   const { shopId } = useParams<{ shopId: string }>()
@@ -103,17 +125,13 @@ export function ShopBooking() {
         sched = data || []
       }
 
-      const { data: slots } = await supabase
-        .from('public_booking_slots')
-        .select('shop_id, barber_id, date, time')
-        .eq('shop_id', shopId)
-        .gte('date', new Date().toISOString().slice(0, 10))
+      const slots = await loadOccupiedSlots(shopId!)
 
       setShop(shopData)
       setServices(svc || [])
       setBarbers(barb || [])
       setSchedules(sched)
-      setOccupiedSlots(slots || [])
+      setOccupiedSlots(slots)
       setPhotos((ph as ShopPhoto[]) || [])
       setShopStats(stats)
       setBarberStats(bStats)
@@ -201,8 +219,15 @@ export function ShopBooking() {
       .single()
 
     if (bkError || !booking) {
-      setError(bkError?.message || 'Erro ao criar agendamento. Tente outro horário.')
+      const msg = bookingErrorMessage(bkError)
+      setError(msg)
       setSubmitting(false)
+      if (/horário|reservado/i.test(msg) && shopId) {
+        setSelectedTime(null)
+        setStep(3)
+        const slots = await loadOccupiedSlots(shopId)
+        setOccupiedSlots(slots)
+      }
       return
     }
 
