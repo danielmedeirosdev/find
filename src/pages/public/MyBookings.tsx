@@ -3,7 +3,7 @@ import { Link, Navigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { formatPrice, formatDate, formatTime, bookingStatusLabel, paymentMethodLabel } from '../../lib/format'
 import type { BookingWithDetails } from '../../lib/types'
-import { BarberPole } from '../../components/BarberPole'
+import { BrandAccent } from '../../components/BrandAccent'
 import { ReviewModal } from '../../components/reviews/ReviewModal'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -56,7 +56,7 @@ export function MyBookings() {
     <div>
       <div className="mb-8 text-center">
         <h1 className="font-display text-4xl text-ink">Minhas Reservas</h1>
-        <BarberPole className="mx-auto max-w-xs mt-4" />
+        <BrandAccent className="mx-auto max-w-xs mt-4" segment="platform" />
       </div>
 
       {loading ? (
@@ -65,7 +65,7 @@ export function MyBookings() {
         <div className="text-center py-12">
           <p className="text-ink-muted mb-4">Você ainda não tem reservas.</p>
           <Link to="/" className="text-brass hover:underline">
-            Encontrar uma barbearia
+            Encontrar um estabelecimento
           </Link>
         </div>
       ) : (
@@ -74,8 +74,7 @@ export function MyBookings() {
             <section>
               <h2 className="font-display text-2xl text-ink mb-2">Como foi seu atendimento?</h2>
               <p className="text-sm text-ink-muted mb-4">
-                Sua opinião ajuda outras pessoas a escolherem um barbeiro e ajuda o profissional a
-                melhorar.
+                Sua opinião ajuda outras pessoas a escolherem e ajuda o profissional a melhorar.
               </p>
               <div className="space-y-4">
                 {awaitingReview.map((b) => (
@@ -125,7 +124,7 @@ export function MyBookings() {
       {reviewBooking && (
         <ReviewModal
           bookingId={reviewBooking.id}
-          shopName={reviewBooking.shops?.name || 'Barbearia'}
+          shopName={reviewBooking.shops?.name || 'Estabelecimento'}
           barberName={reviewBooking.barbers?.name}
           onClose={() => setReviewBooking(null)}
           onSubmitted={() => {

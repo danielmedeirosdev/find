@@ -2,26 +2,45 @@ import type { ShopSegment } from './types'
 
 export interface SegmentDefinition {
   id: ShopSegment
-  /** Path público da vertical, ex: /barbearia */
   path: string
   brandName: string
   shortName: string
-  headline: string
-  description: string
-  /** Ícone visual curto (pode ser emoji ou símbolo) */
+  /** Nome genérico do negócio (Barbearia / Pet Shop) */
+  businessLabel: string
+  professionalLabel: string
+  professionalPlural: string
+  teamLabel: string
+  customerLabel: string
+  petLabel?: string
   mark: string
   ctaLabel: string
+  headline: string
+  description: string
   listTitle: string
   listSubtitle: string
-  professionalLabel: string
   defaultShopName: string
+  panelEyebrow: string
+  panelSubtitle: string
+  infoTitle: string
+  logoTitle: string
+  photosTitle: string
+  linkTabLabel: string
+  linkPageTitle: string
+  hoursHint: string
+  namePlaceholder: string
+  deleteConfirmVerb: string
+  deleteArticle: 'a' | 'o'
+  blockedBody: string
+  bookingNotFound: string
+  publicEnvTitle: string
   bookingPath: (shopId: string) => string
+  /** Classe CSS no root da experiência */
+  themeClass: string
 }
 
 /**
- * Registry de verticais do FIND.
- * Para adicionar FIND BEAUTY etc.: registre aqui + regras/telas específicas.
- * Não copie o projeto.
+ * Configuração central de verticais do FIND.
+ * Labels compartilhados vêm daqui — não espalhar "Barbearia" hardcoded.
  */
 export const SEGMENTS: Record<ShopSegment, SegmentDefinition> = {
   barbershop: {
@@ -29,39 +48,91 @@ export const SEGMENTS: Record<ShopSegment, SegmentDefinition> = {
     path: '/barbearia',
     brandName: 'FIND BARBEARIA',
     shortName: 'Barbearia',
-    headline: 'Agenda, clientes e gestão para barbearias.',
-    description: 'Serviços, equipe, horários e agendamento online no mesmo FIND.',
+    businessLabel: 'Barbearia',
+    professionalLabel: 'Barbeiro',
+    professionalPlural: 'Barbeiros',
+    teamLabel: 'Equipe',
+    customerLabel: 'Cliente',
     mark: '💈',
     ctaLabel: 'Acessar',
+    headline: 'Agenda, clientes e gestão para barbearias.',
+    description: 'Serviços, equipe, horários e agendamento online no mesmo FIND.',
     listTitle: 'Encontre sua barbearia',
     listSubtitle: 'Agende online, sem fila, com estilo clássico.',
-    professionalLabel: 'barbearia',
     defaultShopName: 'Minha Barbearia',
+    panelEyebrow: 'FIND BARBEARIA',
+    panelSubtitle: 'Painel de gestão',
+    infoTitle: 'Informações da Barbearia',
+    logoTitle: 'Logo da Barbearia',
+    photosTitle: 'Fotos da Barbearia',
+    linkTabLabel: 'Link da Barbearia',
+    linkPageTitle: 'Link da Barbearia',
+    hoursHint:
+      'Informe os horários gerais da barbearia. Os horários individuais ficam em Equipe e horários.',
+    namePlaceholder: 'Ex: Barbearia Black Crown',
+    deleteConfirmVerb: 'barbearia',
+    deleteArticle: 'a',
+    blockedBody: 'A barbearia',
+    bookingNotFound: 'Barbearia não encontrada.',
+    publicEnvTitle: 'Ambiente',
     bookingPath: (shopId) => `/barbearia/${shopId}`,
+    themeClass: 'segment-barbershop',
   },
   pet: {
     id: 'pet',
     path: '/pet',
     brandName: 'FIND PET',
     shortName: 'Pet',
-    headline: 'Agenda, clientes e pets para banho e tosa.',
-    description: 'Porte, duração inteligente e histórico do pet no mesmo FIND.',
+    businessLabel: 'Pet Shop',
+    professionalLabel: 'Profissional',
+    professionalPlural: 'Profissionais',
+    teamLabel: 'Equipe',
+    customerLabel: 'Cliente',
+    petLabel: 'Pet',
     mark: '🐾',
     ctaLabel: 'Acessar',
-    listTitle: 'Encontre seu pet shop',
-    listSubtitle: 'Agende banho e tosa pelo porte do pet, sem complicação.',
-    professionalLabel: 'pet shop',
+    headline: 'Agenda, clientes e pets para banho e tosa.',
+    description:
+      'Porte, duração inteligente, histórico do pet e pacotes — feitos para banho e tosa.',
+    listTitle: 'Encontre o pet shop ideal para o seu pet',
+    listSubtitle: 'Agende banho, tosa e cuidados de forma simples e profissional.',
     defaultShopName: 'Meu Pet Shop',
+    panelEyebrow: 'FIND PET',
+    panelSubtitle: 'Painel de gestão',
+    infoTitle: 'Informações do Pet Shop',
+    logoTitle: 'Logo do Pet Shop',
+    photosTitle: 'Fotos do estabelecimento',
+    linkTabLabel: 'Link do Pet Shop',
+    linkPageTitle: 'Link do Pet Shop',
+    hoursHint:
+      'Horário geral do pet shop. Disponibilidade de cada profissional fica em Equipe e horários.',
+    namePlaceholder: 'Ex: Banho & Tosa da Maria',
+    deleteConfirmVerb: 'pet shop',
+    deleteArticle: 'o',
+    blockedBody: 'O pet shop',
+    bookingNotFound: 'Pet shop não encontrado.',
+    publicEnvTitle: 'Espaço',
     bookingPath: (shopId) => `/pet/${shopId}`,
+    themeClass: 'segment-pet',
   },
 }
 
-/** Verticais ativas na plataforma (ordem da landing). */
 export const ACTIVE_SEGMENTS: ShopSegment[] = ['barbershop', 'pet']
 
+/** Normaliza qualquer valor vindo do banco/metadata/URL para o segmento canônico. */
+export function normalizeSegment(id: ShopSegment | string | null | undefined): ShopSegment {
+  const raw = String(id ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, '')
+  if (raw === 'pet' || raw === 'pets' || raw === 'petshop' || raw === 'banhoetosa') {
+    return 'pet'
+  }
+  return 'barbershop'
+}
+
 export function getSegment(id: ShopSegment | string | null | undefined): SegmentDefinition {
-  if (id === 'pet') return SEGMENTS.pet
-  return SEGMENTS.barbershop
+  return SEGMENTS[normalizeSegment(id)]
 }
 
 export function getSegmentFromPath(pathname: string): SegmentDefinition | null {
@@ -71,7 +142,10 @@ export function getSegmentFromPath(pathname: string): SegmentDefinition | null {
 }
 
 export function parseSegmentParam(value: string | null): ShopSegment | null {
-  if (value === 'pet' || value === 'barbershop') return value
+  if (!value) return null
+  const v = value.trim().toLowerCase()
+  if (v === 'pet' || v === 'pets' || v === 'petshop' || v === 'pet-shop') return 'pet'
+  if (v === 'barbershop' || v === 'barbearia') return 'barbershop'
   return null
 }
 
@@ -80,4 +154,9 @@ export function publicBookingPathForSegment(
   segment?: ShopSegment | string | null
 ): string {
   return getSegment(segment).bookingPath(shopId)
+}
+
+/** Compat: rótulo curto do negócio. */
+export function businessLabel(segment?: ShopSegment | string | null): string {
+  return getSegment(segment).businessLabel
 }

@@ -4,7 +4,7 @@ import { supabase, authErrorMessage, isSupabaseConfigured } from '../../lib/supa
 import { ensureAuthSession } from '../../lib/auth'
 import { completeGoogleCredentialLogin } from '../../lib/oauth'
 import { formatPhone } from '../../lib/format'
-import { BarberPole } from '../../components/BarberPole'
+import { BrandAccent } from '../../components/BrandAccent'
 import { AuthDivider, GoogleSignInButton } from '../../components/GoogleSignInButton'
 import {
   FieldHint,
@@ -140,9 +140,9 @@ export function ClientAuth() {
         <h1 className="font-display text-4xl text-ink">
           {mode === 'login' ? 'Entrar' : 'Criar conta'}
         </h1>
-        <BarberPole className="mx-auto max-w-xs mt-4" />
+        <BrandAccent className="mx-auto max-w-xs mt-4" segment="platform" />
         <p className="text-ink-muted mt-2 text-sm">
-          Acompanhe seus agendamentos em qualquer barbearia FIND.
+          Acompanhe seus agendamentos em pet shops e barbearias FIND.
         </p>
       </div>
 
@@ -170,7 +170,7 @@ export function ClientAuth() {
                 className="w-full rounded-lg border border-paper-dark px-4 py-2 placeholder:text-ink-muted/50 focus:border-brass focus:outline-none"
               />
               <FieldHint tone="light">
-                Usado pela barbearia para confirmar ou lembrar do horário.
+                Usado pelo estabelecimento para confirmar ou lembrar do horário.
               </FieldHint>
             </div>
           </>

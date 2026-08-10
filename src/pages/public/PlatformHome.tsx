@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ACTIVE_SEGMENTS, SEGMENTS } from '../../lib/segments'
-import { BarberPole } from '../../components/BarberPole'
+import { BrandAccent } from '../../components/BrandAccent'
 
 export function PlatformHome() {
   return (
@@ -17,7 +17,11 @@ export function PlatformHome() {
         <h1 className="platform-fade platform-fade-delay-1 mt-3 font-display text-7xl tracking-[0.12em] text-ink sm:text-8xl">
           FIND
         </h1>
-        <BarberPole className="platform-fade platform-fade-delay-1 mx-auto mt-5 max-w-[12rem]" height="h-1.5" />
+        <BrandAccent
+          className="platform-fade platform-fade-delay-1 mx-auto mt-5 max-w-[12rem]"
+          height="h-1.5"
+          segment="platform"
+        />
         <p className="platform-fade platform-fade-delay-2 mt-6 max-w-md text-lg text-ink-muted sm:text-xl">
           Encontre a solução ideal para o seu negócio.
         </p>

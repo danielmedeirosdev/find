@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { formatPrice, formatDate, formatTime, formatDuration } from '../../lib/format'
 import { getTotalDuration, getTotalPrice } from '../../lib/booking'
 import type { BookingConfirmationState, BookingWithDetails } from '../../lib/types'
-import { BarberPole } from '../../components/BarberPole'
+import { BrandAccent } from '../../components/BrandAccent'
 import { useAuth } from '../../contexts/AuthContext'
 
 export function BookingConfirm() {
@@ -51,14 +51,14 @@ export function BookingConfirm() {
             <p className="font-display text-sm tracking-widest text-ink-muted">
               {isPet ? 'FIND PET' : 'COMANDA'}
             </p>
-            <BarberPole className="my-3" height="h-2" />
+            <BrandAccent className="my-3" height="h-2" segment={isPet ? 'pet' : 'barbershop'} />
             <h1 className="font-display text-3xl text-ink">Agendamento confirmado!</h1>
           </div>
 
           <div className="space-y-4 font-mono text-sm">
             <div className="border-b border-dashed border-ink/10 pb-3">
               <p className="text-ink-muted text-xs uppercase">
-                {isPet ? 'Estabelecimento' : 'Barbearia'}
+                {isPet ? 'Pet Shop' : 'Barbearia'}
               </p>
               <p className="text-lg font-semibold text-ink">{confirmationState.shopName}</p>
               {confirmationState.shopAddress && (
@@ -110,7 +110,7 @@ export function BookingConfirm() {
             </div>
           </div>
 
-          <BarberPole className="my-6" height="h-1" />
+          <BrandAccent className="my-6" height="h-1" segment={isPet ? 'pet' : 'barbershop'} />
 
           {!user && (
             <div className="rounded-lg bg-paper p-4 text-center text-sm">
@@ -125,8 +125,8 @@ export function BookingConfirm() {
           )}
 
           <div className="mt-6 flex flex-col gap-2 text-center text-sm">
-            <Link to="/" className="text-brass hover:underline">
-              Voltar ao FIND
+            <Link to={isPet ? '/pet' : '/barbearia'} className="text-brass hover:underline">
+              {isPet ? 'Voltar à lista de pet shops' : 'Voltar à lista de barbearias'}
             </Link>
             {user && (
               <Link to="/minhas-reservas" className="text-ink-muted hover:text-brass">
@@ -150,7 +150,7 @@ export function BookingConfirm() {
       <div className="rounded-lg border-2 border-dashed border-ink/20 bg-white p-8 shadow-sm">
         <div className="text-center mb-6">
           <p className="font-display text-sm tracking-widest text-ink-muted">COMANDA</p>
-          <BarberPole className="my-3" height="h-2" />
+          <BrandAccent className="my-3" height="h-2" />
           <h1 className="font-display text-3xl text-ink">Agendamento confirmado!</h1>
         </div>
 
@@ -197,7 +197,7 @@ export function BookingConfirm() {
           </div>
         </div>
 
-        <BarberPole className="my-6" height="h-1" />
+        <BrandAccent className="my-6" height="h-1" />
 
         {!user && (
           <div className="rounded-lg bg-paper p-4 text-center text-sm">
@@ -212,7 +212,7 @@ export function BookingConfirm() {
         )}
 
         <div className="mt-6 flex flex-col gap-2 text-center text-sm">
-          <Link to="/" className="text-brass hover:underline">
+          <Link to="/barbearia" className="text-brass hover:underline">
             Voltar à lista de barbearias
           </Link>
           {user && (

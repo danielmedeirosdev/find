@@ -6,15 +6,18 @@ import {
   fetchShopReviewsForOwner,
   formatAvgRating,
 } from '../../../lib/reviews'
-import type { RatingStats, ReviewPublic } from '../../../lib/types'
+import type { RatingStats, ReviewPublic, ShopSegment } from '../../../lib/types'
+import { getSegment } from '../../../lib/segments'
 import { ReviewsSection } from '../../../components/reviews/ReviewsSection'
 import { StarRating } from '../../../components/reviews/StarRating'
 
 interface Props {
   shopId: string
+  segment?: string | null
 }
 
-export function ReviewsTab({ shopId }: Props) {
+export function ReviewsTab({ shopId, segment }: Props) {
+  const seg = getSegment(segment as ShopSegment)
   const [stats, setStats] = useState<RatingStats | null>(null)
   const [reviews, setReviews] = useState<ReviewPublic[]>([])
   const [loading, setLoading] = useState(true)
@@ -53,7 +56,8 @@ export function ReviewsTab({ shopId }: Props) {
       <div>
         <h2 className="font-display text-2xl text-white mb-1">Sua avaliação</h2>
         <p className="text-sm text-charcoal-muted">
-          Reputação da barbearia com base em atendimentos concluídos no FIND.
+          Reputação d{seg.deleteArticle} {seg.businessLabel.toLowerCase()} com base em
+          atendimentos concluídos no FIND.
         </p>
       </div>
 

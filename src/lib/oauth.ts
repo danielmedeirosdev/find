@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase'
 import { ensureBarberShop } from './auth'
+import { getSegment } from './segments'
 import type { GoogleCredentialResponse } from './google'
 import type { ShopSegment } from './types'
 
@@ -35,9 +36,10 @@ export function readOAuthIntent(fallbackRole: OAuthRole = 'client'): {
   const stored = sessionStorage.getItem(ROLE_KEY)
   const role: OAuthRole =
     stored === 'barber' || stored === 'client' ? stored : fallbackRole
-  const shopName = sessionStorage.getItem(SHOP_NAME_KEY) || 'Minha Barbearia'
   const storedSegment = sessionStorage.getItem(SEGMENT_KEY)
   const segment: ShopSegment = storedSegment === 'pet' ? 'pet' : 'barbershop'
+  const shopName =
+    sessionStorage.getItem(SHOP_NAME_KEY) || getSegment(segment).defaultShopName
   return { role, shopName, segment }
 }
 

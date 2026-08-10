@@ -8,9 +8,10 @@ import {
   fetchShopRatingStats,
   fetchShopReviews,
 } from '../../lib/reviews'
-import { publicBookingPathForSegment } from '../../lib/segments'
+import { getSegment, publicBookingPathForSegment } from '../../lib/segments'
+import { SegmentProvider } from '../../contexts/SegmentContext'
 import { DefaultAvatar, Skeleton } from '../../components/MediaUI'
-import { BarberPole } from '../../components/BarberPole'
+import { BrandAccent } from '../../components/BrandAccent'
 import { RatingBadge } from '../../components/reviews/StarRating'
 import { ReviewsSection } from '../../components/reviews/ReviewsSection'
 import type {
@@ -89,10 +90,12 @@ export function ShopPublic() {
   }
 
   const isPet = shop.segment === 'pet'
+  const seg = getSegment(shop.segment)
   const bookPath = publicBookingPathForSegment(shop.id, shop.segment)
 
   return (
-    <div>
+    <SegmentProvider segment={shop.segment}>
+    <div className={isPet ? 'pet-hero-glow -mx-4 px-4 py-6 rounded-2xl' : undefined}>
       <header className="mb-8">
         <div className="flex flex-wrap items-start gap-4">
           {shop.logo_url ? (
@@ -103,15 +106,13 @@ export function ShopPublic() {
             />
           ) : (
             <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border border-paper-dark bg-white font-display text-2xl text-brass">
-              {shop.name.trim()[0]?.toUpperCase() || 'B'}
+              {shop.name.trim()[0]?.toUpperCase() || (isPet ? 'P' : 'B')}
             </div>
           )}
           <div className="min-w-0 flex-1">
-            {isPet && (
-              <p className="text-xs uppercase tracking-widest text-brass font-medium mb-1">
-                FIND PET
-              </p>
-            )}
+            <p className="text-xs uppercase tracking-widest text-brass font-medium mb-1">
+              {seg.brandName}
+            </p>
             <h1 className="font-display text-3xl text-ink sm:text-4xl">{shop.name}</h1>
             {shop.slogan && (
               <p className="mt-1 text-ink-muted italic">{shop.slogan}</p>
@@ -124,7 +125,7 @@ export function ShopPublic() {
                 className="mt-2"
               />
             )}
-            <BarberPole className="mt-4 max-w-xs" height="h-1.5" />
+            <BrandAccent className="mt-4 max-w-xs" height="h-1.5" segment={seg.id} />
           </div>
         </div>
 
@@ -158,7 +159,7 @@ export function ShopPublic() {
 
       {photos.length > 0 && (
         <section className="mb-10">
-          <h2 className="font-display text-2xl text-ink mb-4">Ambiente</h2>
+          <h2 className="font-display text-2xl text-ink mb-4">{seg.publicEnvTitle}</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {photos.map((p) => (
               <img
@@ -245,5 +246,6 @@ export function ShopPublic() {
         className="mb-10"
       />
     </div>
+    </SegmentProvider>
   )
 }

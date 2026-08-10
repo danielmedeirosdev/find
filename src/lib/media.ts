@@ -29,8 +29,13 @@ export function isValidSlug(slug: string): boolean {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)
 }
 
-export async function ensureUniqueSlug(base: string, excludeShopId?: string): Promise<string> {
-  const root = slugify(base) || 'barbearia'
+export async function ensureUniqueSlug(
+  base: string,
+  excludeShopId?: string,
+  segment?: string | null
+): Promise<string> {
+  const fallback = segment === 'pet' ? 'pet-shop' : 'barbearia'
+  const root = slugify(base) || fallback
   let candidate = root
   let n = 1
   for (;;) {

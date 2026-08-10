@@ -106,3 +106,177 @@ body {
     animation: none;
   }
 }
+
+/* —— FIND PET theme (público + painel) —— */
+.segment-pet,
+[data-segment='pet'] {
+  --color-paper: #eef5f1;
+  --color-paper-dark: #d4e5dc;
+  --color-ink: #14241e;
+  --color-ink-muted: #4d655a;
+  --color-brass: #2f7a5f;
+  --color-brass-light: #4a9b7a;
+  --color-charcoal: #121c18;
+  --color-charcoal-light: #1e2e28;
+  --color-charcoal-muted: #7a9188;
+}
+
+/*
+  Tailwind v4 pode compilar utilitários com hex fixo.
+  Força a paleta PET em qualquer superfície com data-segment=pet.
+*/
+.segment-pet .bg-brass.text-charcoal,
+[data-segment='pet'] .bg-brass.text-charcoal,
+.segment-pet .bg-brass.text-white,
+[data-segment='pet'] .bg-brass.text-white {
+  color: #0f1f19 !important;
+}
+.segment-pet .hover\:bg-brass:hover,
+[data-segment='pet'] .hover\:bg-brass:hover,
+.segment-pet .hover\:bg-brass-light:hover,
+[data-segment='pet'] .hover\:bg-brass-light:hover {
+  background-color: #4a9b7a !important;
+}
+.segment-pet .bg-brass-light,
+[data-segment='pet'] .bg-brass-light {
+  background-color: #4a9b7a !important;
+}
+.segment-pet .text-brass,
+[data-segment='pet'] .text-brass {
+  color: #2f7a5f !important;
+}
+.segment-pet .hover\:text-brass:hover,
+[data-segment='pet'] .hover\:text-brass:hover {
+  color: #4a9b7a !important;
+}
+.segment-pet .border-brass,
+[data-segment='pet'] .border-brass {
+  border-color: #2f7a5f !important;
+}
+.segment-pet .hover\:border-brass:hover,
+[data-segment='pet'] .hover\:border-brass:hover,
+.segment-pet .hover\:border-brass\/40:hover,
+[data-segment='pet'] .hover\:border-brass\/40:hover,
+.segment-pet .hover\:border-brass\/50:hover,
+[data-segment='pet'] .hover\:border-brass\/50:hover {
+  border-color: rgba(47, 122, 95, 0.55) !important;
+}
+.segment-pet .ring-brass\/20,
+[data-segment='pet'] .ring-brass\/20 {
+  --tw-ring-color: rgba(47, 122, 95, 0.25) !important;
+}
+.segment-pet .accent-brass,
+[data-segment='pet'] .accent-brass {
+  accent-color: #2f7a5f !important;
+}
+.segment-pet .bg-brass\/5,
+[data-segment='pet'] .bg-brass\/5,
+.segment-pet .bg-brass\/10,
+[data-segment='pet'] .bg-brass\/10,
+.segment-pet .bg-brass\/15,
+[data-segment='pet'] .bg-brass\/15 {
+  background-color: rgba(47, 122, 95, 0.12) !important;
+}
+.segment-pet .text-brass\/70,
+[data-segment='pet'] .text-brass\/70,
+.segment-pet .text-brass\/80,
+[data-segment='pet'] .text-brass\/80 {
+  color: rgba(47, 122, 95, 0.85) !important;
+}
+.segment-pet .focus\:border-brass:focus,
+[data-segment='pet'] .focus\:border-brass:focus {
+  border-color: #2f7a5f !important;
+}
+.segment-pet .bg-paper,
+[data-segment='pet'] .bg-paper {
+  background-color: #eef5f1 !important;
+}
+.segment-pet .bg-paper-dark,
+[data-segment='pet'] .bg-paper-dark {
+  background-color: #d4e5dc !important;
+}
+.segment-pet .border-paper-dark,
+[data-segment='pet'] .border-paper-dark {
+  border-color: #d4e5dc !important;
+}
+.segment-pet .text-ink,
+[data-segment='pet'] .text-ink {
+  color: #14241e !important;
+}
+.segment-pet .text-ink-muted,
+[data-segment='pet'] .text-ink-muted {
+  color: #4d655a !important;
+}
+
+/* Painel dark PET: sem dourado de barbearia */
+.segment-pet.bg-charcoal,
+[data-segment='pet'].bg-charcoal,
+.segment-pet .bg-charcoal,
+[data-segment='pet'] .bg-charcoal {
+  background-color: #121c18 !important;
+}
+.segment-pet .bg-charcoal-light,
+[data-segment='pet'] .bg-charcoal-light,
+.segment-pet .bg-charcoal-light\/30,
+[data-segment='pet'] .bg-charcoal-light\/30,
+.segment-pet .bg-charcoal-light\/40,
+[data-segment='pet'] .bg-charcoal-light\/40 {
+  background-color: #1e2e28 !important;
+}
+.segment-pet .border-charcoal-light,
+[data-segment='pet'] .border-charcoal-light {
+  border-color: #2a4038 !important;
+}
+.segment-pet .text-charcoal-muted,
+[data-segment='pet'] .text-charcoal-muted {
+  color: #7a9188 !important;
+}
+
+.pet-accent-stripe {
+  background: linear-gradient(
+    90deg,
+    #1f5a45 0%,
+    #2f7a5f 30%,
+    #7eb89a 50%,
+    #2f7a5f 70%,
+    #1f5a45 100%
+  );
+  background-size: 220% 100%;
+  animation: petAccentShift 9s ease-in-out infinite;
+}
+
+@keyframes petAccentShift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pet-accent-stripe {
+    animation: none;
+  }
+}
+
+.segment-pet .pet-hero-glow,
+[data-segment='pet'] .pet-hero-glow {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(47, 122, 95, 0.22), transparent 60%),
+    linear-gradient(180deg, #eef5f1 0%, #e0ece5 100%);
+}
+
+/* Nunca mostre barber-pole dentro de superfícies PET */
+.segment-pet .barber-pole-stripe,
+[data-segment='pet'] .barber-pole-stripe {
+  background: linear-gradient(
+    90deg,
+    #1f5a45 0%,
+    #2f7a5f 30%,
+    #7eb89a 50%,
+    #2f7a5f 70%,
+    #1f5a45 100%
+  ) !important;
+}

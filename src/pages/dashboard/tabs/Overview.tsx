@@ -1,24 +1,19 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { formatPrice, formatTime, formatDate, bookingStatusLabel } from '../../../lib/format'
-import { petSizeLabel } from '../../../lib/pet'
 import { WhatsAppService } from '../../../lib/whatsapp'
-import type { BookingWithDetails, ShopSegment } from '../../../lib/types'
+import type { BookingWithDetails } from '../../../lib/types'
 
 interface Props {
   shopId: string
-  segment: ShopSegment
   onNavigate: (tab: string) => void
 }
 
-export function OverviewTab({ shopId, segment, onNavigate }: Props) {
-  const isPet = segment === 'pet'
+export function OverviewTab({ shopId, onNavigate }: Props) {
   const [todayBookings, setTodayBookings] = useState<BookingWithDetails[]>([])
   const [upcoming, setUpcoming] = useState<BookingWithDetails[]>([])
   const [revenue, setRevenue] = useState(0)
   const [customers, setCustomers] = useState(0)
-  const [pets, setPets] = useState(0)
-  const [packagesLeft, setPackagesLeft] = useState(0)
   const [noShows, setNoShows] = useState(0)
   const [unread, setUnread] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -33,7 +28,6 @@ export function OverviewTab({ shopId, segment, onNavigate }: Props) {
       const select = `
         *,
         barbers(name),
-        pets(id, name, size, photo_url),
         booking_services(service_id, services(name, price, duration_minutes))
       `
 
@@ -42,8 +36,6 @@ export function OverviewTab({ shopId, segment, onNavigate }: Props) {
         { data: upData },
         { data: tx },
         { count: custCount },
-        { count: petCount },
-        { data: pkgs },
         { count: noShowCount },
         { count: unreadCount },
       ] = await Promise.all([
@@ -72,16 +64,6 @@ export function OverviewTab({ shopId, segment, onNavigate }: Props) {
           .from('shop_customers')
           .select('*', { count: 'exact', head: true })
           .eq('shop_id', shopId),
-        isPet
-          ? supabase.from('pets').select('*', { count: 'exact', head: true }).eq('shop_id', shopId)
-          : Promise.resolve({ count: 0 }),
-        isPet
-          ? supabase
-              .from('customer_packages')
-              .select('total_sessions, used_sessions')
-              .eq('shop_id', shopId)
-              .eq('status', 'active')
-          : Promise.resolve({ data: [] }),
         supabase
           .from('bookings')
           .select('*', { count: 'exact', head: true })
@@ -101,19 +83,12 @@ export function OverviewTab({ shopId, segment, onNavigate }: Props) {
         ((tx as { amount: number }[]) || []).reduce((s, t) => s + Number(t.amount), 0)
       )
       setCustomers(custCount || 0)
-      setPets(petCount || 0)
-      setPackagesLeft(
-        ((pkgs as { total_sessions: number; used_sessions: number }[]) || []).reduce(
-          (s, p) => s + Math.max(0, p.total_sessions - p.used_sessions),
-          0
-        )
-      )
       setNoShows(noShowCount || 0)
       setUnread(unreadCount || 0)
       setLoading(false)
     }
     load()
-  }, [shopId, isPet])
+  }, [shopId])
 
   if (loading) return <p className="text-charcoal-muted">Carregando...</p>
 
@@ -126,7 +101,7 @@ export function OverviewTab({ shopId, segment, onNavigate }: Props) {
       <div>
         <h2 className="font-display text-2xl text-white mb-2">Visão geral</h2>
         <p className="text-sm text-charcoal-muted">
-          Operação do dia{isPet ? ' — banho e tosa' : ''}.
+          Operação do dia.
           {!WhatsAppService.isConfigured() && (
             <span className="block mt-1 text-charcoal-muted/80">
               WhatsApp Business API ainda não configurado (mensagens automáticas em espera).
@@ -138,22 +113,14 @@ export function OverviewTab({ shopId, segment, onNavigate }: Props) {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Hoje" value={String(activeToday.length)} hint="atendimentos" />
         <Stat label="Faturamento (mês)" value={formatPrice(revenue)} />
-        <Stat label={isPet ? 'Pets' : 'Clientes'} value={String(isPet ? pets : customers)} />
+        <Stat label="Clientes" value={String(customers)} />
         <Stat label="No-shows (mês)" value={String(noShows)} />
-        {isPet && <Stat label="Sessões de pacote" value={String(packagesLeft)} hint="restantes" />}
         <Stat label="Notificações" value={String(unread)} hint="não lidas" />
       </div>
 
       <div className="flex flex-wrap gap-2">
         {[
           { id: 'agenda', label: 'Agenda' },
-          ...(isPet
-            ? [
-                { id: 'pets', label: 'Pets' },
-                { id: 'customers', label: 'Clientes' },
-                { id: 'packages', label: 'Pacotes' },
-              ]
-            : []),
           { id: 'notifications', label: 'Notificações' },
           { id: 'services', label: 'Serviços' },
         ].map((a) => (
@@ -180,11 +147,7 @@ export function OverviewTab({ shopId, segment, onNavigate }: Props) {
               >
                 <div>
                   <p className="font-mono text-brass">{formatTime(b.time)}</p>
-                  <p className="text-white">
-                    {isPet && b.pets
-                      ? `${b.pets.name} · ${petSizeLabel(b.pets.size)}`
-                      : b.client_name}
-                  </p>
+                  <p className="text-white">{b.client_name}</p>
                   <p className="text-xs text-charcoal-muted">
                     {(b.booking_services || []).map((bs) => bs.services.name).join(' · ')}
                   </p>
@@ -210,8 +173,7 @@ export function OverviewTab({ shopId, segment, onNavigate }: Props) {
                 className="flex justify-between rounded-lg bg-charcoal-light/30 px-4 py-3 text-sm"
               >
                 <span className="text-white">
-                  {formatDate(b.date)} {formatTime(b.time)} —{' '}
-                  {isPet && b.pets ? b.pets.name : b.client_name}
+                  {formatDate(b.date)} {formatTime(b.time)} — {b.client_name}
                 </span>
                 <span className="text-charcoal-muted">
                   {bookingStatusLabel(b.status || 'scheduled')}

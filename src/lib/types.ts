@@ -10,6 +10,7 @@ export interface Shop {
   address: string | null
   phone: string | null
   hours_text: string | null
+  description?: string | null
   cpf_cnpj: string | null
   asaas_customer_id: string | null
   subscription_status: SubscriptionStatus

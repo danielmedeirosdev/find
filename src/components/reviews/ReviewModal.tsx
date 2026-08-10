@@ -78,8 +78,7 @@ export function ReviewModal({
                 <p className="mt-1 text-sm text-ink-muted">com {barberName}</p>
               )}
               <p className="mt-3 text-sm text-ink-muted leading-relaxed">
-                Sua opinião ajuda outras pessoas a escolherem um barbeiro e ajuda o profissional a
-                melhorar.
+                Sua opinião ajuda outras pessoas a escolherem e ajuda o profissional a melhorar.
               </p>
             </div>
 

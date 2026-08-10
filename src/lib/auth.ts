@@ -26,6 +26,9 @@ async function seedDefaultServices(shopId: string, segment: ShopSegment) {
       { name: 'Banho', price: 60, duration_minutes: 60 },
       { name: 'Tosa', price: 80, duration_minutes: 90 },
       { name: 'Banho + Tosa', price: 120, duration_minutes: 120 },
+      { name: 'Tosa higiênica', price: 50, duration_minutes: 45 },
+      { name: 'Hidratação', price: 40, duration_minutes: 40 },
+      { name: 'Corte de unhas', price: 25, duration_minutes: 20 },
     ]
     for (const svc of defaults) {
       const { data } = await supabase
@@ -70,7 +73,7 @@ export async function ensureBarberShop(
 
   const trialEndsAt = new Date()
   trialEndsAt.setDate(trialEndsAt.getDate() + 30)
-  const slug = await ensureUniqueSlug(shopName)
+  const slug = await ensureUniqueSlug(shopName, undefined, segment)
   const meta = getSegment(segment)
 
   const { data: created, error } = await supabase

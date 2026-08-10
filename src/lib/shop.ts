@@ -61,7 +61,7 @@ export async function deleteOwnShop(): Promise<void> {
     .maybeSingle()
 
   if (shopError) throw new Error(shopError.message)
-  if (!shop) throw new Error('Barbearia não encontrada.')
+  if (!shop) throw new Error('Estabelecimento não encontrado.')
 
   await deleteShopMediaFolder(shop.id)
 

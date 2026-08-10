@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { formatPrice, subscriptionLabel, getTrialDaysRemaining } from '../../../lib/format'
 import { SUBSCRIPTION_PRICE, type Shop, type BillingType, type SubscribeHandler } from '../../../lib/types'
-import { BarberPole } from '../../../components/BarberPole'
+import { BrandAccent } from '../../../components/BrandAccent'
 
 interface Props {
   shop: Shop
@@ -76,7 +76,7 @@ export function SubscriptionTab({ shop, onUpdate, onSubscribe, subscribing, subs
       )}
 
       <div className="rounded-lg border border-charcoal-light p-6 mb-6">
-        <BarberPole className="mb-4" />
+        <BrandAccent className="mb-4" segment={shop.segment === 'pet' ? 'pet' : 'barbershop'} />
         <p className="text-charcoal-muted text-sm mb-1">Plano FIND</p>
         <p className="font-mono text-3xl text-brass mb-4">
           {formatPrice(SUBSCRIPTION_PRICE)}<span className="text-lg text-charcoal-muted">/mês</span>

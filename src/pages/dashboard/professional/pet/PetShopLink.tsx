@@ -1,25 +1,24 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from '../../../lib/supabase'
+import { supabase } from '../../../../lib/supabase'
 import {
   isValidSlug,
   publicShopPath,
   publicShopUrl,
   slugify,
-} from '../../../lib/media'
-import { Toast } from '../../../components/MediaUI'
-import { FieldHint } from '../../../components/FormHints'
-import { getSegment } from '../../../lib/segments'
-import type { Barber, Shop, ShopPhoto } from '../../../lib/types'
+} from '../../../../lib/media'
+import { Toast } from '../../../../components/MediaUI'
+import { FieldHint } from '../../../../components/FormHints'
+import type { Barber, Shop, ShopPhoto } from '../../../../lib/types'
 
 interface Props {
   shop: Shop
   onUpdate: () => void
 }
 
-export function ShopLinkTab({ shop, onUpdate }: Props) {
-  const seg = getSegment(shop.segment)
-  const slugExample = shop.segment === 'pet' ? 'banho-e-tosa-maria' : 'barbearia-black-crown'
+const SLUG_EXAMPLE = 'banho-e-tosa-maria'
+
+export function PetShopLink({ shop, onUpdate }: Props) {
   const [slug, setSlug] = useState(shop.slug || slugify(shop.name))
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -104,7 +103,7 @@ export function ShopLinkTab({ shop, onUpdate }: Props) {
       <Toast message={toast} onClose={() => setToast(null)} />
 
       <div>
-        <h2 className="font-display text-2xl text-white mb-2">{seg.linkPageTitle}</h2>
+        <h2 className="font-display text-2xl text-white mb-2">Link do Pet Shop</h2>
         <p className="text-sm text-charcoal-muted">
           Página pública exclusiva com logo, fotos, equipe e agendamento.
         </p>
@@ -115,7 +114,7 @@ export function ShopLinkTab({ shop, onUpdate }: Props) {
         <FieldHint>
           Endereço que será usado no link público. Use só letras minúsculas, números e hífen.
           <br />
-          Exemplo: {displayHost}/b/{slugExample}
+          Exemplo: {displayHost}/b/{SLUG_EXAMPLE}
         </FieldHint>
         <div className="flex flex-wrap items-center gap-2 font-mono text-sm pt-1">
           <span className="text-charcoal-muted">{displayHost}/b/</span>
@@ -123,7 +122,7 @@ export function ShopLinkTab({ shop, onUpdate }: Props) {
             <input
               value={slug}
               onChange={(e) => setSlug(e.target.value.toLowerCase())}
-              placeholder={slugExample}
+              placeholder={SLUG_EXAMPLE}
               className="min-w-[12rem] flex-1 rounded-lg border border-brass bg-charcoal px-3 py-2 text-white placeholder:text-charcoal-muted/60 focus:outline-none"
             />
           ) : (
@@ -181,7 +180,7 @@ export function ShopLinkTab({ shop, onUpdate }: Props) {
         </div>
 
         <p className="text-xs text-charcoal-muted">
-          Exemplo: {displayHost}/b/{shop.slug || slugExample}
+          Exemplo: {displayHost}/b/{shop.slug || SLUG_EXAMPLE}
         </p>
       </div>
 
@@ -221,24 +220,29 @@ export function ShopLinkTab({ shop, onUpdate }: Props) {
               </div>
             )}
             {barbers.length > 0 && (
-              <div className="mt-3 flex -space-x-2">
-                {barbers.map((b) =>
-                  b.photo_url ? (
-                    <img
-                      key={b.id}
-                      src={b.photo_url}
-                      alt={b.name}
-                      className="h-8 w-8 rounded-full border-2 border-white object-cover"
-                    />
-                  ) : (
-                    <div
-                      key={b.id}
-                      className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-brass/20 text-xs font-display text-brass"
-                    >
-                      {b.name[0]}
-                    </div>
-                  )
-                )}
+              <div className="mt-3">
+                <p className="text-[10px] uppercase tracking-wider text-ink-muted mb-1.5">
+                  Profissionais
+                </p>
+                <div className="flex -space-x-2">
+                  {barbers.map((b) =>
+                    b.photo_url ? (
+                      <img
+                        key={b.id}
+                        src={b.photo_url}
+                        alt={b.name}
+                        className="h-8 w-8 rounded-full border-2 border-white object-cover"
+                      />
+                    ) : (
+                      <div
+                        key={b.id}
+                        className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-brass/20 text-xs font-display text-brass"
+                      >
+                        {b.name[0]}
+                      </div>
+                    )
+                  )}
+                </div>
               </div>
             )}
             <div className="mt-4 flex gap-2">

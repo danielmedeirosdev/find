@@ -2,17 +2,21 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { deleteOwnShop } from '../lib/shop'
+import { getSegment } from '../lib/segments'
+import type { ShopSegment } from '../lib/types'
 import { FieldLabel } from './FormHints'
 
 interface Props {
   shopName: string
+  segment?: ShopSegment | string | null
   /** Compacto para overlays; completo para a aba Informações */
   variant?: 'section' | 'inline'
 }
 
-export function DeleteShopControl({ shopName, variant = 'section' }: Props) {
+export function DeleteShopControl({ shopName, segment, variant = 'section' }: Props) {
   const navigate = useNavigate()
   const { signOut } = useAuth()
+  const seg = getSegment(segment)
   const [showConfirm, setShowConfirm] = useState(false)
   const [confirmText, setConfirmText] = useState('')
   const [deleting, setDeleting] = useState(false)
@@ -42,7 +46,7 @@ export function DeleteShopControl({ shopName, variant = 'section' }: Props) {
       await signOut()
       navigate('/painel', { replace: true })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao excluir a barbearia.')
+      setError(err instanceof Error ? err.message : `Erro ao excluir o ${seg.deleteConfirmVerb}.`)
       setDeleting(false)
     }
   }
@@ -60,11 +64,13 @@ export function DeleteShopControl({ shopName, variant = 'section' }: Props) {
         </h2>
         <p className="text-sm text-charcoal-muted leading-relaxed">
           Você vai <span className="text-red-300 font-medium">perder tudo</span>: agendamentos,
-          clientes da agenda, serviços, equipe, horários, fotos, fluxo de caixa, relatórios, link
-          público e a conta de barbeiro. Não há como recuperar depois.
+          clientes, serviços, equipe, horários, fotos, fluxo de caixa, relatórios, link público e a
+          conta profissional. Não há como recuperar depois.
         </p>
         <div>
-          <FieldLabel>Digite o nome da barbearia ({shopName}) para confirmar</FieldLabel>
+          <FieldLabel>
+            Digite o nome d{seg.deleteArticle} {seg.deleteConfirmVerb} ({shopName}) para confirmar
+          </FieldLabel>
           <input
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
@@ -105,7 +111,7 @@ export function DeleteShopControl({ shopName, variant = 'section' }: Props) {
           onClick={openConfirm}
           className="mt-6 text-sm text-red-400/80 underline-offset-2 hover:text-red-300 hover:underline"
         >
-          Excluir barbearia e apagar todos os dados
+          Excluir {seg.deleteConfirmVerb} e apagar todos os dados
         </button>
         {dialog}
       </>
@@ -117,15 +123,16 @@ export function DeleteShopControl({ shopName, variant = 'section' }: Props) {
       <section className="rounded-lg border border-red-500/40 bg-red-950/20 p-5 space-y-3">
         <h3 className="font-display text-xl text-red-300">Zona de perigo</h3>
         <p className="text-sm text-charcoal-muted">
-          Excluir a barbearia apaga permanentemente todos os dados: agendamentos, serviços, equipe,
-          fotos, financeiro, página pública e a conta de acesso. Essa ação não pode ser desfeita.
+          Excluir {seg.deleteArticle} {seg.deleteConfirmVerb} apaga permanentemente todos os dados: agendamentos,
+          serviços, equipe, fotos, financeiro, página pública e a conta de acesso. Essa ação não
+          pode ser desfeita.
         </p>
         <button
           type="button"
           onClick={openConfirm}
           className="rounded-lg border border-red-500/60 bg-red-500/10 px-5 py-2 text-sm font-semibold text-red-300 transition-colors hover:bg-red-500/20"
         >
-          Excluir barbearia
+          Excluir {seg.deleteConfirmVerb}
         </button>
       </section>
       {dialog}

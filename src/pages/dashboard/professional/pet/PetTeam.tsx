@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../../../lib/supabase'
-import { deleteShopMedia, uploadShopMedia } from '../../../lib/media'
-import { DefaultAvatar, ImageDropzone, ProgressBar, Toast } from '../../../components/MediaUI'
-import { DAY_NAMES } from '../../../lib/types'
-import type { Barber, BarberSchedule } from '../../../lib/types'
+import { supabase } from '../../../../lib/supabase'
+import { deleteShopMedia, uploadShopMedia } from '../../../../lib/media'
+import { DefaultAvatar, ImageDropzone, ProgressBar, Toast } from '../../../../components/MediaUI'
+import { DAY_NAMES } from '../../../../lib/types'
+import type { Barber, BarberSchedule } from '../../../../lib/types'
 
 interface Props {
   shopId: string
 }
 
-export function TeamScheduleTab({ shopId }: Props) {
+export function PetTeam({ shopId }: Props) {
   const [barbers, setBarbers] = useState<Barber[]>([])
   const [schedules, setSchedules] = useState<BarberSchedule[]>([])
   const [newName, setNewName] = useState('')
@@ -137,21 +137,20 @@ export function TeamScheduleTab({ shopId }: Props) {
       <Toast message={toast} onClose={() => setToast(null)} />
       <h2 className="font-display text-2xl text-white mb-2">Equipe e horários</h2>
       <p className="text-sm text-charcoal-muted mb-6">
-        Cada funcionário pode ter foto, cargo e horários próprios. No futuro, cada um terá agenda
-        individual.
+        Cadastre profissionais de banho e tosa com foto, cargo e horários de atendimento.
       </p>
 
       <div className="mb-8 flex flex-wrap gap-2">
         <input
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
-          placeholder="Ex: Lucas Andrade"
+          placeholder="Ex: Maria Tosadora"
           className="min-w-[12rem] flex-1 rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
         />
         <input
           value={newRole}
           onChange={(e) => setNewRole(e.target.value)}
-          placeholder="Cargo (ex: Barbeiro Sênior)"
+          placeholder="Cargo (ex: Banho e tosa / Tosador)"
           className="w-48 rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
         />
         <button
@@ -202,7 +201,7 @@ export function TeamScheduleTab({ shopId }: Props) {
                     <input
                       defaultValue={barber.role || ''}
                       onBlur={(e) => updateRole(barber.id, e.target.value)}
-                      placeholder="Cargo (ex: Barbeiro Sênior)"
+                      placeholder="Cargo (ex: Banho e tosa / Tosador)"
                       className="mt-1 w-full max-w-xs rounded border border-charcoal-light bg-charcoal px-2 py-1 text-sm text-white focus:border-brass focus:outline-none"
                     />
                     {uploadingId === barber.id && (

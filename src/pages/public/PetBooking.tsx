@@ -11,6 +11,8 @@ import { getPetServicesDuration, getPetServicesPrice, petSizeLabel } from '../..
 import { notifyCustomerWhatsApp, notifyShopOwner } from '../../lib/notifications'
 import { formatDuration, formatPhone, formatPrice } from '../../lib/format'
 import { DefaultAvatar } from '../../components/MediaUI'
+import { BrandAccent } from '../../components/BrandAccent'
+import { SegmentProvider } from '../../contexts/SegmentContext'
 import { DAY_NAMES, PET_SIZES } from '../../lib/types'
 import type {
   Barber,
@@ -376,7 +378,8 @@ export function PetBooking() {
   ]
 
   return (
-    <div>
+    <SegmentProvider segment="pet">
+    <div className="pet-hero-glow -mx-4 rounded-2xl px-4 py-2">
       <div className="mb-6 flex items-start gap-3">
         {shop.logo_url && (
           <img src={shop.logo_url} alt="" className="h-14 w-14 rounded-xl object-cover" />
@@ -385,6 +388,7 @@ export function PetBooking() {
           <p className="text-xs uppercase tracking-widest text-brass font-medium">FIND PET</p>
           <h1 className="font-display text-3xl text-ink">{shop.name}</h1>
           {shop.slogan && <p className="text-ink-muted italic text-sm">{shop.slogan}</p>}
+          <BrandAccent className="mt-3 max-w-xs" height="h-1.5" segment="pet" />
         </div>
       </div>
 
@@ -771,5 +775,6 @@ export function PetBooking() {
         )}
       </div>
     </div>
+    </SegmentProvider>
   )
 }

@@ -5,7 +5,7 @@ import { formatPhone } from '../../lib/format'
 import { RATING_LABELS, submitGuestReview } from '../../lib/reviews'
 import { StarPicker } from '../../components/reviews/StarRating'
 import { FieldLabel } from '../../components/FormHints'
-import { BarberPole } from '../../components/BarberPole'
+import { BrandAccent } from '../../components/BrandAccent'
 
 export function GuestReview() {
   const { bookingId } = useParams<{ bookingId: string }>()
@@ -89,7 +89,11 @@ export function GuestReview() {
       <div className="rounded-lg border border-paper-dark bg-white p-6">
         <p className="text-xs uppercase tracking-widest text-brass mb-1">FIND</p>
         <h1 className="font-display text-3xl text-ink">Como foi o atendimento?</h1>
-        <BarberPole className="my-3 max-w-[10rem]" height="h-1.5" />
+        <BrandAccent
+          className="my-3 max-w-[10rem]"
+          height="h-1.5"
+          segment={petName ? 'pet' : 'platform'}
+        />
         <p className="text-sm text-ink-muted mb-6">
           {shopName}
           {petName ? ` · ${petName}` : ''}

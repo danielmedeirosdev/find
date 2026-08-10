@@ -4,7 +4,7 @@ import { supabase, authErrorMessage, isSupabaseConfigured } from '../../lib/supa
 import { ensureAuthSession, ensureBarberShop } from '../../lib/auth'
 import { completeGoogleCredentialLogin } from '../../lib/oauth'
 import { getSegment, parseSegmentParam, ACTIVE_SEGMENTS, SEGMENTS } from '../../lib/segments'
-import { BarberPole } from '../../components/BarberPole'
+import { BrandAccent } from '../../components/BrandAccent'
 import { AuthDivider, GoogleSignInButton } from '../../components/GoogleSignInButton'
 import {
   FieldHint,
@@ -16,7 +16,7 @@ import type { ShopSegment } from '../../lib/types'
 
 export function BarberAuth() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -31,6 +31,14 @@ export function BarberAuth() {
     if (fromUrl) setSegment(fromUrl)
     if (searchParams.get('modo') === 'cadastro') setMode('signup')
   }, [searchParams])
+
+  const selectSegment = (id: ShopSegment) => {
+    setSegment(id)
+    const next = new URLSearchParams(searchParams)
+    next.set('segment', id)
+    if (mode === 'signup') next.set('modo', 'cadastro')
+    setSearchParams(next, { replace: true })
+  }
 
   const meta = getSegment(segment)
   const businessLabel = meta.professionalLabel
@@ -140,11 +148,14 @@ export function BarberAuth() {
         if (user) {
           const { data: shop } = await supabase
             .from('shops')
-            .select('id')
+            .select('id, segment')
             .eq('owner_user_id', user.id)
             .maybeSingle()
           if (!shop) {
             await ensureBarberShop(user.id, defaultShopName, segment)
+          } else if (segment === 'pet' && shop.segment !== 'pet') {
+            // Cadastro/login via FIND PET: garante que a loja entre no painel PET
+            await supabase.from('shops').update({ segment: 'pet' }).eq('id', shop.id)
           }
         }
         navigate('/painel/dashboard')
@@ -165,7 +176,7 @@ export function BarberAuth() {
             ? 'Área do profissional'
             : `Cadastrar ${meta.shortName}`}
         </h1>
-        <BarberPole className="mx-auto max-w-xs mt-4" />
+        <BrandAccent className="mx-auto max-w-xs mt-4" segment={segment} />
         <p className="text-charcoal-muted mt-2 text-sm">{meta.description}</p>
       </div>
 
@@ -184,7 +195,7 @@ export function BarberAuth() {
                     <button
                       key={id}
                       type="button"
-                      onClick={() => setSegment(id)}
+                      onClick={() => selectSegment(id)}
                       className={`rounded-lg px-3 py-3 text-sm font-medium transition-colors ${
                         segment === id
                           ? 'bg-brass text-charcoal'
@@ -211,9 +222,7 @@ export function BarberAuth() {
                 value={shopName}
                 onChange={(e) => setShopName(e.target.value)}
                 required
-                placeholder={
-                  segment === 'pet' ? 'Ex: Banho & Tosa da Maria' : 'Ex: Barbearia Black Crown'
-                }
+                placeholder={meta.namePlaceholder}
                 className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
               />
               <FieldHint>Aparece no painel e na página pública dos clientes.</FieldHint>

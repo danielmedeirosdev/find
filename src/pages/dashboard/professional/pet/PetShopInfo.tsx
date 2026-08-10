@@ -1,19 +1,20 @@
 import { useCallback, useEffect, useState } from 'react'
-import { supabase } from '../../../lib/supabase'
-import { deleteShopMedia, uploadShopMedia } from '../../../lib/media'
-import { ImageDropzone, ProgressBar, Toast } from '../../../components/MediaUI'
-import { DeleteShopControl } from '../../../components/DeleteShopControl'
-import { FieldHint, FieldLabel } from '../../../components/FormHints'
-import type { Shop, ShopPhoto } from '../../../lib/types'
+import { supabase } from '../../../../lib/supabase'
+import { deleteShopMedia, uploadShopMedia } from '../../../../lib/media'
+import { ImageDropzone, ProgressBar, Toast } from '../../../../components/MediaUI'
+import { DeleteShopControl } from '../../../../components/DeleteShopControl'
+import { FieldHint, FieldLabel } from '../../../../components/FormHints'
+import type { Shop, ShopPhoto } from '../../../../lib/types'
 
 interface Props {
   shop: Shop
   onUpdate: () => void
 }
 
-export function ShopInfoTab({ shop, onUpdate }: Props) {
+export function PetShopInfo({ shop, onUpdate }: Props) {
   const [name, setName] = useState(shop.name)
   const [slogan, setSlogan] = useState(shop.slogan || '')
+  const [description, setDescription] = useState(shop.description || '')
   const [address, setAddress] = useState(shop.address || '')
   const [phone, setPhone] = useState(shop.phone || '')
   const [hoursText, setHoursText] = useState(shop.hours_text || '')
@@ -42,6 +43,7 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
   useEffect(() => {
     setName(shop.name)
     setSlogan(shop.slogan || '')
+    setDescription(shop.description || '')
     setAddress(shop.address || '')
     setPhone(shop.phone || '')
     setHoursText(shop.hours_text || '')
@@ -53,16 +55,22 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
     setSaving(true)
     setMessage('')
 
-    const { error } = await supabase
+    const base = {
+      name: name.trim(),
+      slogan: slogan.trim() || null,
+      address: address.trim() || null,
+      phone: phone.trim() || null,
+      hours_text: hoursText.trim() || null,
+    }
+
+    let { error } = await supabase
       .from('shops')
-      .update({
-        name: name.trim(),
-        slogan: slogan.trim() || null,
-        address: address.trim() || null,
-        phone: phone.trim() || null,
-        hours_text: hoursText.trim() || null,
-      })
+      .update({ ...base, description: description.trim() || null })
       .eq('id', shop.id)
+
+    if (error && /description/i.test(error.message)) {
+      ;({ error } = await supabase.from('shops').update(base).eq('id', shop.id))
+    }
 
     if (error) setMessage(error.message)
     else {
@@ -155,13 +163,13 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
       <Toast message={toast} onClose={() => setToast(null)} />
 
       <form onSubmit={handleSave} className="space-y-4">
-        <h2 className="font-display text-2xl text-white">Informações da Barbearia</h2>
+        <h2 className="font-display text-2xl text-white">Informações do Pet Shop</h2>
         <p className="text-sm text-charcoal-muted -mt-2 mb-2">
           Esses dados aparecem na página pública e no fluxo de agendamento.
         </p>
 
         <div className="rounded-lg border border-charcoal-light p-5">
-          <h3 className="font-medium text-white mb-1">Logo da Barbearia</h3>
+          <h3 className="font-medium text-white mb-1">Logo do Pet Shop</h3>
           <FieldHint>
             Será exibida no site público, agendamentos e futuras notificações.
           </FieldHint>
@@ -199,7 +207,7 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
         </div>
 
         <div className="rounded-lg border border-charcoal-light p-5">
-          <h3 className="font-medium text-white mb-1">Fotos da Barbearia</h3>
+          <h3 className="font-medium text-white mb-1">Fotos do estabelecimento</h3>
           <FieldHint>
             Adicione fotos da fachada, ambiente e estrutura para transmitir mais confiança aos
             clientes.
@@ -240,12 +248,12 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
         </div>
 
         <div>
-          <FieldLabel>Nome</FieldLabel>
+          <FieldLabel>Nome do Pet Shop</FieldLabel>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            placeholder="Ex: Barbearia Black Crown"
+            placeholder="Ex: Banho & Tosa da Maria"
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
         </div>
@@ -255,10 +263,21 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
           <input
             value={slogan}
             onChange={(e) => setSlogan(e.target.value)}
-            placeholder="Ex: Estilo, precisão e tradição."
+            placeholder="Ex: Cuidado profissional para quem você ama."
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
           <FieldHint>Frase curta que aparece sob o nome na página pública.</FieldHint>
+        </div>
+
+        <div>
+          <FieldLabel>Descrição</FieldLabel>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={4}
+            placeholder="Conte um pouco sobre o pet shop, serviços e diferenciais."
+            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
+          />
         </div>
 
         <div>
@@ -272,7 +291,7 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
         </div>
 
         <div>
-          <FieldLabel>Telefone</FieldLabel>
+          <FieldLabel>Telefone / WhatsApp</FieldLabel>
           <input
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
@@ -294,8 +313,7 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
           <FieldHint>
-            Informe os horários gerais da barbearia. Os horários individuais ficam em Equipe e
-            horários.
+            Horário geral do pet shop. Disponibilidade de cada profissional fica em Equipe e horários.
           </FieldHint>
         </div>
 
@@ -314,7 +332,115 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
         </button>
       </form>
 
-      <DeleteShopControl shopName={shop.name} segment="barbershop" />
+      <DeleteShopControl shopName={shop.name} segment="pet" />
+
+      <NoShowPolicyEditor shopId={shop.id} />
+    </div>
+  )
+}
+
+function NoShowPolicyEditor({ shopId }: { shopId: string }) {
+  const [enabled, setEnabled] = useState(false)
+  const [hoursBefore, setHoursBefore] = useState('24')
+  const [feeAmount, setFeeAmount] = useState('0')
+  const [termsText, setTermsText] = useState(
+    'Cancelamentos com menos de X horas de antecedência poderão estar sujeitos à cobrança conforme política do estabelecimento. A cobrança efetiva depende de gateway de pagamento e requisitos jurídicos aplicáveis — o aceite não torna a cobrança automaticamente válida.'
+  )
+  const [termsVersion, setTermsVersion] = useState('1')
+  const [msg, setMsg] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    supabase
+      .from('no_show_policies')
+      .select('*')
+      .eq('shop_id', shopId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!data) return
+        setEnabled(data.enabled)
+        setHoursBefore(String(data.hours_before))
+        setFeeAmount(String(data.fee_amount))
+        setTermsText(data.terms_text)
+        setTermsVersion(data.terms_version)
+      })
+  }, [shopId])
+
+  const save = async () => {
+    setSaving(true)
+    setMsg('')
+    const { error } = await supabase.from('no_show_policies').upsert({
+      shop_id: shopId,
+      enabled,
+      hours_before: Number(hoursBefore) || 0,
+      fee_amount: Number(feeAmount) || 0,
+      terms_text: termsText.trim(),
+      terms_version: termsVersion.trim() || '1',
+      updated_at: new Date().toISOString(),
+    })
+    setMsg(error ? error.message : 'Política de faltas salva.')
+    setSaving(false)
+  }
+
+  return (
+    <div className="mt-10 rounded-lg border border-charcoal-light p-6 space-y-4">
+      <h3 className="font-display text-xl text-white">Política de faltas (no-show)</h3>
+      <p className="text-sm text-charcoal-muted">
+        Estrutura de aceite e valor potencial. Não armazenamos cartão. Cobrança futura via gateway
+        tokenizado.
+      </p>
+      <label className="flex items-center gap-2 text-sm text-white">
+        <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="accent-brass" />
+        Exigir aceite no agendamento público
+      </label>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div>
+          <FieldLabel>Horas de antecedência</FieldLabel>
+          <input
+            value={hoursBefore}
+            onChange={(e) => setHoursBefore(e.target.value)}
+            type="number"
+            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2 text-white"
+          />
+        </div>
+        <div>
+          <FieldLabel>Valor potencial (R$)</FieldLabel>
+          <input
+            value={feeAmount}
+            onChange={(e) => setFeeAmount(e.target.value)}
+            type="number"
+            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2 text-white"
+          />
+        </div>
+        <div>
+          <FieldLabel>Versão dos termos</FieldLabel>
+          <input
+            value={termsVersion}
+            onChange={(e) => setTermsVersion(e.target.value)}
+            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2 text-white"
+          />
+        </div>
+      </div>
+      <div>
+        <FieldLabel>Texto dos termos</FieldLabel>
+        <textarea
+          value={termsText}
+          onChange={(e) => setTermsText(e.target.value)}
+          rows={4}
+          className="w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2 text-white"
+        />
+      </div>
+      {msg && (
+        <p className={`text-sm ${msg.includes('salva') ? 'text-green-400' : 'text-red-400'}`}>{msg}</p>
+      )}
+      <button
+        type="button"
+        onClick={save}
+        disabled={saving}
+        className="rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal disabled:opacity-50"
+      >
+        {saving ? 'Salvando...' : 'Salvar política'}
+      </button>
     </div>
   )
 }

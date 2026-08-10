@@ -21,7 +21,7 @@ import type {
   BookingConfirmationState,
   ShopPhoto,
 } from '../../lib/types'
-import { BarberPole } from '../../components/BarberPole'
+import { BrandAccent } from '../../components/BrandAccent'
 import { DefaultAvatar } from '../../components/MediaUI'
 import { RatingBadge } from '../../components/reviews/StarRating'
 import { useAuth } from '../../contexts/AuthContext'
@@ -265,7 +265,7 @@ export function ShopBooking() {
   }
 
   if (loading) return <p className="text-center text-ink-muted">Carregando...</p>
-  if (!shop) return <p className="text-center text-ink-muted">Barbearia não encontrada.</p>
+  if (!shop) return <p className="text-center text-ink-muted">Estabelecimento não encontrado.</p>
 
   const steps: { n: Step; label: string }[] = [
     { n: 1, label: 'Serviços' },
@@ -314,7 +314,7 @@ export function ShopBooking() {
             ))}
           </div>
         )}
-        <BarberPole className="mt-2 max-w-md" />
+        <BrandAccent className="mt-2 max-w-md" />
       </div>
 
       <div className="mb-8 flex gap-2">
