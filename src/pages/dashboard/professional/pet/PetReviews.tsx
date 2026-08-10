@@ -64,8 +64,8 @@ export function PetReviews({ shopId }: Props) {
           <div>
             <p className="font-display text-3xl text-brass mb-2">—</p>
             <p className="text-sm text-charcoal-muted">
-              Ainda não há avaliações. Quando um atendimento for finalizado, o cliente poderá
-              avaliar o pet shop.
+              Ainda não há avaliações. Cada cliente avalia o pet shop uma única vez, no primeiro
+              atendimento.
             </p>
           </div>
         ) : (

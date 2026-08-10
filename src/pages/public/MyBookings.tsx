@@ -76,16 +76,23 @@ export function MyBookings() {
   if (!user) return <Navigate to="/entrar" replace />
 
   const today = new Date().toISOString().slice(0, 10)
-  const awaitingReview = bookings.filter(
-    (b) => b.status === 'completed' && b.review_status === 'awaiting'
-  )
+  // Uma avaliação por estabelecimento: só o primeiro awaiting de cada loja
+  const awaitingReview = (() => {
+    const seen = new Set<string>()
+    return bookings.filter((b) => {
+      if (b.status !== 'completed' || b.review_status !== 'awaiting') return false
+      if (seen.has(b.shop_id)) return false
+      seen.add(b.shop_id)
+      return true
+    })
+  })()
   const upcoming = bookings.filter(
     (b) => b.date >= today && b.status !== 'completed' && b.status !== 'cancelled' && b.status !== 'no_show'
   )
   const past = bookings.filter(
     (b) =>
       !(b.date >= today && b.status !== 'completed' && b.status !== 'cancelled' && b.status !== 'no_show') &&
-      !(b.status === 'completed' && b.review_status === 'awaiting')
+      !awaitingReview.some((a) => a.id === b.id)
   )
 
   return (
@@ -163,12 +170,24 @@ export function MyBookings() {
           shopName={reviewBooking.shops?.name || 'Estabelecimento'}
           barberName={reviewBooking.barbers?.name}
           onClose={() => setReviewBooking(null)}
-          onSubmitted={() => {
+  onSubmitted={() => {
+            const shopId = reviewBooking.shop_id
             setBookings((prev) =>
-              prev.map((b) =>
-                b.id === reviewBooking.id ? { ...b, review_status: 'reviewed' as const } : b
-              )
+              prev.map((b) => {
+                if (b.id === reviewBooking.id) {
+                  return { ...b, review_status: 'reviewed' as const }
+                }
+                if (
+                  b.shop_id === shopId &&
+                  b.status === 'completed' &&
+                  b.review_status === 'awaiting'
+                ) {
+                  return { ...b, review_status: 'unavailable' as const }
+                }
+                return b
+              })
             )
+            setReviewBooking(null)
           }}
         />
       )}
