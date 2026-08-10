@@ -1,5 +1,37 @@
 -- Uma avaliação por cliente por estabelecimento (só no 1º atendimento concluído).
 
+-- 0) Remove duplicatas existentes (mantém a avaliação mais antiga de cada cliente na loja)
+WITH ranked AS (
+  SELECT
+    id,
+    booking_id,
+    ROW_NUMBER() OVER (
+      PARTITION BY shop_id, client_id
+      ORDER BY created_at ASC, id ASC
+    ) AS rn
+  FROM public.reviews
+)
+UPDATE public.bookings b
+SET review_status = 'unavailable'
+FROM ranked r
+WHERE b.id = r.booking_id
+  AND r.rn > 1
+  AND b.review_status = 'reviewed';
+
+WITH ranked AS (
+  SELECT
+    id,
+    ROW_NUMBER() OVER (
+      PARTITION BY shop_id, client_id
+      ORDER BY created_at ASC, id ASC
+    ) AS rn
+  FROM public.reviews
+)
+DELETE FROM public.reviews r
+USING ranked d
+WHERE r.id = d.id
+  AND d.rn > 1;
+
 -- 1) Índice único shop + cliente (mantém unique por booking)
 CREATE UNIQUE INDEX IF NOT EXISTS reviews_one_per_client_shop_uidx
   ON public.reviews (shop_id, client_id);
