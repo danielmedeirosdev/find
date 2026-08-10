@@ -10,7 +10,7 @@ import {
   loadOccupiedSlots,
 } from '../../lib/booking'
 import { getPetServicesDuration, getPetServicesPrice, petSizeLabel } from '../../lib/pet'
-import { notifyCustomerWhatsApp, notifyShopOwner } from '../../lib/notifications'
+import { notifyShopOwner } from '../../lib/notifications'
 import { formatDuration, formatPhone, formatPrice } from '../../lib/format'
 import { DefaultAvatar } from '../../components/MediaUI'
 import { BrandAccent } from '../../components/BrandAccent'
@@ -382,14 +382,6 @@ export function PetBooking() {
       kind: 'new_booking',
       title: 'Novo agendamento',
       body: `${selectedPet.name} · ${cust.name} · ${selectedDate} ${selectedTime}`,
-      bookingId: booking.id,
-    })
-
-    await notifyCustomerWhatsApp({
-      toPhone: cust.phone,
-      kind: 'booking_confirmation',
-      body: `Agendamento confirmado no ${shop.name}: ${selectedPet.name} em ${selectedDate} às ${selectedTime}.`,
-      shopId: shop.id,
       bookingId: booking.id,
     })
 

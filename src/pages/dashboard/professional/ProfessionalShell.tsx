@@ -9,10 +9,16 @@ export interface ProfessionalTab {
   label: string
 }
 
+export interface ProfessionalTabGroup {
+  label: string
+  tabs: ProfessionalTab[]
+}
+
 interface Props {
   shop: Shop
   segment: ShopSegment
   tabs: ProfessionalTab[]
+  tabGroups?: ProfessionalTabGroup[]
   activeTab: string
   onTabChange: (tab: string) => void
   /** Título principal do painel (ex.: nome da loja ou "Meu Pet Shop") */
@@ -29,6 +35,7 @@ export function ProfessionalShell({
   shop,
   segment,
   tabs,
+  tabGroups,
   activeTab,
   onTabChange,
   title,
@@ -61,25 +68,53 @@ export function ProfessionalShell({
 
         <BrandAccent className="mb-6 max-w-sm" height="h-1" segment={segment} />
 
-        <nav
-          className="mb-8 flex flex-wrap gap-2 border-b border-charcoal-light pb-4"
-          aria-label={`Navegação ${meta.brandName}`}
-        >
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => onTabChange(tab.id)}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === tab.id
-                  ? 'bg-brass text-charcoal'
-                  : 'text-charcoal-muted hover:text-white hover:bg-charcoal-light'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+        {tabGroups && tabGroups.length > 0 ? (
+          <nav className="mb-8 space-y-4 border-b border-charcoal-light pb-4" aria-label={`Navegação ${meta.brandName}`}>
+            {tabGroups.map((group) => (
+              <div key={group.label}>
+                <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-charcoal-muted/80">
+                  {group.label}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {group.tabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => onTabChange(tab.id)}
+                      className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                        activeTab === tab.id
+                          ? 'bg-brass text-charcoal'
+                          : 'text-charcoal-muted hover:text-white hover:bg-charcoal-light'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </nav>
+        ) : (
+          <nav
+            className="mb-8 flex flex-wrap gap-2 border-b border-charcoal-light pb-4"
+            aria-label={`Navegação ${meta.brandName}`}
+          >
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => onTabChange(tab.id)}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                  activeTab === tab.id
+                    ? 'bg-brass text-charcoal'
+                    : 'text-charcoal-muted hover:text-white hover:bg-charcoal-light'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        )}
 
         {children}
       </div>

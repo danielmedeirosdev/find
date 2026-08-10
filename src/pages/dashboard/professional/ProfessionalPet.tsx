@@ -11,29 +11,43 @@ import { PetReviews } from './pet/PetReviews'
 import { PetsTab } from '../tabs/Pets'
 import { CustomersTab } from '../tabs/Customers'
 import { PackagesTab } from '../tabs/Packages'
-import { NotificationsTab } from '../tabs/Notifications'
 import { CashFlowTab } from '../tabs/CashFlow'
 import { ReportsTab } from '../tabs/Reports'
 import { SubscriptionTab } from '../tabs/Subscription'
 
-const PET_TABS = [
-  { id: 'overview', label: 'Visão geral' },
-  { id: 'info', label: 'Informações do Pet Shop' },
-  { id: 'team', label: 'Equipe e horários' },
-  { id: 'services', label: 'Serviços' },
-  { id: 'agenda', label: 'Agenda' },
-  { id: 'customers', label: 'Clientes' },
-  { id: 'pets', label: 'Pets' },
-  { id: 'packages', label: 'Pacotes' },
-  { id: 'notifications', label: 'Notificações' },
-  { id: 'cashflow', label: 'Fluxo de Caixa' },
-  { id: 'reports', label: 'Relatórios' },
-  { id: 'reviews', label: 'Avaliações' },
-  { id: 'link', label: 'Link do Pet Shop' },
-  { id: 'subscription', label: 'Assinatura' },
-] as const
+const PET_TAB_GROUPS: { label: string; tabs: { id: string; label: string }[] }[] = [
+  {
+    label: 'Dia a dia',
+    tabs: [
+      { id: 'overview', label: 'Início' },
+      { id: 'agenda', label: 'Agenda' },
+    ],
+  },
+  {
+    label: 'Cadastros',
+    tabs: [
+      { id: 'pets', label: 'Pets' },
+      { id: 'customers', label: 'Donos' },
+      { id: 'services', label: 'Serviços' },
+      { id: 'team', label: 'Equipe' },
+      { id: 'packages', label: 'Pacotes' },
+    ],
+  },
+  {
+    label: 'Negócio',
+    tabs: [
+      { id: 'cashflow', label: 'Caixa' },
+      { id: 'reports', label: 'Relatórios' },
+      { id: 'reviews', label: 'Avaliações' },
+      { id: 'info', label: 'Meu pet shop' },
+      { id: 'link', label: 'Link público' },
+      { id: 'subscription', label: 'Plano' },
+    ],
+  },
+]
 
-type PetTabId = (typeof PET_TABS)[number]['id']
+const PET_TABS = PET_TAB_GROUPS.flatMap((g) => g.tabs)
+type PetTabId = string
 
 interface Props {
   shop: Shop
@@ -63,11 +77,12 @@ export function ProfessionalPet({
     <ProfessionalShell
       shop={shop}
       segment="pet"
-      tabs={[...PET_TABS]}
+      tabs={PET_TABS}
+      tabGroups={PET_TAB_GROUPS}
       activeTab={activeTab}
       onTabChange={setTab}
       title={shop.name?.trim() || 'Meu Pet Shop'}
-      subtitle="Painel de gestão"
+      subtitle="Banho, tosa e cuidados"
     >
       {activeTab === 'overview' && <PetOverview shopId={shop.id} onNavigate={setTab} />}
       {activeTab === 'info' && <PetShopInfo shop={shop} onUpdate={onUpdate} />}
@@ -77,7 +92,6 @@ export function ProfessionalPet({
       {activeTab === 'customers' && <CustomersTab shopId={shop.id} />}
       {activeTab === 'pets' && <PetsTab shopId={shop.id} />}
       {activeTab === 'packages' && <PackagesTab shopId={shop.id} />}
-      {activeTab === 'notifications' && <NotificationsTab shopId={shop.id} />}
       {activeTab === 'cashflow' && <CashFlowTab shopId={shop.id} />}
       {activeTab === 'reports' && <ReportsTab shopId={shop.id} />}
       {activeTab === 'reviews' && <PetReviews shopId={shop.id} />}

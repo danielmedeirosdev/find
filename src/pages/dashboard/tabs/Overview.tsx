@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { formatPrice, formatTime, formatDate, bookingStatusLabel } from '../../../lib/format'
-import { WhatsAppService } from '../../../lib/whatsapp'
 import type { BookingWithDetails } from '../../../lib/types'
 
 interface Props {
@@ -100,14 +99,7 @@ export function OverviewTab({ shopId, onNavigate }: Props) {
     <div className="space-y-8">
       <div>
         <h2 className="font-display text-2xl text-white mb-2">Visão geral</h2>
-        <p className="text-sm text-charcoal-muted">
-          Operação do dia.
-          {!WhatsAppService.isConfigured() && (
-            <span className="block mt-1 text-charcoal-muted/80">
-              WhatsApp Business API ainda não configurado (mensagens automáticas em espera).
-            </span>
-          )}
-        </p>
+        <p className="text-sm text-charcoal-muted">Operação do dia.</p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

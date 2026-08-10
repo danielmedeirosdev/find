@@ -170,18 +170,18 @@ body {
   border-color: #c9a227 !important;
 }
 
-/* —— FIND PET theme (público + painel) —— */
+/* —— FIND PET: oliva sólida (quente, sem teal/azul) —— */
 .segment-pet,
 [data-segment='pet'] {
-  --color-paper: #eef5f1;
-  --color-paper-dark: #d4e5dc;
-  --color-ink: #14241e;
-  --color-ink-muted: #4d655a;
-  --color-brass: #2f7a5f;
-  --color-brass-light: #4a9b7a;
-  --color-charcoal: #121c18;
-  --color-charcoal-light: #1e2e28;
-  --color-charcoal-muted: #7a9188;
+  --color-paper: #f2efe6;
+  --color-paper-dark: #e4dece;
+  --color-ink: #2a2418;
+  --color-ink-muted: #6a5f4d;
+  --color-brass: #6a7d3a;
+  --color-brass-light: #84964f;
+  --color-charcoal: #1c1a14;
+  --color-charcoal-light: #2c2920;
+  --color-charcoal-muted: #8a8478;
 }
 
 /*
@@ -192,33 +192,33 @@ body {
 [data-segment='pet'] .bg-brass.text-charcoal,
 .segment-pet .bg-brass.text-white,
 [data-segment='pet'] .bg-brass.text-white {
-  color: #0f1f19 !important;
+  color: #1c1a14 !important;
 }
 .segment-pet .bg-brass,
 [data-segment='pet'] .bg-brass {
-  background-color: #2f7a5f !important;
+  background-color: #6a7d3a !important;
 }
 .segment-pet .hover\:bg-brass:hover,
 [data-segment='pet'] .hover\:bg-brass:hover,
 .segment-pet .hover\:bg-brass-light:hover,
 [data-segment='pet'] .hover\:bg-brass-light:hover {
-  background-color: #4a9b7a !important;
+  background-color: #84964f !important;
 }
 .segment-pet .bg-brass-light,
 [data-segment='pet'] .bg-brass-light {
-  background-color: #4a9b7a !important;
+  background-color: #84964f !important;
 }
 .segment-pet .text-brass,
 [data-segment='pet'] .text-brass {
-  color: #2f7a5f !important;
+  color: #6a7d3a !important;
 }
 .segment-pet .hover\:text-brass:hover,
 [data-segment='pet'] .hover\:text-brass:hover {
-  color: #4a9b7a !important;
+  color: #84964f !important;
 }
 .segment-pet .border-brass,
 [data-segment='pet'] .border-brass {
-  border-color: #2f7a5f !important;
+  border-color: #6a7d3a !important;
 }
 .segment-pet .hover\:border-brass:hover,
 [data-segment='pet'] .hover\:border-brass:hover,
@@ -226,15 +226,15 @@ body {
 [data-segment='pet'] .hover\:border-brass\/40:hover,
 .segment-pet .hover\:border-brass\/50:hover,
 [data-segment='pet'] .hover\:border-brass\/50:hover {
-  border-color: rgba(47, 122, 95, 0.55) !important;
+  border-color: rgba(106, 125, 58, 0.55) !important;
 }
 .segment-pet .ring-brass\/20,
 [data-segment='pet'] .ring-brass\/20 {
-  --tw-ring-color: rgba(47, 122, 95, 0.25) !important;
+  --tw-ring-color: rgba(106, 125, 58, 0.25) !important;
 }
 .segment-pet .accent-brass,
 [data-segment='pet'] .accent-brass {
-  accent-color: #2f7a5f !important;
+  accent-color: #6a7d3a !important;
 }
 .segment-pet .bg-brass\/5,
 [data-segment='pet'] .bg-brass\/5,
@@ -242,45 +242,45 @@ body {
 [data-segment='pet'] .bg-brass\/10,
 .segment-pet .bg-brass\/15,
 [data-segment='pet'] .bg-brass\/15 {
-  background-color: rgba(47, 122, 95, 0.12) !important;
+  background-color: rgba(106, 125, 58, 0.12) !important;
 }
 .segment-pet .text-brass\/70,
 [data-segment='pet'] .text-brass\/70,
 .segment-pet .text-brass\/80,
 [data-segment='pet'] .text-brass\/80 {
-  color: rgba(47, 122, 95, 0.85) !important;
+  color: rgba(106, 125, 58, 0.85) !important;
 }
 .segment-pet .focus\:border-brass:focus,
 [data-segment='pet'] .focus\:border-brass:focus {
-  border-color: #2f7a5f !important;
+  border-color: #6a7d3a !important;
 }
 .segment-pet .bg-paper,
 [data-segment='pet'] .bg-paper {
-  background-color: #eef5f1 !important;
+  background-color: #f2efe6 !important;
 }
 .segment-pet .bg-paper-dark,
 [data-segment='pet'] .bg-paper-dark {
-  background-color: #d4e5dc !important;
+  background-color: #e4dece !important;
 }
 .segment-pet .border-paper-dark,
 [data-segment='pet'] .border-paper-dark {
-  border-color: #d4e5dc !important;
+  border-color: #e4dece !important;
 }
 .segment-pet .text-ink,
 [data-segment='pet'] .text-ink {
-  color: #14241e !important;
+  color: #2a2418 !important;
 }
 .segment-pet .text-ink-muted,
 [data-segment='pet'] .text-ink-muted {
-  color: #4d655a !important;
+  color: #6a5f4d !important;
 }
 
-/* Painel dark PET: sem dourado de barbearia */
+/* Painel dark PET */
 .segment-pet.bg-charcoal,
 [data-segment='pet'].bg-charcoal,
 .segment-pet .bg-charcoal,
 [data-segment='pet'] .bg-charcoal {
-  background-color: #121c18 !important;
+  background-color: #1c1a14 !important;
 }
 .segment-pet .bg-charcoal-light,
 [data-segment='pet'] .bg-charcoal-light,
@@ -288,25 +288,25 @@ body {
 [data-segment='pet'] .bg-charcoal-light\/30,
 .segment-pet .bg-charcoal-light\/40,
 [data-segment='pet'] .bg-charcoal-light\/40 {
-  background-color: #1e2e28 !important;
+  background-color: #2c2920 !important;
 }
 .segment-pet .border-charcoal-light,
 [data-segment='pet'] .border-charcoal-light {
-  border-color: #2a4038 !important;
+  border-color: #3d392e !important;
 }
 .segment-pet .text-charcoal-muted,
 [data-segment='pet'] .text-charcoal-muted {
-  color: #7a9188 !important;
+  color: #8a8478 !important;
 }
 
 .pet-accent-stripe {
   background: linear-gradient(
     90deg,
-    #1f5a45 0%,
-    #2f7a5f 30%,
-    #7eb89a 50%,
-    #2f7a5f 70%,
-    #1f5a45 100%
+    #4f5e2c 0%,
+    #6a7d3a 35%,
+    #a3b36a 50%,
+    #6a7d3a 65%,
+    #4f5e2c 100%
   );
   background-size: 220% 100%;
   animation: petAccentShift 9s ease-in-out infinite;
@@ -331,8 +331,8 @@ body {
 .segment-pet .pet-hero-glow,
 [data-segment='pet'] .pet-hero-glow {
   background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(47, 122, 95, 0.22), transparent 60%),
-    linear-gradient(180deg, #eef5f1 0%, #e0ece5 100%);
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(106, 125, 58, 0.18), transparent 60%),
+    linear-gradient(180deg, #f2efe6 0%, #e8e2d4 100%);
 }
 
 /* Nunca mostre barber-pole dentro de superfícies PET */
@@ -340,10 +340,10 @@ body {
 [data-segment='pet'] .barber-pole-stripe {
   background: linear-gradient(
     90deg,
-    #1f5a45 0%,
-    #2f7a5f 30%,
-    #7eb89a 50%,
-    #2f7a5f 70%,
-    #1f5a45 100%
+    #4f5e2c 0%,
+    #6a7d3a 35%,
+    #a3b36a 50%,
+    #6a7d3a 65%,
+    #4f5e2c 100%
   ) !important;
 }

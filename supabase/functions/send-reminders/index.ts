@@ -2,10 +2,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 /**
- * Lembretes de agendamento (cron).
- * - Cria notificações para o profissional
- * - Tenta WhatsApp só se WHATSAPP_PROVIDER_URL + token estiverem configurados
- * - Sem provedor: não finge envio; retorna skipped
+ * Lembretes de agendamento (cron) — só avisa o profissional no painel.
+ * Sem integração WhatsApp externa.
  */
 Deno.serve(async (req) => {
   if (req.method !== "POST") {
@@ -36,17 +34,10 @@ Deno.serve(async (req) => {
 
     if (error) throw error;
 
-    const providerUrl = Deno.env.get("WHATSAPP_PROVIDER_URL");
-    const providerToken = Deno.env.get("WHATSAPP_PROVIDER_TOKEN");
-    const whatsappConfigured = Boolean(providerUrl && providerToken);
-
     let notified = 0;
-    let whatsappSent = 0;
-    let whatsappSkipped = 0;
 
     for (const b of bookings || []) {
       const petName = (b.pets as { name?: string } | null)?.name;
-      const shopName = (b.shops as { name?: string } | null)?.name || "FIND";
       const title = "Lembrete de amanhã";
       const body = `${petName || b.client_name} · ${b.time}`;
 
@@ -58,35 +49,6 @@ Deno.serve(async (req) => {
         p_booking_id: b.id,
       });
       notified += 1;
-
-      if (!whatsappConfigured) {
-        whatsappSkipped += 1;
-        continue;
-      }
-
-      const phone = String(b.client_phone || "").replace(/\D/g, "");
-      if (phone.length < 10) {
-        whatsappSkipped += 1;
-        continue;
-      }
-
-      const res = await fetch(providerUrl!, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${providerToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          to: phone,
-          message: `Lembrete ${shopName}: ${petName || b.client_name} amanhã às ${b.time}.`,
-          kind: "booking_reminder",
-          booking_id: b.id,
-          shop_id: b.shop_id,
-        }),
-      });
-
-      if (res.ok) whatsappSent += 1;
-      else whatsappSkipped += 1;
     }
 
     return new Response(
@@ -94,9 +56,6 @@ Deno.serve(async (req) => {
         date,
         bookings: bookings?.length ?? 0,
         owner_notifications: notified,
-        whatsapp_sent: whatsappSent,
-        whatsapp_skipped: whatsappSkipped,
-        whatsapp_configured: whatsappConfigured,
       }),
       { headers: { "Content-Type": "application/json" } }
     );

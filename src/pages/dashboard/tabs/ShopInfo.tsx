@@ -280,7 +280,7 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
           <FieldHint>
-            Utilizado para contato dos clientes e integração futura com WhatsApp.
+            Utilizado para contato dos clientes.
           </FieldHint>
         </div>
 

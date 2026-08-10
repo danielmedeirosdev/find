@@ -3,8 +3,6 @@ import { supabase } from '../lib/supabase'
 import { formatPrice } from '../lib/format'
 import { getTotalPrice } from '../lib/booking'
 import { packageRemaining } from '../lib/notifications'
-import { notifyCustomerWhatsApp } from '../lib/notifications'
-import { guestReviewUrl } from '../lib/reviews'
 import type { BookingWithDetails, CustomerPackage, PaymentMethod, Service } from '../lib/types'
 
 interface Props {
@@ -75,14 +73,6 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
       setSubmitting(false)
       return
     }
-
-    await notifyCustomerWhatsApp({
-      toPhone: booking.client_phone,
-      kind: 'review_request',
-      body: `Olá ${booking.client_name}! Seu atendimento foi concluído. Avalie aqui: ${guestReviewUrl(booking.id)}`,
-      shopId: booking.shop_id,
-      bookingId: booking.id,
-    })
 
     onComplete()
   }

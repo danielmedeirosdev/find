@@ -1,6 +1,4 @@
 import { supabase } from './supabase'
-import { WhatsAppService } from './whatsapp'
-import type { WhatsAppMessageKind } from './whatsapp'
 
 export async function notifyShopOwner(input: {
   shopId: string
@@ -19,27 +17,6 @@ export async function notifyShopOwner(input: {
   if (error) {
     console.warn('[notifyShopOwner]', error.message)
   }
-}
-
-/** Tenta WhatsApp oficial; se não configurado, apenas registra intenção (sem fingir sucesso). */
-export async function notifyCustomerWhatsApp(input: {
-  toPhone: string
-  kind: WhatsAppMessageKind
-  body: string
-  shopId: string
-  bookingId?: string
-}) {
-  const digits = input.toPhone.replace(/\D/g, '')
-  if (digits.length < 10) {
-    return { ok: false as const, skipped: true, reason: 'invalid_phone' }
-  }
-  return WhatsAppService.send({
-    toPhone: digits,
-    kind: input.kind,
-    body: input.body,
-    shopId: input.shopId,
-    bookingId: input.bookingId,
-  })
 }
 
 export function packageRemaining(total: number, used: number): number {

@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../../../lib/supabase'
 import { formatPrice, formatTime, formatDate, formatDuration, bookingStatusLabel } from '../../../../lib/format'
 import { petSizeLabel } from '../../../../lib/pet'
-import { WhatsAppService } from '../../../../lib/whatsapp'
 import { DefaultAvatar } from '../../../../components/MediaUI'
 import type { BookingWithDetails } from '../../../../lib/types'
 
@@ -17,9 +16,6 @@ export function PetOverview({ shopId, onNavigate }: Props) {
   const [revenue, setRevenue] = useState(0)
   const [customers, setCustomers] = useState(0)
   const [pets, setPets] = useState(0)
-  const [noShows, setNoShows] = useState(0)
-  const [unread, setUnread] = useState(0)
-  const [packagesLeft, setPackagesLeft] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -42,9 +38,6 @@ export function PetOverview({ shopId, onNavigate }: Props) {
         { data: tx },
         { count: custCount },
         { count: petCount },
-        { data: pkgs },
-        { count: noShowCount },
-        { count: unreadCount },
       ] = await Promise.all([
         supabase
           .from('bookings')
@@ -72,22 +65,6 @@ export function PetOverview({ shopId, onNavigate }: Props) {
           .select('*', { count: 'exact', head: true })
           .eq('shop_id', shopId),
         supabase.from('pets').select('*', { count: 'exact', head: true }).eq('shop_id', shopId),
-        supabase
-          .from('customer_packages')
-          .select('total_sessions, used_sessions')
-          .eq('shop_id', shopId)
-          .eq('status', 'active'),
-        supabase
-          .from('bookings')
-          .select('*', { count: 'exact', head: true })
-          .eq('shop_id', shopId)
-          .eq('status', 'no_show')
-          .gte('date', monthStr),
-        supabase
-          .from('notifications')
-          .select('*', { count: 'exact', head: true })
-          .eq('shop_id', shopId)
-          .is('read_at', null),
       ])
 
       setTodayBookings((todayData as BookingWithDetails[]) || [])
@@ -95,14 +72,6 @@ export function PetOverview({ shopId, onNavigate }: Props) {
       setRevenue(((tx as { amount: number }[]) || []).reduce((s, t) => s + Number(t.amount), 0))
       setCustomers(custCount || 0)
       setPets(petCount || 0)
-      setPackagesLeft(
-        ((pkgs as { total_sessions: number; used_sessions: number }[]) || []).reduce(
-          (s, p) => s + Math.max(0, p.total_sessions - p.used_sessions),
-          0
-        )
-      )
-      setNoShows(noShowCount || 0)
-      setUnread(unreadCount || 0)
       setLoading(false)
     }
     load()
@@ -117,40 +86,32 @@ export function PetOverview({ shopId, onNavigate }: Props) {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="font-display text-2xl text-white mb-2">Visão geral</h2>
+        <h2 className="font-display text-2xl text-white mb-2">Início</h2>
         <p className="text-sm text-charcoal-muted">
-          Operação do pet shop — banho, tosa e cuidados do dia.
-          {!WhatsAppService.isConfigured() && (
-            <span className="block mt-1 text-charcoal-muted/80">
-              WhatsApp Business API ainda não configurado (avisos automáticos em espera).
-            </span>
-          )}
+          O que importa hoje: agenda, pets e atendimentos.
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <Stat label="Atendimentos hoje" value={String(activeToday.length)} />
-        <Stat label="Faturamento do mês" value={formatPrice(revenue)} />
-        <Stat label="Clientes" value={String(customers)} />
-        <Stat label="Pets" value={String(pets)} hint="cadastrados" />
-        <Stat label="No-shows" value={String(noShows)} hint="no mês" />
-        <Stat label="Notificações" value={String(unread)} hint="não lidas" />
-        <Stat label="Pacotes ativos" value={String(packagesLeft)} hint="sessões restantes" />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Stat label="Hoje" value={String(activeToday.length)} hint="atendimentos" />
+        <Stat label="Faturamento" value={formatPrice(revenue)} hint="este mês" />
+        <Stat label="Pets" value={String(pets)} />
+        <Stat label="Donos" value={String(customers)} />
       </div>
 
       <div className="flex flex-wrap gap-2">
         {[
-          { id: 'agenda', label: 'Agenda' },
-          { id: 'pets', label: 'Pets' },
-          { id: 'customers', label: 'Clientes' },
-          { id: 'packages', label: 'Pacotes' },
+          { id: 'agenda', label: 'Abrir agenda' },
+          { id: 'pets', label: 'Cadastrar pet' },
+          { id: 'customers', label: 'Donos' },
           { id: 'services', label: 'Serviços' },
+          { id: 'link', label: 'Link para clientes' },
         ].map((a) => (
           <button
             key={a.id}
             type="button"
             onClick={() => onNavigate(a.id)}
-            className="rounded-lg border border-charcoal-light px-4 py-2 text-sm text-charcoal-muted hover:border-brass hover:text-brass"
+            className="rounded-lg border border-charcoal-light px-4 py-2.5 text-sm text-charcoal-muted hover:border-brass hover:text-brass"
           >
             {a.label}
           </button>
