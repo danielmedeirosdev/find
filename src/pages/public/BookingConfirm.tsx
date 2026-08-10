@@ -68,11 +68,20 @@ export function BookingConfirm() {
 
             {isPet && (
               <div className="border-b border-dashed border-ink/10 pb-3">
-                <p className="text-ink-muted text-xs uppercase">Pet</p>
+                <p className="text-ink-muted text-xs uppercase">
+                  {confirmationState.petName?.includes('·') ? 'Pets' : 'Pet'}
+                </p>
                 <p className="text-lg font-semibold">{confirmationState.petName}</p>
                 {confirmationState.petSize && (
                   <p className="text-ink-muted">Porte {confirmationState.petSize}</p>
                 )}
+              </div>
+            )}
+
+            {confirmationState.notes && (
+              <div className="border-b border-dashed border-ink/10 pb-3">
+                <p className="text-ink-muted text-xs uppercase">Observação</p>
+                <p>{confirmationState.notes}</p>
               </div>
             )}
 

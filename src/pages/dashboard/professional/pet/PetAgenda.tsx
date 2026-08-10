@@ -31,8 +31,17 @@ export function PetAgenda({ shopId }: Props) {
     *,
     barbers(name),
     pets(id, name, size, photo_url, breed),
+    booking_pets(pet_id, pets(id, name, size, photo_url, breed)),
     booking_services(service_id, services(name, price, duration_minutes))
   `
+
+  const petsForBooking = (b: BookingWithDetails) => {
+    const fromJoin = (b.booking_pets || [])
+      .map((row) => row.pets)
+      .filter(Boolean) as NonNullable<BookingWithDetails['pets']>[]
+    if (fromJoin.length > 0) return fromJoin
+    return b.pets ? [b.pets] : []
+  }
 
   const load = useCallback(async () => {
     const today = new Date().toISOString().slice(0, 10)
@@ -138,11 +147,13 @@ export function PetAgenda({ shopId }: Props) {
             {clientHistory.map((b) => {
               const services = (b.booking_services || []).map((bs) => bs.services)
               const total = services.reduce((sum, s) => sum + Number(s.price), 0)
+              const petList = petsForBooking(b)
+              const petLabel = petList.map((p) => p.name).join(' · ')
               return (
                 <div key={b.id} className="rounded-lg bg-charcoal-light/30 p-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-white">
-                      {b.pets?.name ? `${b.pets.name} · ${b.client_name}` : b.client_name}
+                      {petLabel ? `${petLabel} · ${b.client_name}` : b.client_name}
                     </span>
                     <span className="font-mono text-brass">{formatPrice(total)}</span>
                   </div>
@@ -151,6 +162,7 @@ export function PetAgenda({ shopId }: Props) {
                     {paymentMethodLabel(b.payment_method)}
                   </p>
                   <p className="text-white">{services.map((s) => s.name).join(' · ')}</p>
+                  {b.notes && <p className="text-charcoal-muted mt-1">Obs: {b.notes}</p>}
                 </div>
               )
             })}
@@ -173,19 +185,21 @@ export function PetAgenda({ shopId }: Props) {
             const duration =
               b.duration_minutes ||
               services.reduce((sum, s) => sum + (s.duration_minutes || 0), 0)
+            const petList = petsForBooking(b)
+            const mainPet = petList[0]
             return (
               <div key={b.id} className="rounded-lg border border-charcoal-light p-4">
                 <div className="flex flex-wrap justify-between gap-3">
                   <div className="flex gap-3">
-                    {b.pets?.photo_url ? (
+                    {mainPet?.photo_url ? (
                       <img
-                        src={b.pets.photo_url}
+                        src={mainPet.photo_url}
                         alt=""
                         className="h-14 w-14 rounded-xl object-cover"
                       />
-                    ) : b.pets ? (
+                    ) : mainPet ? (
                       <DefaultAvatar
-                        name={b.pets.name}
+                        name={mainPet.name}
                         className="h-14 w-14 rounded-xl text-lg"
                       />
                     ) : null}
@@ -203,11 +217,15 @@ export function PetAgenda({ shopId }: Props) {
                     <span className="inline-block rounded-full bg-charcoal-light px-2 py-0.5 text-xs text-charcoal-muted mb-1">
                       {bookingStatusLabel(status)}
                     </span>
-                    {b.pets ? (
+                    {petList.length > 0 ? (
                       <>
-                        <p className="font-medium text-white text-lg">{b.pets.name}</p>
+                        <p className="font-medium text-white text-lg">
+                          {petList.map((p) => p.name).join(' · ')}
+                        </p>
                         <p className="text-sm text-charcoal-muted">
-                          {b.pets.breed || 'Pet'} · {petSizeLabel(b.pets.size)}
+                          {petList
+                            .map((p) => `${p.breed || 'Pet'} · ${petSizeLabel(p.size)}`)
+                            .join(' · ')}
                         </p>
                         <p className="text-sm text-white mt-1">Cliente: {b.client_name}</p>
                         <p className="text-sm text-charcoal-muted">{b.client_phone}</p>
@@ -226,6 +244,9 @@ export function PetAgenda({ shopId }: Props) {
                     <p className="text-sm text-white">
                       {services.map((s) => s.name).join(' · ') || 'Serviço'}
                     </p>
+                    {b.notes && (
+                      <p className="text-sm text-brass mt-1">Obs: {b.notes}</p>
+                    )}
                   </div>
                   <p className="font-mono text-brass">{formatPrice(total)}</p>
                 </div>

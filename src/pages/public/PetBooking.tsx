@@ -51,11 +51,12 @@ export function PetBooking() {
   const [customerName, setCustomerName] = useState('')
   const [customer, setCustomer] = useState<ShopCustomer | null>(null)
   const [pets, setPets] = useState<Pet[]>([])
-  const [selectedPetId, setSelectedPetId] = useState<string | null>(null)
+  const [selectedPetIds, setSelectedPetIds] = useState<Set<string>>(new Set())
   const [creatingPet, setCreatingPet] = useState(false)
   const [newPetName, setNewPetName] = useState('')
   const [newPetSize, setNewPetSize] = useState<PetSize>('medio')
   const [newPetBreed, setNewPetBreed] = useState('')
+  const [notes, setNotes] = useState('')
 
   const [selectedServiceIds, setSelectedServiceIds] = useState<Set<string>>(new Set())
   const [selectedBarberId, setSelectedBarberId] = useState<string | null>(null)
@@ -148,18 +149,42 @@ export function PetBooking() {
     loadOccupiedSlots(shopId).then(setOccupiedSlots)
   }, [shopId, step])
 
-  const selectedPet = pets.find((p) => p.id === selectedPetId) || null
+  const selectedPets = useMemo(
+    () => pets.filter((p) => selectedPetIds.has(p.id)),
+    [pets, selectedPetIds]
+  )
   const selectedServices = useMemo(
     () => services.filter((s) => selectedServiceIds.has(s.id)),
     [services, selectedServiceIds]
   )
 
-  const duration = selectedPet
-    ? getPetServicesDuration(selectedServices, selectedPet.size, rules)
-    : 0
-  const totalPrice = selectedPet
-    ? getPetServicesPrice(selectedServices, selectedPet.size, rules)
-    : 0
+  // Soma duração/preço de cada pet (mesmos serviços aplicados a cada um)
+  const duration = selectedPets.reduce(
+    (sum, pet) => sum + getPetServicesDuration(selectedServices, pet.size, rules),
+    0
+  )
+  const totalPrice = selectedPets.reduce(
+    (sum, pet) => sum + getPetServicesPrice(selectedServices, pet.size, rules),
+    0
+  )
+
+  const togglePet = (id: string) => {
+    setSelectedPetIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+        return next
+      }
+      if (next.size >= 2) {
+        setError('No máximo 2 pets no mesmo horário (mesma pessoa).')
+        return prev
+      }
+      setError('')
+      next.add(id)
+      return next
+    })
+    setCreatingPet(false)
+  }
 
   const selectedBarber = barbers.find((b) => b.id === selectedBarberId)
   const barberSchedules = schedules.filter((s) => s.barber_id === selectedBarberId)
@@ -268,11 +293,15 @@ export function PetBooking() {
       return
     }
     setPets((prev) => [...prev, data as Pet])
-    setSelectedPetId(data.id)
+    setSelectedPetIds((prev) => {
+      const next = new Set(prev)
+      if (next.size < 2) next.add(data.id)
+      return next
+    })
     setCreatingPet(false)
     setNewPetName('')
     setNewPetBreed('')
-    setStep(3)
+    setError('')
   }
 
   const toggleService = (id: string) => {
@@ -285,7 +314,13 @@ export function PetBooking() {
   }
 
   const handleSubmit = async () => {
-    if (!shop || !selectedBarberId || !selectedDate || !selectedTime || !selectedPet) return
+    if (!shop || !selectedBarberId || !selectedDate || !selectedTime || selectedPets.length === 0) {
+      return
+    }
+    if (selectedPets.length > 2) {
+      setError('No máximo 2 pets no mesmo horário (mesma pessoa).')
+      return
+    }
     const cust = await ensureCustomer()
     if (!cust) return
 
@@ -324,6 +359,9 @@ export function PetBooking() {
       }
     }
 
+    const primaryPet = selectedPets[0]
+    const notesValue = notes.trim() || null
+
     const { data: booking, error: bkError } = await supabase
       .from('bookings')
       .insert({
@@ -334,9 +372,10 @@ export function PetBooking() {
         client_phone: cust.phone,
         date: selectedDate,
         time: selectedTime,
-        pet_id: selectedPet.id,
+        pet_id: primaryPet.id,
         shop_customer_id: cust.id,
         duration_minutes: duration,
+        notes: notesValue,
         status: 'scheduled',
       })
       .select()
@@ -352,6 +391,18 @@ export function PetBooking() {
         const slots = await loadOccupiedSlots(shopId)
         setOccupiedSlots(slots)
       }
+      return
+    }
+
+    const { error: petsLinkError } = await supabase.from('booking_pets').insert(
+      selectedPets.map((pet) => ({
+        booking_id: booking.id,
+        pet_id: pet.id,
+      }))
+    )
+    if (petsLinkError) {
+      setError(petsLinkError.message)
+      setSubmitting(false)
       return
     }
 
@@ -377,11 +428,14 @@ export function PetBooking() {
       })
     }
 
+    const petNames = selectedPets.map((p) => p.name).join(' · ')
     await notifyShopOwner({
       shopId: shop.id,
       kind: 'new_booking',
       title: 'Novo agendamento',
-      body: `${selectedPet.name} · ${cust.name} · ${selectedDate} ${selectedTime}`,
+      body: `${petNames} · ${cust.name} · ${selectedDate} ${selectedTime}${
+        notesValue ? ` · ${notesValue}` : ''
+      }`,
       bookingId: booking.id,
     })
 
@@ -396,12 +450,19 @@ export function PetBooking() {
       clientPhone: cust.phone,
       services: selectedServices.map((s) => ({
         ...s,
-        price: getPetServicesPrice([s], selectedPet.size, rules),
-        duration_minutes: getPetServicesDuration([s], selectedPet.size, rules),
+        price: selectedPets.reduce(
+          (sum, pet) => sum + getPetServicesPrice([s], pet.size, rules),
+          0
+        ),
+        duration_minutes: selectedPets.reduce(
+          (sum, pet) => sum + getPetServicesDuration([s], pet.size, rules),
+          0
+        ),
       })),
-      petName: selectedPet.name,
-      petSize: petSizeLabel(selectedPet.size),
+      petName: petNames,
+      petSize: selectedPets.map((p) => petSizeLabel(p.size)).join(' · '),
       durationMinutes: duration,
+      notes: notesValue || undefined,
     }
 
     navigate(`/confirmacao/${booking.id}`, { state: confirmationState })
@@ -477,6 +538,9 @@ export function PetBooking() {
         {step === 2 && (
           <div>
             <h2 className="font-display text-2xl mb-2">Qual pet?</h2>
+            <p className="text-sm text-ink-muted mb-4">
+              Pode escolher até 2 pets no mesmo horário (só da mesma pessoa).
+            </p>
             {!customer && (
               <div className="mb-4">
                 <label className="block text-sm mb-1">Seu nome</label>
@@ -493,31 +557,44 @@ export function PetBooking() {
             )}
 
             <div className="space-y-3 mb-4">
-              {pets.map((pet) => (
-                <button
-                  key={pet.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedPetId(pet.id)
-                    setCreatingPet(false)
-                  }}
-                  className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left ${
-                    selectedPetId === pet.id ? 'border-brass bg-brass/5' : 'border-paper-dark'
-                  }`}
-                >
-                  {pet.photo_url ? (
-                    <img src={pet.photo_url} alt="" className="h-12 w-12 rounded-xl object-cover" />
-                  ) : (
-                    <DefaultAvatar name={pet.name} className="h-12 w-12 rounded-xl text-lg" />
-                  )}
-                  <div>
-                    <p className="font-medium">{pet.name}</p>
-                    <p className="text-xs text-ink-muted">
-                      {pet.breed || 'Pet'} · {petSizeLabel(pet.size)}
-                    </p>
-                  </div>
-                </button>
-              ))}
+              {pets.map((pet) => {
+                const selected = selectedPetIds.has(pet.id)
+                return (
+                  <button
+                    key={pet.id}
+                    type="button"
+                    onClick={() => togglePet(pet.id)}
+                    className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left ${
+                      selected ? 'border-brass bg-brass/5' : 'border-paper-dark'
+                    }`}
+                  >
+                    <span
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border text-xs ${
+                        selected
+                          ? 'border-brass bg-brass text-white'
+                          : 'border-paper-dark text-transparent'
+                      }`}
+                    >
+                      ✓
+                    </span>
+                    {pet.photo_url ? (
+                      <img
+                        src={pet.photo_url}
+                        alt=""
+                        className="h-12 w-12 rounded-xl object-cover"
+                      />
+                    ) : (
+                      <DefaultAvatar name={pet.name} className="h-12 w-12 rounded-xl text-lg" />
+                    )}
+                    <div>
+                      <p className="font-medium">{pet.name}</p>
+                      <p className="text-xs text-ink-muted">
+                        {pet.breed || 'Pet'} · {petSizeLabel(pet.size)}
+                      </p>
+                    </div>
+                  </button>
+                )
+              })}
             </div>
 
             {!creatingPet ? (
@@ -573,7 +650,7 @@ export function PetBooking() {
               </button>
               <button
                 onClick={() => setStep(3)}
-                disabled={!selectedPetId}
+                disabled={selectedPetIds.size === 0}
                 className="flex-1 rounded-lg bg-brass py-3 font-semibold text-white disabled:opacity-40"
               >
                 Continuar
@@ -586,16 +663,23 @@ export function PetBooking() {
           <div>
             <h2 className="font-display text-2xl mb-2">Serviços</h2>
             <p className="text-sm text-ink-muted mb-4">
-              Para {selectedPet?.name} · porte {selectedPet && petSizeLabel(selectedPet.size)}
+              Para {selectedPets.map((p) => p.name).join(' · ') || '…'}
+              {selectedPets.length > 1
+                ? ' · valores somados para cada pet'
+                : selectedPets[0]
+                  ? ` · porte ${petSizeLabel(selectedPets[0].size)}`
+                  : ''}
             </p>
             <div className="space-y-3">
               {services.map((s) => {
-                const dur = selectedPet
-                  ? getPetServicesDuration([s], selectedPet.size, rules)
-                  : s.duration_minutes
-                const price = selectedPet
-                  ? getPetServicesPrice([s], selectedPet.size, rules)
-                  : Number(s.price)
+                const dur = selectedPets.reduce(
+                  (sum, pet) => sum + getPetServicesDuration([s], pet.size, rules),
+                  0
+                )
+                const price = selectedPets.reduce(
+                  (sum, pet) => sum + getPetServicesPrice([s], pet.size, rules),
+                  0
+                )
                 return (
                   <label
                     key={s.id}
@@ -764,8 +848,13 @@ export function PetBooking() {
             <h2 className="font-display text-2xl mb-4">Confirmar</h2>
             <div className="rounded-lg bg-paper p-4 text-sm space-y-2 mb-4">
               <p>
-                <strong>{selectedPet?.name}</strong> ·{' '}
-                {selectedPet && petSizeLabel(selectedPet.size)}
+                <strong>{selectedPets.map((p) => p.name).join(' · ')}</strong>
+                {selectedPets.length > 0 && (
+                  <span className="text-ink-muted">
+                    {' '}
+                    · {selectedPets.map((p) => petSizeLabel(p.size)).join(' · ')}
+                  </span>
+                )}
               </p>
               <p className="text-ink-muted">
                 {selectedServices.map((s) => s.name).join(', ')}
@@ -782,6 +871,21 @@ export function PetBooking() {
                 {customerName || customer?.name} · {phone}
               </p>
             </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">
+                Observação <span className="text-ink-muted font-normal">(opcional)</span>
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+                maxLength={300}
+                placeholder="Ex: táxi dog, trazer na coleira, alergia a perfume…"
+                className="w-full rounded-lg border border-paper-dark px-4 py-3 text-sm focus:border-brass focus:outline-none"
+              />
+            </div>
+
             {noShowPolicy?.enabled && (
               <label className="mb-4 flex items-start gap-3 rounded-lg border border-paper-dark p-3 text-sm">
                 <input

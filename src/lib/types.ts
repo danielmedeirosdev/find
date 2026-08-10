@@ -91,6 +91,7 @@ export interface Booking {
   shop_customer_id?: string | null
   duration_minutes?: number | null
   customer_package_id?: string | null
+  notes?: string | null
   created_at: string
 }
 
@@ -199,6 +200,7 @@ export interface BookingConfirmationState {
   petName?: string
   petSize?: string
   durationMinutes?: number
+  notes?: string
 }
 
 export interface BookingService {
@@ -210,6 +212,7 @@ export interface BookingWithDetails extends Booking {
   barbers?: Barber
   shops?: Shop
   pets?: Pet
+  booking_pets?: Array<{ pet_id: string; pets: Pet }>
   booking_services?: Array<{
     service_id: string
     services: Service
