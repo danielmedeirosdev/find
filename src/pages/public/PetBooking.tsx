@@ -2,10 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import {
+  bookingErrorMessage,
   getActiveDays,
   getScheduleForDay,
   getAvailableSlots,
   getNextDatesForDay,
+  loadOccupiedSlots,
 } from '../../lib/booking'
 import { getPetServicesDuration, getPetServicesPrice, petSizeLabel } from '../../lib/pet'
 import { notifyCustomerWhatsApp, notifyShopOwner } from '../../lib/notifications'
@@ -119,11 +121,7 @@ export function PetBooking() {
         sched = data || []
       }
 
-      const { data: slots } = await supabase
-        .from('public_booking_slots')
-        .select('shop_id, barber_id, date, time, duration_minutes')
-        .eq('shop_id', shopId)
-        .gte('date', new Date().toISOString().slice(0, 10))
+      const slots = await loadOccupiedSlots(shopId!)
 
       const { data: policy } = await supabase
         .from('no_show_policies')
@@ -136,13 +134,19 @@ export function PetBooking() {
       setRules(sizeRules)
       setBarbers(barb || [])
       setSchedules(sched)
-      setOccupiedSlots((slots as PublicBookingSlot[]) || [])
+      setOccupiedSlots(slots)
       setNoShowPolicy((policy as NoShowPolicy) || null)
       if ((barb || []).length === 1) setSelectedBarberId(barb![0].id)
       setLoading(false)
     }
     load()
   }, [shopId])
+
+  // Atualiza horários ocupados ao chegar na etapa de agenda
+  useEffect(() => {
+    if (!shopId || step !== 4) return
+    loadOccupiedSlots(shopId).then(setOccupiedSlots)
+  }, [shopId, step])
 
   const selectedPet = pets.find((p) => p.id === selectedPetId) || null
   const selectedServices = useMemo(
@@ -339,8 +343,15 @@ export function PetBooking() {
       .single()
 
     if (bkError || !booking) {
-      setError(bkError?.message || 'Horário indisponível. Tente outro.')
+      const msg = bookingErrorMessage(bkError)
+      setError(msg)
       setSubmitting(false)
+      if (/horário|reservado/i.test(msg) && shopId) {
+        setSelectedTime(null)
+        setStep(4)
+        const slots = await loadOccupiedSlots(shopId)
+        setOccupiedSlots(slots)
+      }
       return
     }
 

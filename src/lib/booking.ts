@@ -1,4 +1,5 @@
 import { timeToMinutes, minutesToTime } from './format'
+import { supabase } from './supabase'
 import type { BarberSchedule, PublicBookingSlot, Service } from './types'
 
 export function bookingErrorMessage(err: unknown): string {
@@ -7,7 +8,9 @@ export function bookingErrorMessage(err: unknown): string {
       ? err.message
       : typeof err === 'string'
         ? err
-        : ''
+        : typeof err === 'object' && err && 'message' in err
+          ? String((err as { message: unknown }).message)
+          : ''
 
   if (/bookings_barber_id_date_time|bookings_active_slot|duplicate key|unique constraint/i.test(message)) {
     return 'Esse horário acabou de ser reservado. Escolha outro horário.'
@@ -15,6 +18,41 @@ export function bookingErrorMessage(err: unknown): string {
 
   if (message.trim()) return message
   return 'Erro ao criar agendamento. Tente outro horário.'
+}
+
+const ACTIVE_SLOT_STATUSES = [
+  'scheduled',
+  'confirmed',
+  'in_progress',
+  'awaiting_payment',
+  'completed',
+] as const
+
+/** Horários que ainda ocupam a agenda (alinhado a bookings_active_slot_uidx). */
+export async function loadOccupiedSlots(shopId: string): Promise<PublicBookingSlot[]> {
+  const today = new Date().toISOString().slice(0, 10)
+  const { data: fromView, error: viewError } = await supabase
+    .from('public_booking_slots')
+    .select('shop_id, barber_id, date, time, duration_minutes')
+    .eq('shop_id', shopId)
+    .gte('date', today)
+
+  if (!viewError && fromView) return fromView as PublicBookingSlot[]
+
+  const { data: fromBookings } = await supabase
+    .from('bookings')
+    .select('shop_id, barber_id, date, time, duration_minutes, status')
+    .eq('shop_id', shopId)
+    .gte('date', today)
+    .in('status', [...ACTIVE_SLOT_STATUSES])
+
+  return ((fromBookings as PublicBookingSlot[]) || []).map((s) => ({
+    shop_id: s.shop_id,
+    barber_id: s.barber_id,
+    date: s.date,
+    time: s.time,
+    duration_minutes: s.duration_minutes,
+  }))
 }
 
 

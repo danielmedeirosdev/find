@@ -9,6 +9,7 @@ import {
   getScheduleForDay,
   getAvailableSlots,
   getNextDatesForDay,
+  loadOccupiedSlots,
 } from '../../lib/booking'
 import { formatPrice, formatDuration, formatPhone } from '../../lib/format'
 import { DAY_NAMES } from '../../lib/types'
@@ -32,27 +33,6 @@ import {
 import type { BarberRatingStats, RatingStats } from '../../lib/types'
 
 type Step = 1 | 2 | 3 | 4
-
-async function loadOccupiedSlots(id: string): Promise<PublicBookingSlot[]> {
-  const today = new Date().toISOString().slice(0, 10)
-  const { data: fromView, error: viewError } = await supabase
-    .from('public_booking_slots')
-    .select('shop_id, barber_id, date, time, duration_minutes')
-    .eq('shop_id', id)
-    .gte('date', today)
-
-  if (!viewError && fromView) return fromView as PublicBookingSlot[]
-
-  // Fallback se a view ainda não existir no projeto
-  const { data: fromBookings } = await supabase
-    .from('bookings')
-    .select('shop_id, barber_id, date, time, duration_minutes')
-    .eq('shop_id', id)
-    .gte('date', today)
-    .in('status', ['scheduled', 'in_progress'])
-
-  return (fromBookings as PublicBookingSlot[]) || []
-}
 
 export function ShopBooking() {
   const { shopId } = useParams<{ shopId: string }>()
