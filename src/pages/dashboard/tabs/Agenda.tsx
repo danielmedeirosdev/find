@@ -4,17 +4,22 @@ import {
   formatPrice,
   formatDate,
   formatTime,
+  formatDuration,
   bookingStatusLabel,
   paymentMethodLabel,
 } from '../../../lib/format'
+import { petSizeLabel } from '../../../lib/pet'
 import { CompleteBookingModal } from '../../../components/CompleteBookingModal'
-import type { BookingWithDetails, Service } from '../../../lib/types'
+import { DefaultAvatar } from '../../../components/MediaUI'
+import type { BookingWithDetails, Service, ShopSegment } from '../../../lib/types'
 
 interface Props {
   shopId: string
+  segment?: ShopSegment
 }
 
-export function AgendaTab({ shopId }: Props) {
+export function AgendaTab({ shopId, segment = 'barbershop' }: Props) {
+  const isPet = segment === 'pet'
   const [bookings, setBookings] = useState<BookingWithDetails[]>([])
   const [shopServices, setShopServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
@@ -22,19 +27,21 @@ export function AgendaTab({ shopId }: Props) {
   const [clientSearch, setClientSearch] = useState('')
   const [clientHistory, setClientHistory] = useState<BookingWithDetails[]>([])
   const [searching, setSearching] = useState(false)
-
   const [actionError, setActionError] = useState('')
+
+  const bookingSelect = `
+    *,
+    barbers(name),
+    pets(id, name, size, photo_url, breed),
+    booking_services(service_id, services(name, price, duration_minutes))
+  `
 
   const load = useCallback(async () => {
     const today = new Date().toISOString().slice(0, 10)
     const [{ data }, { data: svc }] = await Promise.all([
       supabase
         .from('bookings')
-        .select(`
-          *,
-          barbers(name),
-          booking_services(service_id, services(name, price, duration_minutes))
-        `)
+        .select(bookingSelect)
         .eq('shop_id', shopId)
         .gte('date', today)
         .order('date')
@@ -71,11 +78,7 @@ export function AgendaTab({ shopId }: Props) {
     const digits = query.replace(/\D/g, '')
     let q = supabase
       .from('bookings')
-      .select(`
-        *,
-        barbers(name),
-        booking_services(service_id, services(name, price, duration_minutes))
-      `)
+      .select(bookingSelect)
       .eq('shop_id', shopId)
       .eq('status', 'completed')
       .order('date', { ascending: false })
@@ -102,13 +105,16 @@ export function AgendaTab({ shopId }: Props) {
     <div>
       <h2 className="font-display text-2xl text-white mb-2">Agenda</h2>
       <p className="text-sm text-charcoal-muted mb-4">
-        Finalize o atendimento para registrar o pagamento no caixa. Use “Não compareceu” ou
-        “Cancelado” quando o horário não for realizado.
+        {isPet
+          ? 'Veja pet, porte, duração e serviço. Finalize para registrar no histórico e no caixa.'
+          : 'Finalize o atendimento para registrar o pagamento no caixa. Use “Não compareceu” ou “Cancelado” quando o horário não for realizado.'}
       </p>
       {actionError && <p className="mb-4 text-sm text-red-400">{actionError}</p>}
 
       <div className="mb-8 rounded-lg border border-charcoal-light p-4">
-        <h3 className="font-medium text-white mb-3">Histórico do cliente</h3>
+        <h3 className="font-medium text-white mb-3">
+          {isPet ? 'Histórico do cliente / pet' : 'Histórico do cliente'}
+        </h3>
         <div className="flex gap-2">
           <input
             value={clientSearch}
@@ -133,7 +139,9 @@ export function AgendaTab({ shopId }: Props) {
               return (
                 <div key={b.id} className="rounded-lg bg-charcoal-light/30 p-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-white">{b.client_name}</span>
+                    <span className="text-white">
+                      {b.pets?.name ? `${b.pets.name} · ${b.client_name}` : b.client_name}
+                    </span>
                     <span className="font-mono text-brass">{formatPrice(total)}</span>
                   </div>
                   <p className="text-charcoal-muted">
@@ -160,26 +168,63 @@ export function AgendaTab({ shopId }: Props) {
             )
             const total = services.reduce((sum, s) => sum + Number(s.price), 0)
             const status = b.status || 'scheduled'
+            const duration =
+              b.duration_minutes ||
+              services.reduce((sum, s) => sum + (s.duration_minutes || 0), 0)
             return (
               <div key={b.id} className="rounded-lg border border-charcoal-light p-4">
-                <div className="flex flex-wrap justify-between gap-2">
-                  <div>
-                    <p className="font-mono text-brass text-lg">{formatTime(b.time)}</p>
-                    <p className="text-sm text-charcoal-muted">{formatDate(b.date)}</p>
+                <div className="flex flex-wrap justify-between gap-3">
+                  <div className="flex gap-3">
+                    {isPet && (
+                      b.pets?.photo_url ? (
+                        <img
+                          src={b.pets.photo_url}
+                          alt=""
+                          className="h-14 w-14 rounded-xl object-cover"
+                        />
+                      ) : b.pets ? (
+                        <DefaultAvatar
+                          name={b.pets.name}
+                          className="h-14 w-14 rounded-xl text-lg"
+                        />
+                      ) : null
+                    )}
+                    <div>
+                      <p className="font-mono text-brass text-lg">{formatTime(b.time)}</p>
+                      <p className="text-sm text-charcoal-muted">{formatDate(b.date)}</p>
+                      {duration > 0 && (
+                        <p className="text-xs text-charcoal-muted mt-1">
+                          {formatDuration(duration)}
+                        </p>
+                      )}
+                    </div>
                   </div>
                   <div className="text-right">
                     <span className="inline-block rounded-full bg-charcoal-light px-2 py-0.5 text-xs text-charcoal-muted mb-1">
                       {bookingStatusLabel(status)}
                     </span>
-                    <p className="font-medium text-white">{b.client_name}</p>
-                    <p className="text-sm text-charcoal-muted">{b.client_phone}</p>
+                    {isPet && b.pets ? (
+                      <>
+                        <p className="font-medium text-white text-lg">{b.pets.name}</p>
+                        <p className="text-sm text-charcoal-muted">
+                          {b.pets.breed || 'Pet'} · {petSizeLabel(b.pets.size)}
+                        </p>
+                        <p className="text-sm text-white mt-1">Cliente: {b.client_name}</p>
+                        <p className="text-sm text-charcoal-muted">{b.client_phone}</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-medium text-white">{b.client_name}</p>
+                        <p className="text-sm text-charcoal-muted">{b.client_phone}</p>
+                      </>
+                    )}
                   </div>
                 </div>
                 <div className="mt-3 flex flex-wrap justify-between gap-2 border-t border-charcoal-light pt-3">
                   <div>
                     <p className="text-sm text-charcoal-muted">{b.barbers?.name}</p>
                     <p className="text-sm text-white">
-                      {services.map((s) => s.name).join(' · ')}
+                      {services.map((s) => s.name).join(' · ') || 'Serviço'}
                     </p>
                   </div>
                   <p className="font-mono text-brass">{formatPrice(total)}</p>

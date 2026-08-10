@@ -101,7 +101,9 @@ export function ShopLinkTab({ shop, onUpdate }: Props) {
       <Toast message={toast} onClose={() => setToast(null)} />
 
       <div>
-        <h2 className="font-display text-2xl text-white mb-2">Link da Barbearia</h2>
+        <h2 className="font-display text-2xl text-white mb-2">
+          {shop.segment === 'pet' ? 'Link do Pet Shop' : 'Link da Barbearia'}
+        </h2>
         <p className="text-sm text-charcoal-muted">
           Página pública exclusiva com logo, fotos, equipe e agendamento.
         </p>

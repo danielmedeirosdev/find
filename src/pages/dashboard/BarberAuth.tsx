@@ -1,8 +1,9 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase, authErrorMessage, isSupabaseConfigured } from '../../lib/supabase'
 import { ensureAuthSession, ensureBarberShop } from '../../lib/auth'
 import { completeGoogleCredentialLogin } from '../../lib/oauth'
+import { getSegment, parseSegmentParam, ACTIVE_SEGMENTS, SEGMENTS } from '../../lib/segments'
 import { BarberPole } from '../../components/BarberPole'
 import { AuthDivider, GoogleSignInButton } from '../../components/GoogleSignInButton'
 import {
@@ -11,16 +12,29 @@ import {
   PasswordRequirements,
   isPasswordStrong,
 } from '../../components/FormHints'
+import type { ShopSegment } from '../../lib/types'
 
 export function BarberAuth() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [shopName, setShopName] = useState('')
+  const [segment, setSegment] = useState<ShopSegment>('barbershop')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+
+  useEffect(() => {
+    const fromUrl = parseSegmentParam(searchParams.get('segment'))
+    if (fromUrl) setSegment(fromUrl)
+    if (searchParams.get('modo') === 'cadastro') setMode('signup')
+  }, [searchParams])
+
+  const meta = getSegment(segment)
+  const businessLabel = meta.professionalLabel
+  const defaultShopName = meta.defaultShopName
 
   const handleGoogleCredential = async (
     response: { credential: string },
@@ -28,7 +42,7 @@ export function BarberAuth() {
   ) => {
     setError('')
     if (mode === 'signup' && !shopName.trim()) {
-      setError('Informe o nome da barbearia antes de continuar com Google.')
+      setError('Informe o nome do estabelecimento antes de continuar com Google.')
       return
     }
     setGoogleLoading(true)
@@ -37,7 +51,8 @@ export function BarberAuth() {
         'barber',
         response,
         nonce,
-        shopName.trim() || 'Minha Barbearia'
+        shopName.trim() || defaultShopName,
+        segment
       )
       navigate(result.redirectTo)
     } catch (err) {
@@ -65,7 +80,7 @@ export function BarberAuth() {
           return
         }
 
-        const shopNameValue = shopName.trim() || 'Minha Barbearia'
+        const shopNameValue = shopName.trim() || defaultShopName
 
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
@@ -74,6 +89,7 @@ export function BarberAuth() {
             data: {
               role: 'barber',
               shop_name: shopNameValue,
+              segment,
             },
           },
         })
@@ -99,12 +115,12 @@ export function BarberAuth() {
         }
 
         try {
-          await ensureBarberShop(data.user.id, shopNameValue)
+          await ensureBarberShop(data.user.id, shopNameValue, segment)
         } catch (shopError) {
           setError(
             shopError instanceof Error
               ? shopError.message
-              : 'Erro ao criar barbearia. Rode o SQL 002_signup_trigger.sql no Supabase.'
+              : 'Erro ao criar estabelecimento. Rode o SQL 002_signup_trigger.sql no Supabase.'
           )
           setLoading(false)
           return
@@ -128,7 +144,7 @@ export function BarberAuth() {
             .eq('owner_user_id', user.id)
             .maybeSingle()
           if (!shop) {
-            await ensureBarberShop(user.id, 'Minha Barbearia')
+            await ensureBarberShop(user.id, defaultShopName, segment)
           }
         }
         navigate('/painel/dashboard')
@@ -143,13 +159,14 @@ export function BarberAuth() {
   return (
     <div className="mx-auto max-w-md">
       <div className="text-center mb-8">
+        <p className="text-xs uppercase tracking-[0.3em] text-brass mb-2">FIND</p>
         <h1 className="font-display text-4xl text-brass">
-          {mode === 'login' ? 'Área do Barbeiro' : 'Cadastrar Barbearia'}
+          {mode === 'login'
+            ? 'Área do profissional'
+            : `Cadastrar ${meta.shortName}`}
         </h1>
         <BarberPole className="mx-auto max-w-xs mt-4" />
-        <p className="text-charcoal-muted mt-2 text-sm">
-          Gerencie sua barbearia e receba agendamentos online.
-        </p>
+        <p className="text-charcoal-muted mt-2 text-sm">{meta.description}</p>
       </div>
 
       <form
@@ -157,18 +174,51 @@ export function BarberAuth() {
         className="rounded-lg border border-charcoal-light bg-charcoal-light/30 p-6 space-y-4"
       >
         {mode === 'signup' && (
-          <div>
-            <FieldLabel>Nome da barbearia</FieldLabel>
-            <input
-              type="text"
-              value={shopName}
-              onChange={(e) => setShopName(e.target.value)}
-              required
-              placeholder="Ex: Barbearia Black Crown"
-              className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
-            />
-            <FieldHint>Aparece no painel e na página pública dos clientes.</FieldHint>
-          </div>
+          <>
+            <div>
+              <FieldLabel>Qual é o seu negócio?</FieldLabel>
+              <div className="grid grid-cols-2 gap-2">
+                {ACTIVE_SEGMENTS.map((id) => {
+                  const s = SEGMENTS[id]
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setSegment(id)}
+                      className={`rounded-lg px-3 py-3 text-sm font-medium transition-colors ${
+                        segment === id
+                          ? 'bg-brass text-charcoal'
+                          : 'border border-charcoal-light text-charcoal-muted hover:text-white'
+                      }`}
+                    >
+                      <span className="block text-lg mb-1" aria-hidden>
+                        {s.mark}
+                      </span>
+                      {s.shortName}
+                    </button>
+                  )
+                })}
+              </div>
+              <FieldHint>
+                O FIND configura automaticamente dashboard, serviços iniciais e regras do segmento.
+              </FieldHint>
+            </div>
+
+            <div>
+              <FieldLabel>Nome do estabelecimento</FieldLabel>
+              <input
+                type="text"
+                value={shopName}
+                onChange={(e) => setShopName(e.target.value)}
+                required
+                placeholder={
+                  segment === 'pet' ? 'Ex: Banho & Tosa da Maria' : 'Ex: Barbearia Black Crown'
+                }
+                className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
+              />
+              <FieldHint>Aparece no painel e na página pública dos clientes.</FieldHint>
+            </div>
+          </>
         )}
 
         <div>
@@ -178,7 +228,7 @@ export function BarberAuth() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            placeholder="Ex: contato@barbearia.com"
+            placeholder="Ex: contato@negocio.com"
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
           <FieldHint>Usado para entrar no painel e receber avisos da assinatura.</FieldHint>
@@ -205,7 +255,11 @@ export function BarberAuth() {
           disabled={loading || googleLoading || (mode === 'signup' && !isPasswordStrong(password))}
           className="w-full rounded-lg bg-brass py-3 font-semibold text-charcoal disabled:opacity-50"
         >
-          {loading ? 'Aguarde...' : mode === 'login' ? 'Entrar' : 'Criar barbearia'}
+          {loading
+            ? 'Aguarde...'
+            : mode === 'login'
+              ? 'Entrar'
+              : `Criar ${businessLabel}`}
         </button>
 
         <AuthDivider tone="dark" />
@@ -233,7 +287,7 @@ export function BarberAuth() {
               }}
               className="text-brass hover:underline"
             >
-              Cadastre sua barbearia
+              Cadastre seu negócio
             </button>
           </>
         ) : (
@@ -255,7 +309,7 @@ export function BarberAuth() {
 
       <p className="mt-4 text-center">
         <Link to="/" className="text-sm text-charcoal-muted hover:text-brass">
-          ← Voltar ao site
+          ← Voltar ao FIND
         </Link>
       </p>
     </div>

@@ -64,6 +64,17 @@ body {
   }
 }
 
+@keyframes platformFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .star-pick.star-hover-on {
   color: var(--color-brass);
   transform: scale(1.2);
@@ -71,4 +82,27 @@ body {
 
 .star-glyph {
   display: inline-block;
+}
+
+.platform-fade {
+  animation: platformFadeUp 0.55s ease-out both;
+}
+
+.platform-fade-delay-1 {
+  animation-delay: 0.08s;
+}
+.platform-fade-delay-2 {
+  animation-delay: 0.16s;
+}
+.platform-fade-delay-3 {
+  animation-delay: 0.24s;
+}
+.platform-fade-delay-4 {
+  animation-delay: 0.32s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .platform-fade {
+    animation: none;
+  }
 }

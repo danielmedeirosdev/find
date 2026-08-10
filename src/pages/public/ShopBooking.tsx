@@ -37,7 +37,7 @@ async function loadOccupiedSlots(id: string): Promise<PublicBookingSlot[]> {
   const today = new Date().toISOString().slice(0, 10)
   const { data: fromView, error: viewError } = await supabase
     .from('public_booking_slots')
-    .select('shop_id, barber_id, date, time')
+    .select('shop_id, barber_id, date, time, duration_minutes')
     .eq('shop_id', id)
     .gte('date', today)
 
@@ -46,10 +46,10 @@ async function loadOccupiedSlots(id: string): Promise<PublicBookingSlot[]> {
   // Fallback se a view ainda não existir no projeto
   const { data: fromBookings } = await supabase
     .from('bookings')
-    .select('shop_id, barber_id, date, time')
+    .select('shop_id, barber_id, date, time, duration_minutes')
     .eq('shop_id', id)
     .gte('date', today)
-    .in('status', ['scheduled', 'in_progress', 'completed'])
+    .in('status', ['scheduled', 'in_progress'])
 
   return (fromBookings as PublicBookingSlot[]) || []
 }
@@ -102,6 +102,11 @@ export function ShopBooking() {
         return
       }
 
+      if (shopData.segment === 'pet') {
+        navigate(`/pet/${shopId}`, { replace: true })
+        return
+      }
+
       const [{ data: svc }, { data: barb }, { data: ph }, stats, bStats] = await Promise.all([
         supabase.from('services').select('*').eq('shop_id', shopId).order('name'),
         supabase.from('barbers').select('*').eq('shop_id', shopId).order('name'),
@@ -138,7 +143,7 @@ export function ShopBooking() {
       setLoading(false)
     }
     load()
-  }, [shopId])
+  }, [shopId, navigate])
 
   const selectedServices = useMemo(
     () => services.filter((s) => selectedServiceIds.has(s.id)),

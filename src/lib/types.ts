@@ -1,4 +1,6 @@
 export type SubscriptionStatus = 'trial' | 'active' | 'blocked'
+export type ShopSegment = 'barbershop' | 'pet'
+export type PetSize = 'pequeno' | 'medio' | 'grande'
 
 export interface Shop {
   id: string
@@ -14,6 +16,7 @@ export interface Shop {
   trial_ends_at: string | null
   logo_url?: string | null
   slug?: string | null
+  segment?: ShopSegment
   created_at: string
 }
 
@@ -76,6 +79,9 @@ export interface Booking {
   payment_method?: PaymentMethod | null
   completed_at?: string | null
   review_status?: ReviewStatus | null
+  pet_id?: string | null
+  shop_customer_id?: string | null
+  duration_minutes?: number | null
   created_at: string
 }
 
@@ -114,6 +120,44 @@ export interface ReviewPublic extends Review {
   barbers?: Pick<Barber, 'id' | 'name' | 'photo_url'> | null
 }
 
+export interface ShopCustomer {
+  id: string
+  shop_id: string
+  name: string
+  phone: string
+  notes: string | null
+  created_at: string
+}
+
+export interface Pet {
+  id: string
+  shop_id: string
+  customer_id: string
+  name: string
+  photo_url: string | null
+  species: string
+  breed: string | null
+  size: PetSize
+  weight_kg: number | null
+  birth_date: string | null
+  sex: 'macho' | 'femea' | null
+  notes: string | null
+  behavior: string | null
+  special_needs: string | null
+  allergies: string | null
+  preferences: string | null
+  created_at: string
+  shop_customers?: ShopCustomer
+}
+
+export interface ServiceSizeRule {
+  id: string
+  service_id: string
+  size: PetSize
+  duration_minutes: number
+  price: number | null
+}
+
 export interface FinancialTransaction {
   id: string
   shop_id: string
@@ -130,6 +174,7 @@ export interface PublicBookingSlot {
   barber_id: string
   date: string
   time: string
+  duration_minutes?: number
 }
 
 export interface BookingConfirmationState {
@@ -142,6 +187,9 @@ export interface BookingConfirmationState {
   clientName: string
   clientPhone: string
   services: Service[]
+  petName?: string
+  petSize?: string
+  durationMinutes?: number
 }
 
 export interface BookingService {
@@ -152,6 +200,7 @@ export interface BookingService {
 export interface BookingWithDetails extends Booking {
   barbers?: Barber
   shops?: Shop
+  pets?: Pet
   booking_services?: Array<{
     service_id: string
     services: Service
@@ -167,6 +216,12 @@ export const DAY_NAMES = [
   'Sexta',
   'Sábado',
 ] as const
+
+export const PET_SIZES: { value: PetSize; label: string }[] = [
+  { value: 'pequeno', label: 'Pequeno' },
+  { value: 'medio', label: 'Médio' },
+  { value: 'grande', label: 'Grande' },
+]
 
 export const SUBSCRIPTION_PRICE = 60
 

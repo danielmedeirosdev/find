@@ -8,6 +8,7 @@ import {
   fetchShopRatingStats,
   fetchShopReviews,
 } from '../../lib/reviews'
+import { publicBookingPathForSegment } from '../../lib/segments'
 import { DefaultAvatar, Skeleton } from '../../components/MediaUI'
 import { BarberPole } from '../../components/BarberPole'
 import { RatingBadge } from '../../components/reviews/StarRating'
@@ -84,8 +85,11 @@ export function ShopPublic() {
   }
 
   if (!shop) {
-    return <p className="text-center text-ink-muted">Barbearia não encontrada.</p>
+    return <p className="text-center text-ink-muted">Estabelecimento não encontrado.</p>
   }
+
+  const isPet = shop.segment === 'pet'
+  const bookPath = publicBookingPathForSegment(shop.id, shop.segment)
 
   return (
     <div>
@@ -103,6 +107,11 @@ export function ShopPublic() {
             </div>
           )}
           <div className="min-w-0 flex-1">
+            {isPet && (
+              <p className="text-xs uppercase tracking-widest text-brass font-medium mb-1">
+                FIND PET
+              </p>
+            )}
             <h1 className="font-display text-3xl text-ink sm:text-4xl">{shop.name}</h1>
             {shop.slogan && (
               <p className="mt-1 text-ink-muted italic">{shop.slogan}</p>
@@ -121,7 +130,7 @@ export function ShopPublic() {
 
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
-            to={`/barbearia/${shop.id}`}
+            to={bookPath}
             className="rounded-lg bg-brass px-6 py-3 font-semibold text-charcoal hover:bg-brass-light transition-colors"
           >
             Agendar horário
@@ -167,7 +176,9 @@ export function ShopPublic() {
 
       {barbers.length > 0 && (
         <section className="mb-10">
-          <h2 className="font-display text-2xl text-ink mb-4">Equipe</h2>
+          <h2 className="font-display text-2xl text-ink mb-4">
+            {isPet ? 'Profissionais' : 'Equipe'}
+          </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {barbers.map((b) => {
               const stats = barberStats[b.id]
@@ -219,7 +230,7 @@ export function ShopPublic() {
             ))}
           </div>
           <Link
-            to={`/barbearia/${shop.id}`}
+            to={bookPath}
             className="mt-6 inline-block rounded-lg bg-brass px-6 py-3 font-semibold text-charcoal"
           >
             Agendar agora

@@ -1,35 +1,50 @@
 import { supabase, isSupabaseConfigured } from './supabase'
 import { ensureBarberShop } from './auth'
 import type { GoogleCredentialResponse } from './google'
+import type { ShopSegment } from './types'
 
 export type OAuthRole = 'client' | 'barber'
 
 const ROLE_KEY = 'find_oauth_role'
 const SHOP_NAME_KEY = 'find_oauth_shop_name'
+const SEGMENT_KEY = 'find_oauth_segment'
 
-export function rememberOAuthIntent(role: OAuthRole, shopName?: string) {
+export function rememberOAuthIntent(
+  role: OAuthRole,
+  shopName?: string,
+  segment?: ShopSegment
+) {
   sessionStorage.setItem(ROLE_KEY, role)
   if (shopName?.trim()) {
     sessionStorage.setItem(SHOP_NAME_KEY, shopName.trim())
   } else {
     sessionStorage.removeItem(SHOP_NAME_KEY)
   }
+  if (segment === 'pet' || segment === 'barbershop') {
+    sessionStorage.setItem(SEGMENT_KEY, segment)
+  } else {
+    sessionStorage.removeItem(SEGMENT_KEY)
+  }
 }
 
 export function readOAuthIntent(fallbackRole: OAuthRole = 'client'): {
   role: OAuthRole
   shopName: string
+  segment: ShopSegment
 } {
   const stored = sessionStorage.getItem(ROLE_KEY)
   const role: OAuthRole =
     stored === 'barber' || stored === 'client' ? stored : fallbackRole
   const shopName = sessionStorage.getItem(SHOP_NAME_KEY) || 'Minha Barbearia'
-  return { role, shopName }
+  const storedSegment = sessionStorage.getItem(SEGMENT_KEY)
+  const segment: ShopSegment = storedSegment === 'pet' ? 'pet' : 'barbershop'
+  return { role, shopName, segment }
 }
 
 export function clearOAuthIntent() {
   sessionStorage.removeItem(ROLE_KEY)
   sessionStorage.removeItem(SHOP_NAME_KEY)
+  sessionStorage.removeItem(SEGMENT_KEY)
 }
 
 export function googleDisplayName(user: {
@@ -80,7 +95,7 @@ export async function finalizeOAuthLogin(roleHint?: string | null) {
 
   const hintRole: OAuthRole =
     roleHint === 'barber' || roleHint === 'client' ? roleHint : 'client'
-  const { role, shopName } = readOAuthIntent(hintRole)
+  const { role, shopName, segment } = readOAuthIntent(hintRole)
   const user = session.user
   const displayName = googleDisplayName(user)
 
@@ -88,12 +103,12 @@ export async function finalizeOAuthLogin(roleHint?: string | null) {
     data: {
       role,
       name: displayName,
-      ...(role === 'barber' ? { shop_name: shopName } : {}),
+      ...(role === 'barber' ? { shop_name: shopName, segment } : {}),
     },
   })
 
   if (role === 'barber') {
-    await ensureBarberShop(user.id, shopName)
+    await ensureBarberShop(user.id, shopName, segment)
     clearOAuthIntent()
     return { role, redirectTo: '/painel/dashboard' as const }
   }
@@ -108,7 +123,8 @@ export async function completeGoogleCredentialLogin(
   role: OAuthRole,
   response: GoogleCredentialResponse,
   nonce: string,
-  shopName?: string
+  shopName?: string,
+  segment?: ShopSegment
 ) {
   if (!isSupabaseConfigured) {
     throw new Error('Configure o Supabase no arquivo .env antes de entrar com Google.')
@@ -117,7 +133,7 @@ export async function completeGoogleCredentialLogin(
     throw new Error('Google não retornou credencial. Tente novamente.')
   }
 
-  rememberOAuthIntent(role, shopName)
+  rememberOAuthIntent(role, shopName, segment)
 
   const attempt = async (withNonce: boolean) =>
     supabase.auth.signInWithIdToken({

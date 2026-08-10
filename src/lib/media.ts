@@ -167,6 +167,12 @@ export async function deleteShopMedia(url: string): Promise<void> {
   await supabase.storage.from('shop-media').remove([path])
 }
 
+/** Caminho de agendamento público conforme o segmento da loja. */
+export function publicBookingPath(shopId: string, segment?: 'barbershop' | 'pet' | null): string {
+  // Reexporta a lógica centralizada em segments.ts
+  return segment === 'pet' ? `/pet/${shopId}` : `/barbearia/${shopId}`
+}
+
 export function publicShopPath(slug: string): string {
   return `/b/${slug}`
 }

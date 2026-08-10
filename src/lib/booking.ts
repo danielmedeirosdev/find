@@ -19,6 +19,7 @@ export function bookingErrorMessage(err: unknown): string {
 
 
 const SLOT_INTERVAL = 15
+const DEFAULT_SLOT_DURATION = 30
 
 export function getTotalDuration(services: Service[]): number {
   return services.reduce((sum, s) => sum + s.duration_minutes, 0)
@@ -51,15 +52,17 @@ function rangesOverlap(
   return startA < endB && startB < endA
 }
 
-const DEFAULT_SLOT_DURATION = 30
-
 export function getAvailableSlots(
   schedule: BarberSchedule,
   occupiedSlots: PublicBookingSlot[],
   selectedServices: Service[],
-  date: string
+  date: string,
+  overrideDurationMinutes?: number
 ): string[] {
-  const totalDuration = getTotalDuration(selectedServices)
+  const totalDuration =
+    overrideDurationMinutes != null && overrideDurationMinutes > 0
+      ? overrideDurationMinutes
+      : getTotalDuration(selectedServices)
   if (totalDuration === 0) return []
 
   const daySlots = occupiedSlots.filter((s) => s.date === date)
@@ -68,7 +71,8 @@ export function getAvailableSlots(
 
   const occupied: Array<{ start: number; end: number }> = daySlots.map((s) => {
     const start = timeToMinutes(s.time)
-    return { start, end: start + DEFAULT_SLOT_DURATION }
+    const dur = s.duration_minutes && s.duration_minutes > 0 ? s.duration_minutes : DEFAULT_SLOT_DURATION
+    return { start, end: start + dur }
   })
 
   const slots: string[] = []

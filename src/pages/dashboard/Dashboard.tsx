@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
-import type { Shop } from '../../lib/types'
+import type { Shop, ShopSegment } from '../../lib/types'
 import { BlockedOverlay } from '../../components/BlockedOverlay'
 import { invokeFunction } from '../../lib/supabase'
+import { getSegment } from '../../lib/segments'
 import { ShopInfoTab } from './tabs/ShopInfo'
 import { TeamScheduleTab } from './tabs/TeamSchedule'
 import { ServicesTab } from './tabs/Services'
@@ -14,20 +15,50 @@ import { ReportsTab } from './tabs/Reports'
 import { SubscriptionTab } from './tabs/Subscription'
 import { ShopLinkTab } from './tabs/ShopLink'
 import { ReviewsTab } from './tabs/Reviews'
+import { PetsTab } from './tabs/Pets'
+import { CustomersTab } from './tabs/Customers'
 
-const TABS = [
-  { id: 'info', label: 'Informações' },
-  { id: 'team', label: 'Equipe e horários' },
-  { id: 'services', label: 'Serviços' },
-  { id: 'agenda', label: 'Agenda' },
-  { id: 'cashflow', label: 'Fluxo de Caixa' },
-  { id: 'reports', label: 'Relatórios' },
-  { id: 'reviews', label: 'Avaliações' },
-  { id: 'link', label: 'Link da Barbearia' },
-  { id: 'subscription', label: 'Assinatura' },
-] as const
+type TabId =
+  | 'info'
+  | 'team'
+  | 'services'
+  | 'pets'
+  | 'customers'
+  | 'agenda'
+  | 'cashflow'
+  | 'reports'
+  | 'reviews'
+  | 'link'
+  | 'subscription'
 
-type TabId = (typeof TABS)[number]['id']
+function tabsForSegment(segment: ShopSegment) {
+  if (segment === 'pet') {
+    return [
+      { id: 'info' as const, label: 'Informações' },
+      { id: 'team' as const, label: 'Equipe e horários' },
+      { id: 'services' as const, label: 'Serviços' },
+      { id: 'customers' as const, label: 'Clientes' },
+      { id: 'pets' as const, label: 'Pets' },
+      { id: 'agenda' as const, label: 'Agenda' },
+      { id: 'cashflow' as const, label: 'Fluxo de Caixa' },
+      { id: 'reports' as const, label: 'Relatórios' },
+      { id: 'reviews' as const, label: 'Avaliações' },
+      { id: 'link' as const, label: 'Link do Pet Shop' },
+      { id: 'subscription' as const, label: 'Assinatura' },
+    ]
+  }
+  return [
+    { id: 'info' as const, label: 'Informações' },
+    { id: 'team' as const, label: 'Equipe e horários' },
+    { id: 'services' as const, label: 'Serviços' },
+    { id: 'agenda' as const, label: 'Agenda' },
+    { id: 'cashflow' as const, label: 'Fluxo de Caixa' },
+    { id: 'reports' as const, label: 'Relatórios' },
+    { id: 'reviews' as const, label: 'Avaliações' },
+    { id: 'link' as const, label: 'Link da Barbearia' },
+    { id: 'subscription' as const, label: 'Assinatura' },
+  ]
+}
 
 export function Dashboard() {
   const { user, loading: authLoading } = useAuth()
@@ -69,6 +100,10 @@ export function Dashboard() {
   useEffect(() => {
     if (user) loadShop()
   }, [user])
+
+  const segment: ShopSegment = shop?.segment === 'pet' ? 'pet' : 'barbershop'
+  const segmentMeta = getSegment(segment)
+  const tabs = useMemo(() => tabsForSegment(segment), [segment])
 
   const setTab = (tab: TabId) => {
     setSearchParams({ aba: tab })
@@ -129,13 +164,16 @@ export function Dashboard() {
           />
         ) : null}
         <div>
+          <p className="text-xs uppercase tracking-widest text-brass/80 mb-1">
+            {segmentMeta.brandName}
+          </p>
           <h1 className="font-display text-4xl text-brass">{shop.name}</h1>
           <p className="text-charcoal-muted text-sm mt-1">Painel de gestão</p>
         </div>
       </div>
 
       <nav className="mb-8 flex flex-wrap gap-2 border-b border-charcoal-light pb-4">
-        {TABS.map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setTab(tab.id)}
@@ -151,9 +189,11 @@ export function Dashboard() {
       </nav>
 
       {activeTab === 'info' && <ShopInfoTab shop={shop} onUpdate={loadShop} />}
-      {activeTab === 'team' && <TeamScheduleTab shopId={shop.id} />}
-      {activeTab === 'services' && <ServicesTab shopId={shop.id} />}
-      {activeTab === 'agenda' && <AgendaTab shopId={shop.id} />}
+      {activeTab === 'team' && <TeamScheduleTab shopId={shop.id} segment={segment} />}
+      {activeTab === 'services' && <ServicesTab shopId={shop.id} segment={segment} />}
+      {activeTab === 'customers' && segment === 'pet' && <CustomersTab shopId={shop.id} />}
+      {activeTab === 'pets' && segment === 'pet' && <PetsTab shopId={shop.id} />}
+      {activeTab === 'agenda' && <AgendaTab shopId={shop.id} segment={segment} />}
       {activeTab === 'cashflow' && <CashFlowTab shopId={shop.id} />}
       {activeTab === 'reports' && <ReportsTab shopId={shop.id} />}
       {activeTab === 'reviews' && <ReviewsTab shopId={shop.id} />}

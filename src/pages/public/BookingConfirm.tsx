@@ -40,25 +40,41 @@ export function BookingConfirm() {
 
   if (confirmationState) {
     const totalPrice = getTotalPrice(confirmationState.services)
-    const totalDuration = getTotalDuration(confirmationState.services)
+    const totalDuration =
+      confirmationState.durationMinutes ?? getTotalDuration(confirmationState.services)
+    const isPet = Boolean(confirmationState.petName)
 
     return (
       <div className="mx-auto max-w-md">
         <div className="rounded-lg border-2 border-dashed border-ink/20 bg-white p-8 shadow-sm">
           <div className="text-center mb-6">
-            <p className="font-display text-sm tracking-widest text-ink-muted">COMANDA</p>
+            <p className="font-display text-sm tracking-widest text-ink-muted">
+              {isPet ? 'FIND PET' : 'COMANDA'}
+            </p>
             <BarberPole className="my-3" height="h-2" />
             <h1 className="font-display text-3xl text-ink">Agendamento confirmado!</h1>
           </div>
 
           <div className="space-y-4 font-mono text-sm">
             <div className="border-b border-dashed border-ink/10 pb-3">
-              <p className="text-ink-muted text-xs uppercase">Barbearia</p>
+              <p className="text-ink-muted text-xs uppercase">
+                {isPet ? 'Estabelecimento' : 'Barbearia'}
+              </p>
               <p className="text-lg font-semibold text-ink">{confirmationState.shopName}</p>
               {confirmationState.shopAddress && (
                 <p className="text-ink-muted">{confirmationState.shopAddress}</p>
               )}
             </div>
+
+            {isPet && (
+              <div className="border-b border-dashed border-ink/10 pb-3">
+                <p className="text-ink-muted text-xs uppercase">Pet</p>
+                <p className="text-lg font-semibold">{confirmationState.petName}</p>
+                {confirmationState.petSize && (
+                  <p className="text-ink-muted">Porte {confirmationState.petSize}</p>
+                )}
+              </div>
+            )}
 
             <div className="border-b border-dashed border-ink/10 pb-3">
               <p className="text-ink-muted text-xs uppercase">Profissional</p>
@@ -110,7 +126,7 @@ export function BookingConfirm() {
 
           <div className="mt-6 flex flex-col gap-2 text-center text-sm">
             <Link to="/" className="text-brass hover:underline">
-              Voltar à lista de barbearias
+              Voltar ao FIND
             </Link>
             {user && (
               <Link to="/minhas-reservas" className="text-ink-muted hover:text-brass">
