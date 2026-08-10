@@ -107,6 +107,69 @@ body {
   }
 }
 
+/* —— FIND BARBEARIA: trava a paleta clássica (painel + público) —— */
+.segment-barbershop,
+[data-segment='barbershop'] {
+  --color-paper: #f5f0e8;
+  --color-paper-dark: #e8e0d4;
+  --color-ink: #2c2416;
+  --color-ink-muted: #6b5d4d;
+  --color-brass: #c9a227;
+  --color-brass-light: #e0c04a;
+  --color-charcoal: #1a1a1a;
+  --color-charcoal-light: #2a2a2a;
+  --color-charcoal-muted: #8a8a8a;
+}
+
+.segment-barbershop .bg-brass,
+[data-segment='barbershop'] .bg-brass {
+  background-color: #c9a227 !important;
+}
+.segment-barbershop .bg-brass-light,
+[data-segment='barbershop'] .bg-brass-light,
+.segment-barbershop .hover\:bg-brass-light:hover,
+[data-segment='barbershop'] .hover\:bg-brass-light:hover {
+  background-color: #e0c04a !important;
+}
+.segment-barbershop .hover\:bg-brass:hover,
+[data-segment='barbershop'] .hover\:bg-brass:hover {
+  background-color: #c9a227 !important;
+}
+.segment-barbershop .text-brass,
+[data-segment='barbershop'] .text-brass {
+  color: #c9a227 !important;
+}
+.segment-barbershop .hover\:text-brass:hover,
+[data-segment='barbershop'] .hover\:text-brass:hover {
+  color: #e0c04a !important;
+}
+.segment-barbershop .border-brass,
+[data-segment='barbershop'] .border-brass {
+  border-color: #c9a227 !important;
+}
+.segment-barbershop .text-brass\/70,
+[data-segment='barbershop'] .text-brass\/70,
+.segment-barbershop .text-brass\/80,
+[data-segment='barbershop'] .text-brass\/80 {
+  color: rgba(201, 162, 39, 0.85) !important;
+}
+.segment-barbershop .bg-brass\/5,
+[data-segment='barbershop'] .bg-brass\/5,
+.segment-barbershop .bg-brass\/10,
+[data-segment='barbershop'] .bg-brass\/10,
+.segment-barbershop .bg-brass\/15,
+[data-segment='barbershop'] .bg-brass\/15 {
+  background-color: rgba(201, 162, 39, 0.12) !important;
+}
+.segment-barbershop .accent-brass,
+[data-segment='barbershop'] .accent-brass {
+  accent-color: #c9a227 !important;
+}
+.segment-barbershop .focus\:border-brass:focus,
+[data-segment='barbershop'] .focus\:border-brass:focus {
+  border-color: #c9a227 !important;
+}
+
 /* —— FIND PET theme (público + painel) —— */
 .segment-pet,
 [data-segment='pet'] {
@@ -130,6 +193,10 @@ body {
 .segment-pet .bg-brass.text-white,
 [data-segment='pet'] .bg-brass.text-white {
   color: #0f1f19 !important;
+}
+.segment-pet .bg-brass,
+[data-segment='pet'] .bg-brass {
+  background-color: #2f7a5f !important;
 }
 .segment-pet .hover\:bg-brass:hover,
 [data-segment='pet'] .hover\:bg-brass:hover,

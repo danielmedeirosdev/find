@@ -42,6 +42,12 @@ export function DashboardLayout() {
     segmentParam || shopSegment || (segmentResolved ? 'barbershop' : 'platform')
   const meta = getSegment(segmentId === 'platform' ? 'barbershop' : segmentId)
   const showSegmentMark = Boolean(segmentParam || shopSegment)
+  const themeClass =
+    segmentId === 'pet'
+      ? 'segment-pet'
+      : segmentId === 'barbershop'
+        ? 'segment-barbershop'
+        : ''
 
   const handleSignOut = async () => {
     await signOut()
@@ -50,8 +56,8 @@ export function DashboardLayout() {
 
   return (
     <div
-      className={`min-h-screen bg-charcoal text-white ${segmentId === 'platform' ? '' : meta.themeClass}`}
-      data-segment={segmentId}
+      className={`min-h-screen bg-charcoal text-white ${themeClass}`}
+      data-segment={segmentId === 'platform' ? undefined : segmentId}
     >
       <SetupBanner />
       <header className="border-b border-charcoal-light bg-charcoal">
