@@ -45,7 +45,14 @@ export interface Barber {
   commission_percent?: number | null
 }
 
-export type BookingStatus = 'scheduled' | 'in_progress' | 'completed' | 'no_show' | 'cancelled'
+export type BookingStatus =
+  | 'scheduled'
+  | 'confirmed'
+  | 'in_progress'
+  | 'awaiting_payment'
+  | 'completed'
+  | 'no_show'
+  | 'cancelled'
 export type PaymentMethod = 'pix' | 'cartao' | 'dinheiro'
 
 export interface BarberSchedule {
@@ -82,6 +89,7 @@ export interface Booking {
   pet_id?: string | null
   shop_customer_id?: string | null
   duration_minutes?: number | null
+  customer_package_id?: string | null
   created_at: string
 }
 
@@ -205,6 +213,81 @@ export interface BookingWithDetails extends Booking {
     service_id: string
     services: Service
   }>
+}
+
+export interface ServicePackage {
+  id: string
+  shop_id: string
+  name: string
+  description: string | null
+  total_sessions: number
+  price: number
+  validity_days: number | null
+  active: boolean
+  created_at: string
+}
+
+export type CustomerPackageStatus = 'active' | 'exhausted' | 'expired' | 'cancelled'
+
+export interface CustomerPackage {
+  id: string
+  shop_id: string
+  package_id: string
+  customer_id: string
+  pet_id: string
+  total_sessions: number
+  used_sessions: number
+  expires_at: string | null
+  status: CustomerPackageStatus
+  created_at: string
+  service_packages?: ServicePackage
+  pets?: Pick<Pet, 'id' | 'name' | 'size' | 'photo_url'>
+  shop_customers?: Pick<ShopCustomer, 'id' | 'name' | 'phone'>
+}
+
+export interface PackageUsage {
+  id: string
+  customer_package_id: string
+  booking_id: string | null
+  note: string | null
+  used_at: string
+  created_at: string
+}
+
+export interface AppNotification {
+  id: string
+  shop_id: string
+  audience: 'owner' | 'customer'
+  kind: string
+  title: string
+  body: string | null
+  booking_id: string | null
+  read_at: string | null
+  created_at: string
+}
+
+export interface NoShowPolicy {
+  shop_id: string
+  enabled: boolean
+  hours_before: number
+  fee_amount: number
+  terms_text: string
+  terms_version: string
+  updated_at: string
+}
+
+export interface TermsAcceptance {
+  id: string
+  shop_id: string
+  booking_id: string | null
+  shop_customer_id: string | null
+  phone: string
+  policy_version: string
+  terms_text: string
+  fee_amount: number
+  hours_before: number
+  accepted_at: string
+  payment_provider_reference: string | null
 }
 
 export const DAY_NAMES = [

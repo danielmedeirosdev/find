@@ -1,8 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { formatPrice } from '../lib/format'
 import { getTotalPrice } from '../lib/booking'
-import type { BookingWithDetails, PaymentMethod, Service } from '../lib/types'
+import { packageRemaining } from '../lib/notifications'
+import { notifyCustomerWhatsApp } from '../lib/notifications'
+import type { BookingWithDetails, CustomerPackage, PaymentMethod, Service } from '../lib/types'
 
 interface Props {
   booking: BookingWithDetails
@@ -18,8 +20,25 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
   )
   const [selectedIds, setSelectedIds] = useState<Set<string>>(initialIds)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix')
+  const [packages, setPackages] = useState<CustomerPackage[]>([])
+  const [selectedPackageId, setSelectedPackageId] = useState<string>('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!booking.pet_id) return
+    supabase
+      .from('customer_packages')
+      .select('*, service_packages(*)')
+      .eq('pet_id', booking.pet_id)
+      .eq('status', 'active')
+      .then(({ data }) => {
+        const list = ((data as CustomerPackage[]) || []).filter(
+          (p) => packageRemaining(p.total_sessions, p.used_sessions) > 0
+        )
+        setPackages(list)
+      })
+  }, [booking.pet_id])
 
   const selectedServices = shopServices.filter((s) => selectedIds.has(s.id))
   const total = getTotalPrice(selectedServices)
@@ -47,6 +66,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
       p_service_ids: selectedServices.map((s) => s.id),
       p_payment_method: paymentMethod,
       p_amount: total,
+      p_customer_package_id: selectedPackageId || null,
     })
 
     if (rpcError) {
@@ -54,6 +74,14 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
       setSubmitting(false)
       return
     }
+
+    await notifyCustomerWhatsApp({
+      toPhone: booking.client_phone,
+      kind: 'review_request',
+      body: `Olá ${booking.client_name}! Seu atendimento foi concluído. Quando puder, avalie a experiência no FIND.`,
+      shopId: booking.shop_id,
+      bookingId: booking.id,
+    })
 
     onComplete()
   }
@@ -63,6 +91,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg border border-charcoal-light bg-charcoal p-6">
         <h3 className="font-display text-xl text-white mb-1">Finalizar atendimento</h3>
         <p className="text-sm text-charcoal-muted mb-6">
+          {booking.pets?.name ? `${booking.pets.name} · ` : ''}
           {booking.client_name} · {booking.barbers?.name}
         </p>
 
@@ -90,6 +119,25 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
             ))}
           </div>
         </div>
+
+        {packages.length > 0 && (
+          <div className="mb-6">
+            <p className="text-sm font-medium text-white mb-2">Debitar pacote (opcional)</p>
+            <select
+              value={selectedPackageId}
+              onChange={(e) => setSelectedPackageId(e.target.value)}
+              className="w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2 text-white"
+            >
+              <option value="">Não debitar</option>
+              {packages.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.service_packages?.name || 'Pacote'} —{' '}
+                  {packageRemaining(p.total_sessions, p.used_sessions)} restantes
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="mb-6">
           <p className="text-sm font-medium text-white mb-3">Forma de pagamento</p>

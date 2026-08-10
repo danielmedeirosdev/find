@@ -17,29 +17,38 @@ import { ShopLinkTab } from './tabs/ShopLink'
 import { ReviewsTab } from './tabs/Reviews'
 import { PetsTab } from './tabs/Pets'
 import { CustomersTab } from './tabs/Customers'
+import { PackagesTab } from './tabs/Packages'
+import { NotificationsTab } from './tabs/Notifications'
+import { OverviewTab } from './tabs/Overview'
 
 type TabId =
+  | 'overview'
   | 'info'
   | 'team'
   | 'services'
   | 'pets'
   | 'customers'
+  | 'packages'
   | 'agenda'
   | 'cashflow'
   | 'reports'
   | 'reviews'
+  | 'notifications'
   | 'link'
   | 'subscription'
 
 function tabsForSegment(segment: ShopSegment) {
   if (segment === 'pet') {
     return [
+      { id: 'overview' as const, label: 'Visão geral' },
       { id: 'info' as const, label: 'Informações' },
       { id: 'team' as const, label: 'Equipe e horários' },
       { id: 'services' as const, label: 'Serviços' },
       { id: 'customers' as const, label: 'Clientes' },
       { id: 'pets' as const, label: 'Pets' },
+      { id: 'packages' as const, label: 'Pacotes' },
       { id: 'agenda' as const, label: 'Agenda' },
+      { id: 'notifications' as const, label: 'Notificações' },
       { id: 'cashflow' as const, label: 'Fluxo de Caixa' },
       { id: 'reports' as const, label: 'Relatórios' },
       { id: 'reviews' as const, label: 'Avaliações' },
@@ -48,10 +57,12 @@ function tabsForSegment(segment: ShopSegment) {
     ]
   }
   return [
+    { id: 'overview' as const, label: 'Visão geral' },
     { id: 'info' as const, label: 'Informações' },
     { id: 'team' as const, label: 'Equipe e horários' },
     { id: 'services' as const, label: 'Serviços' },
     { id: 'agenda' as const, label: 'Agenda' },
+    { id: 'notifications' as const, label: 'Notificações' },
     { id: 'cashflow' as const, label: 'Fluxo de Caixa' },
     { id: 'reports' as const, label: 'Relatórios' },
     { id: 'reviews' as const, label: 'Avaliações' },
@@ -63,7 +74,7 @@ function tabsForSegment(segment: ShopSegment) {
 export function Dashboard() {
   const { user, loading: authLoading } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
-  const activeTab = (searchParams.get('aba') as TabId) || 'info'
+  const activeTab = (searchParams.get('aba') as TabId) || 'overview'
 
   const [shop, setShop] = useState<Shop | null>(null)
   const [loading, setLoading] = useState(true)
@@ -188,12 +199,17 @@ export function Dashboard() {
         ))}
       </nav>
 
+      {activeTab === 'overview' && (
+        <OverviewTab shopId={shop.id} segment={segment} onNavigate={(tab) => setTab(tab as TabId)} />
+      )}
       {activeTab === 'info' && <ShopInfoTab shop={shop} onUpdate={loadShop} />}
       {activeTab === 'team' && <TeamScheduleTab shopId={shop.id} segment={segment} />}
       {activeTab === 'services' && <ServicesTab shopId={shop.id} segment={segment} />}
       {activeTab === 'customers' && segment === 'pet' && <CustomersTab shopId={shop.id} />}
       {activeTab === 'pets' && segment === 'pet' && <PetsTab shopId={shop.id} />}
+      {activeTab === 'packages' && segment === 'pet' && <PackagesTab shopId={shop.id} />}
       {activeTab === 'agenda' && <AgendaTab shopId={shop.id} segment={segment} />}
+      {activeTab === 'notifications' && <NotificationsTab shopId={shop.id} />}
       {activeTab === 'cashflow' && <CashFlowTab shopId={shop.id} />}
       {activeTab === 'reports' && <ReportsTab shopId={shop.id} />}
       {activeTab === 'reviews' && <ReviewsTab shopId={shop.id} />}

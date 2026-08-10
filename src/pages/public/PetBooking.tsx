@@ -8,6 +8,7 @@ import {
   getNextDatesForDay,
 } from '../../lib/booking'
 import { getPetServicesDuration, getPetServicesPrice, petSizeLabel } from '../../lib/pet'
+import { notifyCustomerWhatsApp, notifyShopOwner } from '../../lib/notifications'
 import { formatDuration, formatPhone, formatPrice } from '../../lib/format'
 import { DefaultAvatar } from '../../components/MediaUI'
 import { DAY_NAMES, PET_SIZES } from '../../lib/types'
@@ -15,6 +16,7 @@ import type {
   Barber,
   BarberSchedule,
   BookingConfirmationState,
+  NoShowPolicy,
   Pet,
   PetSize,
   PublicBookingSlot,
@@ -57,6 +59,8 @@ export function PetBooking() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [lookupDone, setLookupDone] = useState(false)
+  const [noShowPolicy, setNoShowPolicy] = useState<NoShowPolicy | null>(null)
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
 
   useEffect(() => {
     if (!shopId) return
@@ -108,12 +112,19 @@ export function PetBooking() {
         .eq('shop_id', shopId)
         .gte('date', new Date().toISOString().slice(0, 10))
 
+      const { data: policy } = await supabase
+        .from('no_show_policies')
+        .select('*')
+        .eq('shop_id', shopId)
+        .maybeSingle()
+
       setShop(shopData)
       setServices(serviceList)
       setRules(sizeRules)
       setBarbers(barb || [])
       setSchedules(sched)
       setOccupiedSlots((slots as PublicBookingSlot[]) || [])
+      setNoShowPolicy((policy as NoShowPolicy) || null)
       if ((barb || []).length === 1) setSelectedBarberId(barb![0].id)
       setLoading(false)
     }
@@ -261,6 +272,11 @@ export function PetBooking() {
     const cust = await ensureCustomer()
     if (!cust) return
 
+    if (noShowPolicy?.enabled && !acceptedTerms) {
+      setError('Aceite a política de faltas para confirmar.')
+      return
+    }
+
     setSubmitting(true)
     setError('')
 
@@ -296,6 +312,35 @@ export function PetBooking() {
         }))
       )
     }
+
+    if (noShowPolicy?.enabled) {
+      await supabase.from('terms_acceptances').insert({
+        shop_id: shop.id,
+        booking_id: booking.id,
+        shop_customer_id: cust.id,
+        phone: cust.phone,
+        policy_version: noShowPolicy.terms_version,
+        terms_text: noShowPolicy.terms_text,
+        fee_amount: noShowPolicy.fee_amount,
+        hours_before: noShowPolicy.hours_before,
+      })
+    }
+
+    await notifyShopOwner({
+      shopId: shop.id,
+      kind: 'new_booking',
+      title: 'Novo agendamento',
+      body: `${selectedPet.name} · ${cust.name} · ${selectedDate} ${selectedTime}`,
+      bookingId: booking.id,
+    })
+
+    await notifyCustomerWhatsApp({
+      toPhone: cust.phone,
+      kind: 'booking_confirmation',
+      body: `Agendamento confirmado no ${shop.name}: ${selectedPet.name} em ${selectedDate} às ${selectedTime}.`,
+      shopId: shop.id,
+      bookingId: booking.id,
+    })
 
     const confirmationState: BookingConfirmationState = {
       shopName: shop.name,
@@ -692,6 +737,23 @@ export function PetBooking() {
                 {customerName || customer?.name} · {phone}
               </p>
             </div>
+            {noShowPolicy?.enabled && (
+              <label className="mb-4 flex items-start gap-3 rounded-lg border border-paper-dark p-3 text-sm">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="mt-1 accent-brass"
+                />
+                <span className="text-ink-muted">
+                  {noShowPolicy.terms_text ||
+                    `Cancelamentos com menos de ${noShowPolicy.hours_before}h podem estar sujeitos à cobrança de ${formatPrice(Number(noShowPolicy.fee_amount))} conforme política do estabelecimento. A cobrança efetiva depende de gateway e regras aplicáveis — este aceite apenas registra seu consentimento.`}
+                  <span className="block mt-1 text-xs">
+                    Versão {noShowPolicy.terms_version}
+                  </span>
+                </span>
+              </label>
+            )}
             {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
             <div className="flex gap-3">
               <button onClick={() => setStep(4)} className="flex-1 rounded-lg border py-3">

@@ -6,7 +6,8 @@ import { petSizeLabel } from '../../../lib/pet'
 import { formatPhone } from '../../../lib/format'
 import { DefaultAvatar, ImageDropzone, ProgressBar, Toast } from '../../../components/MediaUI'
 import { FieldLabel } from '../../../components/FormHints'
-import { PET_SIZES, type Pet, type PetSize, type ShopCustomer } from '../../../lib/types'
+import { PET_SIZES, type BookingWithDetails, type Pet, type PetSize, type ShopCustomer } from '../../../lib/types'
+import { formatDate, formatTime } from '../../../lib/format'
 
 interface Props {
   shopId: string
@@ -34,6 +35,10 @@ export function PetsTab({ shopId }: Props) {
   const [behavior, setBehavior] = useState('')
   const [allergies, setAllergies] = useState('')
   const [preferences, setPreferences] = useState('')
+  const [weightKg, setWeightKg] = useState('')
+  const [birthDate, setBirthDate] = useState('')
+  const [specialNeeds, setSpecialNeeds] = useState('')
+  const [history, setHistory] = useState<BookingWithDetails[]>([])
 
   const load = useCallback(async () => {
     const [{ data: p }, { data: c }] = await Promise.all([
@@ -53,6 +58,25 @@ export function PetsTab({ shopId }: Props) {
     load()
   }, [load])
 
+  useEffect(() => {
+    if (!selected) {
+      setHistory([])
+      return
+    }
+    supabase
+      .from('bookings')
+      .select(`
+        *,
+        barbers(name),
+        booking_services(service_id, services(name, price, duration_minutes))
+      `)
+      .eq('pet_id', selected.id)
+      .order('date', { ascending: false })
+      .order('time', { ascending: false })
+      .limit(20)
+      .then(({ data }) => setHistory((data as BookingWithDetails[]) || []))
+  }, [selected])
+
   const resetForm = () => {
     setName('')
     setCustomerId('')
@@ -66,6 +90,9 @@ export function PetsTab({ shopId }: Props) {
     setBehavior('')
     setAllergies('')
     setPreferences('')
+    setWeightKg('')
+    setBirthDate('')
+    setSpecialNeeds('')
     setShowForm(false)
   }
 
@@ -116,6 +143,9 @@ export function PetsTab({ shopId }: Props) {
       behavior: behavior.trim() || null,
       allergies: allergies.trim() || null,
       preferences: preferences.trim() || null,
+      weight_kg: weightKg ? Number(weightKg) : null,
+      birth_date: birthDate || null,
+      special_needs: specialNeeds.trim() || null,
     })
     if (error) {
       setToast(error.message)
@@ -290,6 +320,34 @@ export function PetsTab({ shopId }: Props) {
               />
             </div>
           </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <FieldLabel>Peso (kg)</FieldLabel>
+              <input
+                value={weightKg}
+                onChange={(e) => setWeightKg(e.target.value)}
+                type="number"
+                className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white focus:border-brass focus:outline-none"
+              />
+            </div>
+            <div>
+              <FieldLabel>Nascimento</FieldLabel>
+              <input
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+                type="date"
+                className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white focus:border-brass focus:outline-none"
+              />
+            </div>
+            <div>
+              <FieldLabel>Necessidades especiais</FieldLabel>
+              <input
+                value={specialNeeds}
+                onChange={(e) => setSpecialNeeds(e.target.value)}
+                className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white focus:border-brass focus:outline-none"
+              />
+            </div>
+          </div>
 
           <div className="flex gap-2 pt-2">
             <button
@@ -394,6 +452,43 @@ export function PetsTab({ shopId }: Props) {
                   <p className="text-charcoal-muted pt-2">Alergias</p>
                   <p className="text-white">{selected.allergies}</p>
                 </>
+              )}
+              {(selected.weight_kg || selected.birth_date || selected.special_needs) && (
+                <>
+                  <p className="text-charcoal-muted pt-2">Dados</p>
+                  <p className="text-white text-sm">
+                    {selected.weight_kg ? `${selected.weight_kg} kg` : null}
+                    {selected.weight_kg && selected.birth_date ? ' · ' : ''}
+                    {selected.birth_date ? `Nasc. ${formatDate(selected.birth_date)}` : null}
+                    {selected.special_needs && (
+                      <span className="block mt-1">{selected.special_needs}</span>
+                    )}
+                  </p>
+                </>
+              )}
+              <p className="text-charcoal-muted pt-3">Histórico</p>
+              {history.length === 0 ? (
+                <p className="text-sm text-charcoal-muted">Sem atendimentos registrados.</p>
+              ) : (
+                <div className="space-y-2">
+                  {history.map((b) => {
+                    const services = (b.booking_services || []).map((bs) => bs.services.name)
+                    const isNext =
+                      (b.status === 'scheduled' || b.status === 'confirmed') &&
+                      b.date >= new Date().toISOString().slice(0, 10)
+                    return (
+                      <div key={b.id} className="rounded-lg bg-charcoal-light/30 p-2 text-sm">
+                        <p className="text-white">
+                          {formatDate(b.date)} · {formatTime(b.time)}
+                          {isNext ? ' · próximo' : ''}
+                        </p>
+                        <p className="text-charcoal-muted">
+                          {services.join(' · ') || 'Serviço'} · {b.status || 'scheduled'}
+                        </p>
+                      </div>
+                    )
+                  })}
+                </div>
               )}
             </div>
             <button

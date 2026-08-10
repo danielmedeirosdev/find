@@ -67,8 +67,12 @@ export function bookingStatusLabel(status: string): string {
   switch (status) {
     case 'scheduled':
       return 'Agendado'
+    case 'confirmed':
+      return 'Confirmado'
     case 'in_progress':
-      return 'Em atendimento'
+      return 'Em andamento'
+    case 'awaiting_payment':
+      return 'Aguardando pagamento'
     case 'completed':
       return 'Concluído'
     case 'no_show':

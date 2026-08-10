@@ -58,7 +58,10 @@ export function AgendaTab({ shopId, segment = 'barbershop' }: Props) {
     load()
   }, [load])
 
-  const updateStatus = async (bookingId: string, status: 'no_show' | 'cancelled') => {
+  const updateStatus = async (
+    bookingId: string,
+    status: 'confirmed' | 'in_progress' | 'awaiting_payment' | 'no_show' | 'cancelled' | 'scheduled'
+  ) => {
     setActionError('')
     const { error } = await supabase.rpc('update_booking_status', {
       p_booking_id: bookingId,
@@ -98,7 +101,12 @@ export function AgendaTab({ shopId, segment = 'barbershop' }: Props) {
   if (loading) return <p className="text-charcoal-muted">Carregando...</p>
 
   const activeBookings = bookings.filter(
-    (b) => b.status === 'scheduled' || b.status === 'in_progress' || !b.status
+    (b) =>
+      b.status === 'scheduled' ||
+      b.status === 'confirmed' ||
+      b.status === 'in_progress' ||
+      b.status === 'awaiting_payment' ||
+      !b.status
   )
 
   return (
@@ -230,6 +238,30 @@ export function AgendaTab({ shopId, segment = 'barbershop' }: Props) {
                   <p className="font-mono text-brass">{formatPrice(total)}</p>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
+                  {(status === 'scheduled' || !b.status) && (
+                    <button
+                      onClick={() => updateStatus(b.id, 'confirmed')}
+                      className="rounded-lg border border-charcoal-light px-4 py-2 text-sm text-charcoal-muted hover:text-white"
+                    >
+                      Confirmar
+                    </button>
+                  )}
+                  {(status === 'scheduled' || status === 'confirmed') && (
+                    <button
+                      onClick={() => updateStatus(b.id, 'in_progress')}
+                      className="rounded-lg border border-charcoal-light px-4 py-2 text-sm text-charcoal-muted hover:text-white"
+                    >
+                      Iniciar
+                    </button>
+                  )}
+                  {(status === 'in_progress' || status === 'confirmed' || status === 'scheduled') && (
+                    <button
+                      onClick={() => updateStatus(b.id, 'awaiting_payment')}
+                      className="rounded-lg border border-charcoal-light px-4 py-2 text-sm text-charcoal-muted hover:text-white"
+                    >
+                      Aguardando pagamento
+                    </button>
+                  )}
                   <button
                     onClick={() => setCompletingBooking(b)}
                     className="rounded-lg bg-brass px-4 py-2 text-sm font-semibold text-charcoal"
