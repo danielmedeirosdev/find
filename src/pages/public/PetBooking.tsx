@@ -21,7 +21,6 @@ import type {
   Barber,
   BarberSchedule,
   BookingConfirmationState,
-  NoShowPolicy,
   Pet,
   PetSize,
   PublicBookingSlot,
@@ -66,8 +65,6 @@ export function PetBooking() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [lookupDone, setLookupDone] = useState(false)
-  const [noShowPolicy, setNoShowPolicy] = useState<NoShowPolicy | null>(null)
-  const [acceptedTerms, setAcceptedTerms] = useState(false)
 
   useEffect(() => {
     if (clientProfile?.phone && !phone) {
@@ -124,19 +121,12 @@ export function PetBooking() {
 
       const slots = await loadOccupiedSlots(shopId!)
 
-      const { data: policy } = await supabase
-        .from('no_show_policies')
-        .select('*')
-        .eq('shop_id', shopId)
-        .maybeSingle()
-
       setShop(shopData)
       setServices(serviceList)
       setRules(sizeRules)
       setBarbers(barb || [])
       setSchedules(sched)
       setOccupiedSlots(slots)
-      setNoShowPolicy((policy as NoShowPolicy) || null)
       if ((barb || []).length === 1) setSelectedBarberId(barb![0].id)
       setLoading(false)
     }
@@ -324,11 +314,6 @@ export function PetBooking() {
     const cust = await ensureCustomer()
     if (!cust) return
 
-    if (noShowPolicy?.enabled && !acceptedTerms) {
-      setError('Aceite a política de faltas para confirmar.')
-      return
-    }
-
     setSubmitting(true)
     setError('')
 
@@ -413,19 +398,6 @@ export function PetBooking() {
           service_id: s.id,
         }))
       )
-    }
-
-    if (noShowPolicy?.enabled) {
-      await supabase.from('terms_acceptances').insert({
-        shop_id: shop.id,
-        booking_id: booking.id,
-        shop_customer_id: cust.id,
-        phone: cust.phone,
-        policy_version: noShowPolicy.terms_version,
-        terms_text: noShowPolicy.terms_text,
-        fee_amount: noShowPolicy.fee_amount,
-        hours_before: noShowPolicy.hours_before,
-      })
     }
 
     const petNames = selectedPets.map((p) => p.name).join(' · ')
@@ -886,23 +858,6 @@ export function PetBooking() {
               />
             </div>
 
-            {noShowPolicy?.enabled && (
-              <label className="mb-4 flex items-start gap-3 rounded-lg border border-paper-dark p-3 text-sm">
-                <input
-                  type="checkbox"
-                  checked={acceptedTerms}
-                  onChange={(e) => setAcceptedTerms(e.target.checked)}
-                  className="mt-1 accent-brass"
-                />
-                <span className="text-ink-muted">
-                  {noShowPolicy.terms_text ||
-                    `Cancelamentos com menos de ${noShowPolicy.hours_before}h podem estar sujeitos à cobrança de ${formatPrice(Number(noShowPolicy.fee_amount))} conforme política do estabelecimento. A cobrança efetiva depende de gateway e regras aplicáveis — este aceite apenas registra seu consentimento.`}
-                  <span className="block mt-1 text-xs">
-                    Versão {noShowPolicy.terms_version}
-                  </span>
-                </span>
-              </label>
-            )}
             {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
             <div className="flex gap-3">
               <button onClick={() => setStep(4)} className="flex-1 rounded-lg border py-3">
