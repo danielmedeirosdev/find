@@ -2,39 +2,75 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { formatPrice, formatDate, formatTime, bookingStatusLabel, paymentMethodLabel } from '../../lib/format'
+import { petSizeLabel } from '../../lib/pet'
 import type { BookingWithDetails } from '../../lib/types'
 import { BrandAccent } from '../../components/BrandAccent'
 import { ReviewModal } from '../../components/reviews/ReviewModal'
 import { useAuth } from '../../contexts/AuthContext'
 
+function phoneDigits(value: string | null | undefined) {
+  return (value || '').replace(/\D/g, '')
+}
+
 export function MyBookings() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, clientProfile, loading: authLoading } = useAuth()
   const [bookings, setBookings] = useState<BookingWithDetails[]>([])
   const [loading, setLoading] = useState(true)
   const [reviewBooking, setReviewBooking] = useState<BookingWithDetails | null>(null)
 
   const load = async () => {
     if (!user) return
-    const { data } = await supabase
+
+    // Recupera agendamentos PET/barbearia feitos sem client_id (guest) pelo WhatsApp
+    await supabase.rpc('claim_my_bookings')
+
+    const phone = phoneDigits(clientProfile?.phone)
+    let query = supabase
       .from('bookings')
       .select(`
         *,
-        shops(name, address),
+        shops(name, address, segment),
         barbers(name),
+        pets(name, size),
         booking_services(service_id, services(name, price))
       `)
-      .eq('client_id', user.id)
       .order('date', { ascending: true })
       .order('time', { ascending: true })
 
-    setBookings((data as BookingWithDetails[]) || [])
+    if (phone.length >= 10) {
+      const variants = Array.from(
+        new Set([phone, phone.startsWith('55') ? phone.slice(2) : `55${phone}`])
+      )
+      query = query.or(
+        [`client_id.eq.${user.id}`, ...variants.map((p) => `client_phone.eq.${p}`)].join(',')
+      )
+    } else {
+      query = query.eq('client_id', user.id)
+    }
+
+    const { data } = await query
+
+    const rows = ((data as BookingWithDetails[]) || []).filter((b) => {
+      if (b.client_id === user.id) return true
+      if (!phone) return false
+      const bookingPhone = phoneDigits(b.client_phone)
+      return (
+        bookingPhone === phone ||
+        bookingPhone === `55${phone}` ||
+        `55${bookingPhone}` === phone
+      )
+    })
+
+    // Dedup if or() + claim overlap
+    const seen = new Set<string>()
+    setBookings(rows.filter((b) => (seen.has(b.id) ? false : (seen.add(b.id), true))))
     setLoading(false)
   }
 
   useEffect(() => {
     if (!user) return
     load()
-  }, [user])
+  }, [user, clientProfile?.phone])
 
   if (authLoading) return <p className="text-center text-ink-muted">Carregando...</p>
   if (!user) return <Navigate to="/entrar" replace />
@@ -154,6 +190,7 @@ function BookingCard({
   const isCompleted = booking.status === 'completed'
   const canReview = isCompleted && booking.review_status === 'awaiting' && onReview
   const reviewed = booking.review_status === 'reviewed'
+  const pet = booking.pets
 
   return (
     <div
@@ -164,7 +201,15 @@ function BookingCard({
       <div className="flex justify-between items-start">
         <div>
           <h3 className="font-display text-xl text-ink">{booking.shops?.name}</h3>
-          <p className="text-sm text-ink-muted">{booking.barbers?.name}</p>
+          {pet?.name ? (
+            <p className="text-sm text-ink-muted">
+              {pet.name}
+              {pet.size ? ` · ${petSizeLabel(pet.size)}` : ''}
+              {booking.barbers?.name ? ` · ${booking.barbers.name}` : ''}
+            </p>
+          ) : (
+            <p className="text-sm text-ink-muted">{booking.barbers?.name}</p>
+          )}
           {booking.status && (
             <span className="inline-block mt-1 rounded-full bg-paper px-2 py-0.5 text-xs text-ink-muted">
               {bookingStatusLabel(booking.status)}

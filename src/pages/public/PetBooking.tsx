@@ -13,6 +13,7 @@ import { formatDuration, formatPhone, formatPrice } from '../../lib/format'
 import { DefaultAvatar } from '../../components/MediaUI'
 import { BrandAccent } from '../../components/BrandAccent'
 import { SegmentProvider } from '../../contexts/SegmentContext'
+import { useAuth } from '../../contexts/AuthContext'
 import { DAY_NAMES, PET_SIZES } from '../../lib/types'
 import type {
   Barber,
@@ -33,6 +34,7 @@ type Step = 1 | 2 | 3 | 4 | 5
 export function PetBooking() {
   const { shopId } = useParams<{ shopId: string }>()
   const navigate = useNavigate()
+  const { user, clientProfile } = useAuth()
 
   const [shop, setShop] = useState<Shop | null>(null)
   const [services, setServices] = useState<Service[]>([])
@@ -63,6 +65,15 @@ export function PetBooking() {
   const [lookupDone, setLookupDone] = useState(false)
   const [noShowPolicy, setNoShowPolicy] = useState<NoShowPolicy | null>(null)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
+
+  useEffect(() => {
+    if (clientProfile?.phone && !phone) {
+      setPhone(formatPhone(clientProfile.phone))
+    }
+    if (clientProfile?.name && !customerName) {
+      setCustomerName(clientProfile.name)
+    }
+  }, [clientProfile])
 
   useEffect(() => {
     if (!shopId) return
@@ -282,12 +293,39 @@ export function PetBooking() {
     setSubmitting(true)
     setError('')
 
+    // Vincula à conta FIND (Minhas Reservas / avaliações) quando o cliente está logado
+    if (user) {
+      const { data: existingClient } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle()
+      if (!existingClient) {
+        const { error: clientError } = await supabase.from('clients').insert({
+          id: user.id,
+          name: cust.name || 'Cliente',
+          phone: cust.phone || null,
+        })
+        if (clientError) {
+          setError(clientError.message)
+          setSubmitting(false)
+          return
+        }
+      } else if (cust.phone) {
+        await supabase
+          .from('clients')
+          .update({ phone: cust.phone })
+          .eq('id', user.id)
+          .is('phone', null)
+      }
+    }
+
     const { data: booking, error: bkError } = await supabase
       .from('bookings')
       .insert({
         shop_id: shop.id,
         barber_id: selectedBarberId,
-        client_id: null,
+        client_id: user?.id || null,
         client_name: cust.name,
         client_phone: cust.phone,
         date: selectedDate,
