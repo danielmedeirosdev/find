@@ -290,6 +290,19 @@ export interface TermsAcceptance {
   payment_provider_reference: string | null
 }
 
+export interface PaymentMethodReference {
+  id: string
+  shop_id: string
+  shop_customer_id: string | null
+  customer_phone: string | null
+  provider: string
+  provider_customer_ref: string | null
+  provider_payment_method_ref: string
+  brand: string | null
+  last4: string | null
+  created_at: string
+}
+
 export const DAY_NAMES = [
   'Domingo',
   'Segunda',

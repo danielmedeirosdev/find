@@ -136,3 +136,36 @@ export async function submitReview(
   }
   return data as string
 }
+
+/** Avaliação sem login — valida telefone do agendamento (FIND PET). */
+export async function submitGuestReview(
+  bookingId: string,
+  phone: string,
+  rating: number,
+  comment?: string
+): Promise<string> {
+  const { data, error } = await supabase.rpc('submit_guest_review', {
+    p_booking_id: bookingId,
+    p_phone: phone,
+    p_rating: rating,
+    p_comment: comment?.trim() || null,
+  })
+  if (error) {
+    if (error.code === 'PGRST202' || /could not find the function/i.test(error.message)) {
+      throw new Error(
+        'Função de avaliação convidado não encontrada. Execute a migration 016 no Supabase.'
+      )
+    }
+    throw new Error(error.message)
+  }
+  return data as string
+}
+
+export function guestReviewPath(bookingId: string): string {
+  return `/avaliar/${bookingId}`
+}
+
+export function guestReviewUrl(bookingId: string): string {
+  if (typeof window === 'undefined') return guestReviewPath(bookingId)
+  return `${window.location.origin}${guestReviewPath(bookingId)}`
+}

@@ -7,6 +7,7 @@ import { ShopList } from './pages/public/ShopList'
 import { ShopBooking } from './pages/public/ShopBooking'
 import { ShopPublic } from './pages/public/ShopPublic'
 import { PetBooking } from './pages/public/PetBooking'
+import { GuestReview } from './pages/public/GuestReview'
 import { BookingConfirm } from './pages/public/BookingConfirm'
 import { ClientAuth } from './pages/public/ClientAuth'
 import { MyBookings } from './pages/public/MyBookings'
@@ -27,6 +28,7 @@ export default function App() {
             <Route path="pet/:shopId" element={<PetBooking />} />
             <Route path="b/:slug" element={<ShopPublic />} />
             <Route path="confirmacao/:bookingId" element={<BookingConfirm />} />
+            <Route path="avaliar/:bookingId" element={<GuestReview />} />
             <Route path="entrar" element={<ClientAuth />} />
             <Route path="cadastro" element={<ClientAuth />} />
             <Route path="auth/callback" element={<AuthCallback />} />
