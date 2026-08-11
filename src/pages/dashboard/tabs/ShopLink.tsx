@@ -7,6 +7,7 @@ import {
   publicShopUrl,
   slugify,
 } from '../../../lib/media'
+import { publicSiteHost } from '../../../lib/site'
 import { Toast } from '../../../components/MediaUI'
 import { FieldHint } from '../../../components/FormHints'
 import { getSegment } from '../../../lib/segments'
@@ -45,7 +46,7 @@ export function ShopLinkTab({ shop, onUpdate }: Props) {
   }, [shop.id, shop.logo_url])
 
   const fullUrl = publicShopUrl(shop.slug || slug)
-  const displayHost = typeof window !== 'undefined' ? window.location.host : 'findapp.com'
+  const displayHost = publicSiteHost()
 
   const saveSlug = async () => {
     const cleaned = slugify(slug)

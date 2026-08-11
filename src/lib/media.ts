@@ -1,3 +1,4 @@
+import { absolutePublicUrl } from './site'
 import { supabase } from './supabase'
 
 const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp']
@@ -183,6 +184,5 @@ export function publicShopPath(slug: string): string {
 }
 
 export function publicShopUrl(slug: string): string {
-  if (typeof window === 'undefined') return `https://findapp.com/b/${slug}`
-  return `${window.location.origin}/b/${slug}`
+  return absolutePublicUrl(publicShopPath(slug))
 }

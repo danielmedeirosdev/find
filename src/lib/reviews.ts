@@ -1,3 +1,4 @@
+import { absolutePublicUrl } from './site'
 import { supabase } from './supabase'
 import type {
   BarberRatingStats,
@@ -166,6 +167,5 @@ export function guestReviewPath(bookingId: string): string {
 }
 
 export function guestReviewUrl(bookingId: string): string {
-  if (typeof window === 'undefined') return guestReviewPath(bookingId)
-  return `${window.location.origin}${guestReviewPath(bookingId)}`
+  return absolutePublicUrl(guestReviewPath(bookingId))
 }
