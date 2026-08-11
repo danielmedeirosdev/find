@@ -18,7 +18,8 @@ export function PublicLayout() {
     pathname.startsWith('/cadastro') ||
     pathname.startsWith('/minhas-reservas') ||
     pathname.startsWith('/confirmacao') ||
-    pathname.startsWith('/avaliar')
+    pathname.startsWith('/avaliar') ||
+    pathname.startsWith('/privacidade')
       ? 'platform'
       : 'barbershop')
   const isPet = segmentId === 'pet'
@@ -89,6 +90,11 @@ export function PublicLayout() {
             : segmentMeta
               ? 'FIND BARBEARIA — agende com estilo'
               : 'FIND — uma plataforma, várias soluções'}
+        </p>
+        <p className="mt-3">
+          <Link to="/privacidade" className="hover:text-brass transition-colors">
+            Política de Privacidade
+          </Link>
         </p>
       </footer>
     </div>
