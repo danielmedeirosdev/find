@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { PUBLIC_SITE_ORIGIN } from '../../lib/site'
 
 const LAST_UPDATED = '11 de agosto de 2026'
-const CONTACT_EMAIL = 'contato@onefind.com.br'
+const CONTACT_EMAIL = 'daniellindomaravijoso@gmail.com'
 
 export function PrivacyPolicy() {
   return (
@@ -146,14 +146,16 @@ export function PrivacyPolicy() {
             <li>oposição a tratamentos em hipóteses previstas na lei.</li>
           </ul>
           <p className="mt-3">
-            Para exercer seus direitos, escreva para{' '}
+            Para exercer seus direitos (acesso, correção, exclusão e demais
+            previstos na LGPD), envie um e-mail para{' '}
             <a
               href={`mailto:${CONTACT_EMAIL}?subject=LGPD%20-%20FIND`}
               className="text-brass underline-offset-2 hover:underline"
             >
               {CONTACT_EMAIL}
             </a>
-            . Podemos pedir confirmação de identidade antes de atender.
+            . Podemos solicitar confirmação de identidade antes de atender a
+            solicitação.
           </p>
         </section>
 
