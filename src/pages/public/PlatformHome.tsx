@@ -59,20 +59,12 @@ export function PlatformHome() {
 
         <div className="platform-fade platform-fade-delay-4 mt-14 w-full max-w-lg border-t border-ink/10 pt-8">
           <p className="text-sm text-ink-muted mb-4">Sou profissional — quero gerenciar meu negócio</p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-            {ACTIVE_SEGMENTS.map((id) => {
-              const segment = SEGMENTS[id]
-              return (
-                <Link
-                  key={id}
-                  to={`/painel?segment=${id}&modo=cadastro`}
-                  className="rounded-lg border border-ink/15 px-4 py-2.5 text-sm text-ink-muted transition-colors hover:border-brass hover:text-brass"
-                >
-                  Criar {segment.professionalLabel}
-                </Link>
-              )
-            })}
-          </div>
+          <Link
+            to="/painel?modo=cadastro"
+            className="inline-flex rounded-lg border border-ink/15 px-5 py-2.5 text-sm text-ink-muted transition-colors hover:border-brass hover:text-brass"
+          >
+            Criar profissional
+          </Link>
         </div>
       </section>
     </div>

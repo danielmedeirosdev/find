@@ -41,7 +41,6 @@ export function BarberAuth() {
   }
 
   const meta = getSegment(segment)
-  const businessLabel = meta.professionalLabel
   const defaultShopName = meta.defaultShopName
 
   const handleGoogleCredential = async (
@@ -172,9 +171,7 @@ export function BarberAuth() {
       <div className="text-center mb-8">
         <p className="text-xs uppercase tracking-[0.3em] text-brass mb-2">FIND</p>
         <h1 className="font-display text-4xl text-brass">
-          {mode === 'login'
-            ? 'Área do profissional'
-            : `Cadastrar ${meta.shortName}`}
+          {mode === 'login' ? 'Área do profissional' : 'Criar profissional'}
         </h1>
         <BrandAccent className="mx-auto max-w-xs mt-4" segment={segment} />
         <p className="text-charcoal-muted mt-2 text-sm">{meta.description}</p>
@@ -268,7 +265,7 @@ export function BarberAuth() {
             ? 'Aguarde...'
             : mode === 'login'
               ? 'Entrar'
-              : `Criar ${businessLabel}`}
+              : 'Criar conta'}
         </button>
 
         <AuthDivider tone="dark" />
