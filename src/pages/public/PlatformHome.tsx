@@ -12,7 +12,7 @@ export function PlatformHome() {
 
       <section className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center px-2 py-10 text-center sm:py-16">
         <p className="platform-fade text-xs uppercase tracking-[0.35em] text-brass font-medium">
-          Plataforma
+          Plataforma de agendamento
         </p>
         <h1 className="platform-fade platform-fade-delay-1 mt-3 font-display text-7xl tracking-[0.12em] text-ink sm:text-8xl">
           FIND
@@ -22,11 +22,12 @@ export function PlatformHome() {
           height="h-1.5"
           segment="platform"
         />
-        <p className="platform-fade platform-fade-delay-2 mt-6 max-w-md text-lg text-ink-muted sm:text-xl">
-          Encontre a solução ideal para o seu negócio.
+        <p className="platform-fade platform-fade-delay-2 mt-6 max-w-lg text-lg text-ink-muted sm:text-xl">
+          O FIND é a plataforma de agendamento online e gestão para barbearias e pet shops.
         </p>
-        <p className="platform-fade platform-fade-delay-2 mt-2 text-sm text-ink-muted/80">
-          Um FIND. Módulos especializados.
+        <p className="platform-fade platform-fade-delay-2 mt-2 max-w-md text-sm text-ink-muted/80">
+          Clientes marcam horário pelo site. Profissionais gerenciam agenda, clientes e o negócio
+          em um só painel.
         </p>
 
         <div className="mt-12 grid w-full gap-5 sm:grid-cols-2 sm:gap-6">
@@ -65,6 +66,11 @@ export function PlatformHome() {
           >
             Criar profissional
           </Link>
+          <p className="mt-6 text-xs text-ink-muted/70">
+            <Link to="/privacidade" className="underline-offset-2 hover:text-brass hover:underline">
+              Política de Privacidade
+            </Link>
+          </p>
         </div>
       </section>
     </div>
