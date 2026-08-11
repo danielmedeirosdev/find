@@ -73,7 +73,7 @@ export function ShopList({ segment }: Props) {
   }
 
   return (
-    <div className={isPet ? 'pet-hero-glow -mx-4 px-4 py-2 rounded-2xl' : undefined}>
+    <div>
       <div className="mb-2">
         <Link to="/" className="text-xs uppercase tracking-widest text-brass hover:underline">
           ← FIND
