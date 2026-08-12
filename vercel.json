@@ -21,7 +21,7 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!assets/|favicon\\.svg|google.*\\.html|find-.*\\.(mp4|jpg)).*)",
+      "source": "/((?!assets/|favicon\\.svg|google.*\\.html).*)",
       "destination": "/index.html"
     }
   ]
