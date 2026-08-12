@@ -11,11 +11,17 @@
       "has": [{ "type": "host", "value": "find-onefind.vercel.app" }],
       "destination": "https://www.onefind.com.br/:path*",
       "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "find-landingpage.vercel.app" }],
+      "destination": "https://www.onefind.com.br/:path*",
+      "permanent": true
     }
   ],
   "rewrites": [
     {
-      "source": "/((?!assets/|favicon\\.svg|google.*\\.html).*)",
+      "source": "/((?!assets/|favicon\\.svg|google.*\\.html|find-.*\\.(mp4|jpg)).*)",
       "destination": "/index.html"
     }
   ]
