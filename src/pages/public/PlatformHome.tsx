@@ -14,8 +14,8 @@ export function PlatformHome() {
         <p className="platform-fade text-xs uppercase tracking-[0.35em] text-brass font-medium">
           Plataforma de agendamento
         </p>
-        <h1 className="platform-fade platform-fade-delay-1 mt-3 font-display text-7xl tracking-[0.12em] text-ink sm:text-8xl">
-          FIND
+        <h1 className="platform-fade platform-fade-delay-1 mt-3 font-display text-6xl tracking-[0.1em] text-ink sm:text-7xl md:text-8xl">
+          ONEFIND
         </h1>
         <BrandAccent
           className="platform-fade platform-fade-delay-1 mx-auto mt-5 max-w-[12rem]"
@@ -23,7 +23,7 @@ export function PlatformHome() {
           segment="platform"
         />
         <p className="platform-fade platform-fade-delay-2 mt-6 max-w-lg text-lg text-ink-muted sm:text-xl">
-          O FIND é a plataforma de agendamento online e gestão para barbearias e pet shops.
+          ONEFIND é a plataforma de agendamento online e gestão para barbearias e pet shops.
         </p>
         <p className="platform-fade platform-fade-delay-2 mt-2 max-w-md text-sm text-ink-muted/80">
           Clientes marcam horário pelo site. Profissionais gerenciam agenda, clientes e o negócio

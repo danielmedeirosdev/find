@@ -31,7 +31,7 @@ export function PublicLayout() {
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
           <div className="flex items-baseline gap-3">
             <Link to="/" className="font-display text-3xl tracking-wider text-ink">
-              FIND
+              {isHome ? 'ONEFIND' : 'FIND'}
             </Link>
             {segmentMeta && (
               <span className="text-xs uppercase tracking-widest text-brass font-medium">
@@ -89,7 +89,7 @@ export function PublicLayout() {
             ? 'FIND PET — banho, tosa e cuidados com profissionalismo'
             : segmentMeta
               ? 'FIND BARBEARIA — agende com estilo'
-              : 'FIND — uma plataforma, várias soluções'}
+              : 'ONEFIND — uma plataforma, várias soluções'}
         </p>
         <p className="mt-3">
           <Link to="/privacidade" className="hover:text-brass transition-colors">
