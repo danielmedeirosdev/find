@@ -6,6 +6,7 @@ import type { Shop } from '../../lib/types'
 import { BlockedOverlay } from '../../components/BlockedOverlay'
 import { SegmentProvider } from '../../contexts/SegmentContext'
 import { normalizeSegment, parseSegmentParam } from '../../lib/segments'
+import { ensureBarberShop } from '../../lib/auth'
 import { ProfessionalBarbearia } from './professional/ProfessionalBarbearia'
 import { ProfessionalPet } from './professional/ProfessionalPet'
 
@@ -49,14 +50,20 @@ export function Dashboard() {
 
     // Cura: loja criada como barbearia por default, mas o profissional é PET
     if (dbSegment !== 'pet' && (metaSegment === 'pet' || urlSegment === 'pet')) {
+      await ensureBarberShop(user.id, resolved.name, 'pet')
       const { data: fixed } = await supabase
         .from('shops')
-        .update({ segment: 'pet' })
-        .eq('id', resolved.id)
         .select('*')
+        .eq('id', resolved.id)
         .single()
       if (fixed) resolved = fixed as Shop
       else resolved = { ...resolved, segment: 'pet' }
+    } else if (dbSegment === 'pet') {
+      // Troca seed de barbearia residual por serviços PET, se ainda estiver errado
+      await ensureBarberShop(user.id, resolved.name, 'pet')
+      if (resolved.segment !== dbSegment) {
+        resolved = { ...resolved, segment: dbSegment }
+      }
     } else if (resolved.segment !== dbSegment) {
       resolved = { ...resolved, segment: dbSegment }
     }

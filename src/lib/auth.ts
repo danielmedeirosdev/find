@@ -1,11 +1,17 @@
 import { ensureUniqueSlug } from './media'
 import { getSegment } from './segments'
+import {
+  defaultServicesForSegment,
+  isOnlyBarbershopDefaultServices,
+} from './defaultServices'
 import { defaultSizeRules } from './pet'
 import { supabase } from './supabase'
 import type { ShopSegment } from './types'
 
 export async function ensureAuthSession(email: string, password: string) {
-  const { data: { session } } = await supabase.auth.getSession()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
   if (session) return session
 
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
@@ -13,23 +19,33 @@ export async function ensureAuthSession(email: string, password: string) {
   return data.session
 }
 
-async function seedDefaultServices(shopId: string, segment: ShopSegment) {
-  const { count } = await supabase
+/**
+ * Insere serviços padrão da vertical. Se a loja PET só tiver o seed de barbearia
+ * (bug antigo do trigger/ensure), substitui pelos serviços PET.
+ */
+export async function seedDefaultServices(shopId: string, segment: ShopSegment) {
+  const { data: existingServices } = await supabase
     .from('services')
-    .select('*', { count: 'exact', head: true })
+    .select('id, name')
     .eq('shop_id', shopId)
 
-  if ((count ?? 0) > 0) return
+  const existing = existingServices ?? []
+
+  if (existing.length > 0) {
+    const shouldReplaceMisSeededPet =
+      segment === 'pet' && isOnlyBarbershopDefaultServices(existing)
+
+    if (!shouldReplaceMisSeededPet) return
+
+    const ids = existing.map((s) => s.id)
+    await supabase.from('service_size_rules').delete().in('service_id', ids)
+    await supabase.from('services').delete().eq('shop_id', shopId)
+  }
+
+  const defaults = defaultServicesForSegment(segment)
+  if (defaults.length === 0) return
 
   if (segment === 'pet') {
-    const defaults = [
-      { name: 'Banho', price: 60, duration_minutes: 60 },
-      { name: 'Tosa', price: 80, duration_minutes: 90 },
-      { name: 'Banho + Tosa', price: 120, duration_minutes: 120 },
-      { name: 'Tosa higiênica', price: 50, duration_minutes: 45 },
-      { name: 'Hidratação', price: 40, duration_minutes: 40 },
-      { name: 'Corte de unhas', price: 25, duration_minutes: 20 },
-    ]
     for (const svc of defaults) {
       const { data } = await supabase
         .from('services')
@@ -37,19 +53,17 @@ async function seedDefaultServices(shopId: string, segment: ShopSegment) {
         .select('id')
         .single()
       if (data) {
-        await supabase.from('service_size_rules').insert(
-          defaultSizeRules(data.id, svc.duration_minutes, svc.price)
-        )
+        await supabase
+          .from('service_size_rules')
+          .insert(defaultSizeRules(data.id, svc.duration_minutes, svc.price))
       }
     }
     return
   }
 
-  await supabase.from('services').insert([
-    { shop_id: shopId, name: 'Corte', price: 45, duration_minutes: 40 },
-    { shop_id: shopId, name: 'Barba', price: 30, duration_minutes: 25 },
-    { shop_id: shopId, name: 'Corte + Barba', price: 65, duration_minutes: 55 },
-  ])
+  await supabase.from('services').insert(
+    defaults.map((svc) => ({ shop_id: shopId, ...svc }))
+  )
 }
 
 export async function ensureBarberShop(
@@ -59,16 +73,22 @@ export async function ensureBarberShop(
 ) {
   const { data: existing } = await supabase
     .from('shops')
-    .select('id, segment')
+    .select('id, segment, name')
     .eq('owner_user_id', userId)
     .maybeSingle()
 
   if (existing) {
-    if (!existing.segment && segment) {
-      await supabase.from('shops').update({ segment }).eq('id', existing.id)
+    // Sempre prioriza o segmento do fluxo de cadastro/login (o trigger às vezes
+    // cria a loja como barbershop mesmo com metadata pet).
+    if (existing.segment !== segment) {
+      const { error } = await supabase
+        .from('shops')
+        .update({ segment })
+        .eq('id', existing.id)
+      if (error) throw error
     }
-    await seedDefaultServices(existing.id, (existing.segment as ShopSegment) || segment)
-    return existing
+    await seedDefaultServices(existing.id, segment)
+    return { id: existing.id }
   }
 
   const trialEndsAt = new Date()

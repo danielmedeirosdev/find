@@ -147,14 +147,17 @@ export function BarberAuth() {
         if (user) {
           const { data: shop } = await supabase
             .from('shops')
-            .select('id, segment')
+            .select('id, segment, name')
             .eq('owner_user_id', user.id)
             .maybeSingle()
           if (!shop) {
             await ensureBarberShop(user.id, defaultShopName, segment)
-          } else if (segment === 'pet' && shop.segment !== 'pet') {
-            // Cadastro/login via FIND PET: garante que a loja entre no painel PET
-            await supabase.from('shops').update({ segment: 'pet' }).eq('id', shop.id)
+          } else {
+            // Preserva PET existente; só força PET quando o fluxo atual é PET
+            // (corrige lojas criadas pelo trigger antigo como barbershop).
+            const intended: ShopSegment =
+              segment === 'pet' || shop.segment === 'pet' ? 'pet' : 'barbershop'
+            await ensureBarberShop(user.id, shop.name || defaultShopName, intended)
           }
         }
         navigate('/painel/dashboard')
