@@ -66,17 +66,18 @@ export function PlatformHome() {
           >
             Criar profissional
           </Link>
+          <div className="mt-10 rounded-xl border border-ink/10 bg-white/70 px-5 py-5">
+            <p className="text-sm text-ink-muted">Quer entender melhor o ONEFIND?</p>
+            <Link
+              to="/apresentacao"
+              className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-ink px-5 py-3 text-sm font-semibold text-paper transition-colors hover:bg-accent-soft"
+            >
+              Ver apresentação da plataforma →
+            </Link>
+          </div>
           <p className="mt-6 text-xs text-ink-muted/70">
             <Link to="/privacidade" className="underline-offset-2 hover:text-brass hover:underline">
               Política de Privacidade
-            </Link>
-          </p>
-          <p className="mt-8 text-sm text-ink-muted">
-            <Link
-              to="/apresentacao"
-              className="inline-flex items-center gap-1 font-medium text-brass underline-offset-2 hover:underline"
-            >
-              Conhecer a plataforma →
             </Link>
           </p>
         </div>
