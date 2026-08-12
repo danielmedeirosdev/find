@@ -1,9 +1,8 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { PublicLayout } from './components/PublicLayout'
 import { DashboardLayout } from './components/DashboardLayout'
 import { MarketingLanding } from './pages/public/MarketingLanding'
-import { PlatformHome } from './pages/public/PlatformHome'
 import { ShopList } from './pages/public/ShopList'
 import { ShopBooking } from './pages/public/ShopBooking'
 import { ShopPublic } from './pages/public/ShopPublic'
@@ -23,9 +22,9 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route index element={<MarketingLanding />} />
+          <Route path="solucoes" element={<Navigate to="/" replace />} />
 
           <Route element={<PublicLayout />}>
-            <Route path="solucoes" element={<PlatformHome />} />
             <Route path="barbearia" element={<ShopList segment="barbershop" />} />
             <Route path="barbearia/:shopId" element={<ShopBooking />} />
             <Route path="pet" element={<ShopList segment="pet" />} />

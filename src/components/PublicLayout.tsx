@@ -8,12 +8,10 @@ import { getSegmentFromPath } from '../lib/segments'
 export function PublicLayout() {
   const { user } = useAuth()
   const { pathname } = useLocation()
-  const isSolutionsHub = pathname === '/solucoes'
   const segmentMeta = getSegmentFromPath(pathname)
   const segmentId =
     segmentMeta?.id ||
     (pathname.startsWith('/b/') ||
-    pathname === '/solucoes' ||
     pathname.startsWith('/entrar') ||
     pathname.startsWith('/cadastro') ||
     pathname.startsWith('/minhas-reservas') ||
@@ -31,7 +29,7 @@ export function PublicLayout() {
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
           <div className="flex items-baseline gap-3">
             <Link to="/" className="font-display text-3xl tracking-wider text-ink">
-              {isSolutionsHub ? 'ONEFIND' : 'FIND'}
+              FIND
             </Link>
             {segmentMeta && (
               <span className="text-xs uppercase tracking-widest text-brass font-medium">
@@ -40,11 +38,9 @@ export function PublicLayout() {
             )}
           </div>
           <nav className="flex items-center gap-4 text-sm">
-            {!isSolutionsHub && (
-              <Link to="/" className="text-ink-muted hover:text-brass transition-colors">
-                Início
-              </Link>
-            )}
+            <Link to="/" className="text-ink-muted hover:text-brass transition-colors">
+              Início
+            </Link>
             {segmentMeta && (
               <Link
                 to={segmentMeta.path}
@@ -79,7 +75,7 @@ export function PublicLayout() {
         </div>
         <BrandAccent height="h-1.5" segment={segmentId} />
       </header>
-      <main className={`mx-auto px-4 py-8 ${isSolutionsHub ? 'max-w-4xl' : 'max-w-5xl'}`}>
+      <main className="mx-auto max-w-5xl px-4 py-8">
         <Outlet />
       </main>
       <footer className="mt-16 border-t border-paper-dark py-6 text-center text-sm text-ink-muted">

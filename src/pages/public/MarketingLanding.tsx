@@ -17,12 +17,12 @@ export function MarketingLanding() {
             ONEFIND
           </a>
           <div className="flex items-center gap-3">
-            <Link
-              to="/solucoes"
+            <a
+              href="#solucoes"
               className="hidden text-sm text-ink-muted transition-colors hover:text-ink sm:inline"
             >
               Soluções
-            </Link>
+            </a>
             <Link
               to="/entrar"
               className="rounded border border-ink/15 px-3 py-1.5 text-sm text-ink-muted transition-colors hover:border-ink hover:text-ink"
@@ -270,8 +270,11 @@ export function MarketingLanding() {
           <Link to="/privacidade" className="hover:text-ink">
             Política de Privacidade
           </Link>
-          <Link to="/solucoes" className="hover:text-ink">
-            Hub de soluções
+          <Link to="/barbearia" className="hover:text-ink">
+            FIND BARBEARIA
+          </Link>
+          <Link to="/pet" className="hover:text-ink">
+            FIND PET
           </Link>
           <Link to="/painel" className="hover:text-ink">
             Área profissional
