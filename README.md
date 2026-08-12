@@ -54,7 +54,8 @@ No Google Cloud você só precisa de **Authorized JavaScript origins** (sem cami
 
 1. No [Google Cloud Console](https://console.cloud.google.com/auth/clients), abra o cliente Web
 2. Em **Authorized JavaScript origins**, adicione só o domínio:
-   - `https://find-onefind.vercel.app`
+   - `https://www.onefind.com.br`
+   - `https://onefind.com.br`
    - `http://localhost:5173` (dev)
 3. No Supabase → **Authentication → Providers → Google**, ative e cole Client ID + Client Secret
 4. (Opcional) `VITE_GOOGLE_CLIENT_ID` no `.env` / Vercel — já há fallback no código
