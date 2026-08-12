@@ -6,6 +6,11 @@
       "permanent": true
     },
     {
+      "source": "/landing",
+      "destination": "/apresentacao",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [{ "type": "host", "value": "find-gamma-ten.vercel.app" }],
       "destination": "https://www.onefind.com.br/:path*",

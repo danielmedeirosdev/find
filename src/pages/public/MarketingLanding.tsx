@@ -13,16 +13,16 @@ export function MarketingLanding() {
     <div className="min-h-screen overflow-hidden bg-paper text-ink">
       <header className="border-b border-paper-dark bg-paper px-4">
         <div className="mx-auto flex max-w-5xl items-center justify-between py-4">
-          <a href="#inicio" className="font-display text-3xl tracking-wider text-ink">
+          <Link to="/" className="font-display text-3xl tracking-wider text-ink">
             ONEFIND
-          </a>
+          </Link>
           <div className="flex items-center gap-3">
-            <a
-              href="#solucoes"
+            <Link
+              to="/"
               className="hidden text-sm text-ink-muted transition-colors hover:text-ink sm:inline"
             >
-              Soluções
-            </a>
+              Voltar ao início
+            </Link>
             <Link
               to="/entrar"
               className="rounded border border-ink/15 px-3 py-1.5 text-sm text-ink-muted transition-colors hover:border-ink hover:text-ink"
@@ -267,6 +267,9 @@ export function MarketingLanding() {
         <p className="font-display text-2xl tracking-wider text-ink">ONEFIND</p>
         <p className="mt-2">Agendamento online e gestão para barbearias e pet shops.</p>
         <p className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+          <Link to="/" className="hover:text-ink">
+            Voltar ao início
+          </Link>
           <Link to="/privacidade" className="hover:text-ink">
             Política de Privacidade
           </Link>
