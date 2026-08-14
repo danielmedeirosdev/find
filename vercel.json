@@ -29,6 +29,14 @@
       "permanent": true
     }
   ],
+  "headers": [
+    {
+      "source": "/((?!assets/).*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/((?!assets/|favicon\\.svg|google.*\\.html).*)",

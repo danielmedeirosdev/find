@@ -51,11 +51,9 @@ export function ShopList({ segment }: Props) {
   const [geoStatus, setGeoStatus] = useState<GeoStatus>('asking')
   const [userCoords, setUserCoords] = useState<Coords | null>(null)
   const [place, setPlace] = useState<PlaceHint | null>(null)
-  const [showAll, setShowAll] = useState(false)
 
   useEffect(() => {
     setQuery('')
-    setShowAll(false)
   }, [segment])
 
   useEffect(() => {
@@ -175,7 +173,7 @@ export function ShopList({ segment }: Props) {
   }, [shops, userCoords, place])
 
   const nearbyCount = locatedShops.filter((shop) => shop.nearby).length
-  const geoFilterOn = geoStatus === 'ready' && !showAll && nearbyCount > 0
+  const geoFilterOn = geoStatus === 'ready' && nearbyCount > 0
 
   const filteredShops = useMemo(() => {
     const q = foldText(query)
@@ -226,37 +224,7 @@ export function ShopList({ segment }: Props) {
       </div>
 
       {shops.length > 0 && (
-        <div
-          className={`mb-8 flex items-center ${
-            geoFilterOn || showAll ? 'justify-between' : 'justify-end'
-          } gap-3`}
-        >
-          {geoStatus === 'ready' && geoFilterOn && place && (
-            <p className="text-xs text-ink-muted">
-              Perto de {place.label}
-              {' · '}
-              <button
-                type="button"
-                onClick={() => setShowAll(true)}
-                className="text-brass hover:underline"
-              >
-                Ver todos
-              </button>
-            </p>
-          )}
-          {geoStatus === 'ready' && showAll && (
-            <p className="text-xs text-ink-muted">
-              Todas as regiões
-              {' · '}
-              <button
-                type="button"
-                onClick={() => setShowAll(false)}
-                className="text-brass hover:underline"
-              >
-                Usar minha localização
-              </button>
-            </p>
-          )}
+        <div className="mb-8 flex justify-end">
           <label className="relative block w-full sm:w-52">
             <span className="sr-only">Buscar negócio</span>
             <span className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center">
