@@ -30,7 +30,11 @@ export function PublicLayout() {
     <div className={`min-h-screen text-ink ${isPet ? 'bg-paper' : 'bg-paper'}`}>
       <SetupBanner />
       <header className="border-b border-paper-dark bg-paper/90 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
+        <div
+          className={`mx-auto flex items-center justify-between gap-3 px-4 py-4 ${
+            isShopList ? 'max-w-6xl' : 'max-w-5xl'
+          }`}
+        >
           <div className="flex items-baseline gap-3">
             <Link to="/" className="font-display text-3xl tracking-wider text-ink">
               {isHome ? 'ONEFIND' : 'FIND'}
@@ -41,13 +45,13 @@ export function PublicLayout() {
               </span>
             )}
           </div>
-          <nav className="flex items-center gap-4 text-sm">
+          <nav className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 text-sm">
             {!isHome && (
               <Link to="/" className="text-ink-muted hover:text-brass transition-colors">
                 Início
               </Link>
             )}
-            {segmentMeta && (
+            {segmentMeta && !isShopList && (
               <Link
                 to={segmentMeta.path}
                 className="hidden text-ink-muted hover:text-brass transition-colors sm:inline"
@@ -64,18 +68,18 @@ export function PublicLayout() {
               </Link>
             ) : (
               <Link to="/entrar" className="text-ink-muted hover:text-brass transition-colors">
-                Entrar
+                Entrar/Inscrever-se
               </Link>
             )}
             <Link
               to={
                 segmentMeta
                   ? `/painel?segment=${segmentMeta.id}&modo=cadastro`
-                  : '/painel'
+                  : '/painel?modo=cadastro'
               }
               className="rounded border border-ink/20 px-3 py-1.5 text-ink-muted hover:border-brass hover:text-brass transition-colors"
             >
-              Área profissional
+              Cadastre sua empresa
             </Link>
           </nav>
         </div>

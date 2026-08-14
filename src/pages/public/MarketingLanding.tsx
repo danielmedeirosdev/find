@@ -28,7 +28,7 @@ export function MarketingLanding() {
               to="/entrar"
               className="rounded border border-ink/15 px-3 py-1.5 text-sm text-ink-muted transition-colors hover:border-ink hover:text-ink"
             >
-              Entrar
+              Entrar/Inscrever-se
             </Link>
           </div>
         </div>
@@ -319,8 +319,8 @@ export function MarketingLanding() {
           <Link to="/pet" className="hover:text-ink">
             FIND PET
           </Link>
-          <Link to="/painel" className="hover:text-ink">
-            Área profissional
+          <Link to="/painel?modo=cadastro" className="hover:text-ink">
+            Cadastre sua empresa
           </Link>
         </p>
       </footer>

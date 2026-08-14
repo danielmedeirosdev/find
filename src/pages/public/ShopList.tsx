@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { formatPrice } from '../../lib/format'
+import { collectLocations, extractLocation, foldText } from '../../lib/location'
 import { fetchShopRatingStatsMap } from '../../lib/reviews'
 import { getSegment, publicBookingPathForSegment } from '../../lib/segments'
 import type { Shop, Service, ShopSegment, ShopRatingStats } from '../../lib/types'
@@ -23,6 +24,38 @@ export function ShopList({ segment }: Props) {
   const isPet = segment === 'pet'
   const [shops, setShops] = useState<ShopWithServices[]>([])
   const [loading, setLoading] = useState(true)
+  const [query, setQuery] = useState('')
+  const [location, setLocation] = useState('')
+
+  useEffect(() => {
+    setQuery('')
+    setLocation('')
+  }, [segment])
+
+  const locations = useMemo(() => collectLocations(shops.map((shop) => shop.address)), [shops])
+
+  const filteredShops = useMemo(() => {
+    const q = foldText(query)
+    const loc = foldText(location)
+    return shops.filter((shop) => {
+      if (loc) {
+        const address = foldText(shop.address || '')
+        const inferred = foldText(extractLocation(shop.address))
+        if (!address.includes(loc) && !inferred.includes(loc)) return false
+      }
+      if (!q) return true
+      const haystack = foldText(
+        [shop.name, shop.slogan, shop.address, ...shop.services.map((service) => service.name)]
+          .filter(Boolean)
+          .join(' ')
+      )
+      return haystack.includes(q)
+    })
+  }, [shops, query, location])
+
+  const hasFilters = Boolean(query.trim() || location)
+  const inputClass =
+    'w-full rounded-lg border border-paper-dark bg-white px-4 py-2.5 text-sm text-ink placeholder:text-ink-muted/50 focus:border-brass focus:outline-none'
 
   useEffect(() => {
     async function load() {
@@ -94,6 +127,40 @@ export function ShopList({ segment }: Props) {
         )}
       </div>
 
+      <div className="mb-8 grid gap-3 sm:grid-cols-[1fr_16rem]">
+        <label className="block">
+          <span className="mb-1.5 block text-xs uppercase tracking-widest text-ink-muted">
+            Pesquisar negócio
+          </span>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={
+              isPet ? 'Nome do pet shop ou serviço' : 'Nome da barbearia ou serviço'
+            }
+            className={inputClass}
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-xs uppercase tracking-widest text-ink-muted">
+            Localização
+          </span>
+          <select
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className={inputClass}
+          >
+            <option value="">Todas as localizações</option>
+            {locations.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
       {shops.length === 0 ? (
         <div className="py-12 text-center">
           <p className="text-ink-muted mb-4">
@@ -108,15 +175,31 @@ export function ShopList({ segment }: Props) {
             Seja o primeiro. Cadastre {segment === 'pet' ? 'seu pet shop' : 'sua barbearia'}
           </Link>
         </div>
+      ) : filteredShops.length === 0 ? (
+        <div className="py-12 text-center">
+          <p className="text-ink-muted mb-4">Nenhum negócio encontrado para essa busca.</p>
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuery('')
+                setLocation('')
+              }}
+              className="text-sm text-brass hover:underline"
+            >
+              Limpar filtros
+            </button>
+          )}
+        </div>
       ) : (
         <div
           className={
-            shops.length === 1
+            filteredShops.length === 1
               ? 'max-w-md'
               : 'grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-3'
           }
         >
-          {shops.map((shop) => {
+          {filteredShops.map((shop) => {
             const href = shop.slug
               ? `/b/${shop.slug}`
               : publicBookingPathForSegment(shop.id, shop.segment)

@@ -67,7 +67,7 @@ export function AuthCallback() {
             Voltar para entrar como cliente
           </Link>
           <Link to="/painel" className="text-ink-muted hover:text-brass text-sm">
-            Área profissional
+            Cadastre sua empresa
           </Link>
         </div>
       </div>
