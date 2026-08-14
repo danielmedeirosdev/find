@@ -52,7 +52,6 @@ export function ShopList({ segment }: Props) {
   const [userCoords, setUserCoords] = useState<Coords | null>(null)
   const [place, setPlace] = useState<PlaceHint | null>(null)
   const [showAll, setShowAll] = useState(false)
-  const [geoTick, setGeoTick] = useState(0)
 
   useEffect(() => {
     setQuery('')
@@ -134,7 +133,7 @@ export function ShopList({ segment }: Props) {
     return () => {
       cancelled = true
     }
-  }, [segment, geoTick])
+  }, [segment])
 
   const shopKey = shops.map((shop) => shop.id).join('|')
 
@@ -226,23 +225,15 @@ export function ShopList({ segment }: Props) {
         )}
       </div>
 
-      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-ink-muted">
-          {geoStatus === 'asking' && 'Pedindo permissão para ver sua localização...'}
-          {geoStatus === 'ready' && place && !showAll && nearbyCount > 0 && (
-            <>Perto de {place.label}</>
-          )}
-          {geoStatus === 'ready' && showAll && 'Mostrando todas as regiões'}
-          {geoStatus === 'ready' && !showAll && nearbyCount === 0 && (
-            <>
-              {place ? `Nenhum negócio perto de ${place.label}. ` : 'Nenhum negócio perto de você. '}
-              Mostrando todos.
-            </>
-          )}
-          {geoStatus === 'denied' && 'Localização bloqueada. Mostrando todos.'}
-          {geoStatus === 'unavailable' && 'Não foi possível obter sua localização. Mostrando todos.'}
-          {geoStatus === 'ready' && geoFilterOn && (
-            <>
+      {shops.length > 0 && (
+        <div
+          className={`mb-8 flex items-center ${
+            geoFilterOn || showAll ? 'justify-between' : 'justify-end'
+          } gap-3`}
+        >
+          {geoStatus === 'ready' && geoFilterOn && place && (
+            <p className="text-xs text-ink-muted">
+              Perto de {place.label}
               {' · '}
               <button
                 type="button"
@@ -251,10 +242,11 @@ export function ShopList({ segment }: Props) {
               >
                 Ver todos
               </button>
-            </>
+            </p>
           )}
           {geoStatus === 'ready' && showAll && (
-            <>
+            <p className="text-xs text-ink-muted">
+              Todas as regiões
               {' · '}
               <button
                 type="button"
@@ -263,35 +255,23 @@ export function ShopList({ segment }: Props) {
               >
                 Usar minha localização
               </button>
-            </>
+            </p>
           )}
-          {(geoStatus === 'denied' || geoStatus === 'unavailable') && (
-            <>
-              {' · '}
-              <button
-                type="button"
-                onClick={() => setGeoTick((n) => n + 1)}
-                className="text-brass hover:underline"
-              >
-                Permitir localização
-              </button>
-            </>
-          )}
-        </p>
-        <label className="relative block w-full sm:w-52">
-          <span className="sr-only">Buscar negócio</span>
-          <span className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center">
-            <SearchGlyph />
-          </span>
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar..."
-            className="w-full rounded-md border border-ink/10 bg-transparent py-1.5 pl-8 pr-3 text-sm text-ink placeholder:text-ink-muted/60 focus:border-brass/60 focus:outline-none"
-          />
-        </label>
-      </div>
+          <label className="relative block w-full sm:w-52">
+            <span className="sr-only">Buscar negócio</span>
+            <span className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center">
+              <SearchGlyph />
+            </span>
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar..."
+              className="w-full rounded-md border border-ink/10 bg-transparent py-1.5 pl-8 pr-3 text-sm text-ink placeholder:text-ink-muted/60 focus:border-brass/60 focus:outline-none"
+            />
+          </label>
+        </div>
+      )}
 
       {shops.length === 0 ? (
         <div className="py-12 text-center">
