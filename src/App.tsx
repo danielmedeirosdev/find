@@ -13,6 +13,7 @@ import { BookingConfirm } from './pages/public/BookingConfirm'
 import { ClientAuth } from './pages/public/ClientAuth'
 import { MyBookings } from './pages/public/MyBookings'
 import { PrivacyPolicy } from './pages/public/PrivacyPolicy'
+import { Faq } from './pages/public/Faq'
 import { AuthCallback } from './pages/AuthCallback'
 import { BarberAuth } from './pages/dashboard/BarberAuth'
 import { Dashboard } from './pages/dashboard/Dashboard'
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="auth/callback" element={<AuthCallback />} />
             <Route path="minhas-reservas" element={<MyBookings />} />
             <Route path="privacidade" element={<PrivacyPolicy />} />
+            <Route path="faq" element={<Faq />} />
           </Route>
 
           <Route path="painel" element={<DashboardLayout />}>

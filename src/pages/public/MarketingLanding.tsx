@@ -307,6 +307,9 @@ export function MarketingLanding() {
           <Link to="/" className="hover:text-ink">
             Voltar ao início
           </Link>
+          <Link to="/faq" className="hover:text-ink">
+            Perguntas frequentes
+          </Link>
           <Link to="/privacidade" className="hover:text-ink">
             Política de Privacidade
           </Link>

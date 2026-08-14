@@ -77,6 +77,10 @@ export function PlatformHome() {
             </Link>
           </div>
           <p className="mt-6 text-xs text-ink-muted/70">
+            <Link to="/faq" className="underline-offset-2 hover:text-brass hover:underline">
+              Perguntas frequentes
+            </Link>
+            {' · '}
             <Link to="/privacidade" className="underline-offset-2 hover:text-brass hover:underline">
               Política de Privacidade
             </Link>

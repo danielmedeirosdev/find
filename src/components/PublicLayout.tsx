@@ -20,7 +20,8 @@ export function PublicLayout() {
     pathname.startsWith('/minhas-reservas') ||
     pathname.startsWith('/confirmacao') ||
     pathname.startsWith('/avaliar') ||
-    pathname.startsWith('/privacidade')
+    pathname.startsWith('/privacidade') ||
+    pathname.startsWith('/faq')
       ? 'platform'
       : 'barbershop')
   const isPet = segmentId === 'pet'
@@ -97,6 +98,9 @@ export function PublicLayout() {
               : 'ONEFIND · uma plataforma, várias soluções'}
         </p>
         <p className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+          <Link to="/faq" className="hover:text-brass transition-colors">
+            Perguntas frequentes
+          </Link>
           <Link to="/privacidade" className="hover:text-brass transition-colors">
             Política de Privacidade
           </Link>
