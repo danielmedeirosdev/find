@@ -62,14 +62,3 @@ export function extractLocation(address: string | null | undefined): string {
 
   return candidate
 }
-
-export function collectLocations(addresses: Array<string | null | undefined>): string[] {
-  const labels = new Map<string, string>()
-  for (const address of addresses) {
-    const label = extractLocation(address)
-    if (!label) continue
-    const key = foldText(label)
-    if (!labels.has(key)) labels.set(key, label)
-  }
-  return [...labels.values()].sort((a, b) => a.localeCompare(b, 'pt-BR'))
-}

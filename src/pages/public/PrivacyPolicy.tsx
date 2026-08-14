@@ -57,6 +57,12 @@ export function PrivacyPolicy() {
               em nossos servidores.
             </li>
             <li>
+              <span className="text-ink">Localização aproximada:</span> se você permitir no
+              navegador, usamos sua posição só para mostrar estabelecimentos próximos nas listas
+              de FIND BARBEARIA e FIND PET. Não fazemos rastreamento contínuo e não gravamos essa
+              posição em nossos servidores.
+            </li>
+            <li>
               <span className="text-ink">Dados técnicos:</span> logs de acesso, endereço IP,
               tipo de dispositivo/navegador e registros de erro, necessários para segurança e
               funcionamento do serviço.
@@ -69,6 +75,7 @@ export function PrivacyPolicy() {
           <ul className="mt-3 list-disc space-y-2 pl-5">
             <li>Criar e gerenciar contas (cliente e profissional).</li>
             <li>Processar e exibir agendamentos, confirmações e avaliações.</li>
+            <li>Mostrar estabelecimentos próximos, quando você permite a localização.</li>
             <li>Permitir que o estabelecimento gerencie clientes, pets, equipe e agenda.</li>
             <li>Cobrar e gerenciar a assinatura da área profissional.</li>
             <li>Prevenir fraudes, abusos e falhas de segurança.</li>
@@ -77,8 +84,8 @@ export function PrivacyPolicy() {
           </ul>
           <p className="mt-3">
             Bases legais típicas: execução de contrato (prestação do serviço), legítimo interesse
-            (segurança e melhoria), consentimento quando aplicável (ex.: login com Google) e
-            cumprimento de obrigação legal.
+            (segurança e melhoria), consentimento quando aplicável (ex.: login com Google ou
+            acesso à localização no navegador) e cumprimento de obrigação legal.
           </p>
         </section>
 
@@ -102,6 +109,11 @@ export function PrivacyPolicy() {
             </li>
             <li>
               <span className="text-ink">Google:</span> quando você usa login com Google.
+            </li>
+            <li>
+              <span className="text-ink">Geocodificação:</span> se você permitir a localização,
+              o navegador consulta serviços de mapa para identificar sua cidade e a distância até
+              os estabelecimentos. Não armazenamos sua posição.
             </li>
             <li>
               <span className="text-ink">Asaas:</span> processamento de pagamentos da assinatura

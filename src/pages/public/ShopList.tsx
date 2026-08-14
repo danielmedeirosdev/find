@@ -2,7 +2,19 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { formatPrice } from '../../lib/format'
-import { collectLocations, extractLocation, foldText } from '../../lib/location'
+import { foldText } from '../../lib/location'
+import {
+  NEARBY_KM,
+  addressMatchesPlace,
+  formatDistanceKm,
+  geocodeAddress,
+  geoStatusFromError,
+  getUserPlace,
+  haversineKm,
+  type Coords,
+  type GeoStatus,
+  type PlaceHint,
+} from '../../lib/geo'
 import { fetchShopRatingStatsMap } from '../../lib/reviews'
 import { getSegment, publicBookingPathForSegment } from '../../lib/segments'
 import type { Shop, Service, ShopSegment, ShopRatingStats } from '../../lib/types'
@@ -13,10 +25,21 @@ interface ShopWithServices extends Shop {
   services: Service[]
   rating?: ShopRatingStats | null
   fromPrice?: number | null
+  coords?: Coords | null
+  distanceKm?: number | null
 }
 
 interface Props {
   segment: ShopSegment
+}
+
+function SearchGlyph() {
+  return (
+    <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 text-ink-muted" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.6">
+      <circle cx="8.5" cy="8.5" r="5.5" />
+      <path d="M12.8 12.8 17 17" strokeLinecap="round" />
+    </svg>
+  )
 }
 
 export function ShopList({ segment }: Props) {
@@ -25,39 +48,19 @@ export function ShopList({ segment }: Props) {
   const [shops, setShops] = useState<ShopWithServices[]>([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
-  const [location, setLocation] = useState('')
+  const [geoStatus, setGeoStatus] = useState<GeoStatus>('asking')
+  const [userCoords, setUserCoords] = useState<Coords | null>(null)
+  const [place, setPlace] = useState<PlaceHint | null>(null)
+  const [showAll, setShowAll] = useState(false)
+  const [geoTick, setGeoTick] = useState(0)
 
   useEffect(() => {
     setQuery('')
-    setLocation('')
+    setShowAll(false)
   }, [segment])
 
-  const locations = useMemo(() => collectLocations(shops.map((shop) => shop.address)), [shops])
-
-  const filteredShops = useMemo(() => {
-    const q = foldText(query)
-    const loc = foldText(location)
-    return shops.filter((shop) => {
-      if (loc) {
-        const address = foldText(shop.address || '')
-        const inferred = foldText(extractLocation(shop.address))
-        if (!address.includes(loc) && !inferred.includes(loc)) return false
-      }
-      if (!q) return true
-      const haystack = foldText(
-        [shop.name, shop.slogan, shop.address, ...shop.services.map((service) => service.name)]
-          .filter(Boolean)
-          .join(' ')
-      )
-      return haystack.includes(q)
-    })
-  }, [shops, query, location])
-
-  const hasFilters = Boolean(query.trim() || location)
-  const inputClass =
-    'w-full rounded-lg border border-paper-dark bg-white px-4 py-2.5 text-sm text-ink placeholder:text-ink-muted/50 focus:border-brass focus:outline-none'
-
   useEffect(() => {
+    let cancelled = false
     async function load() {
       setLoading(true)
       const { data: shopsData } = await supabase
@@ -67,6 +70,7 @@ export function ShopList({ segment }: Props) {
         .neq('subscription_status', 'blocked')
         .order('name')
 
+      if (cancelled) return
       if (!shopsData) {
         setShops([])
         setLoading(false)
@@ -74,6 +78,7 @@ export function ShopList({ segment }: Props) {
       }
 
       const ratingMap = await fetchShopRatingStatsMap(shopsData.map((s) => s.id))
+      if (cancelled) return
 
       const withServices = await Promise.all(
         shopsData.map(async (shop) => {
@@ -91,15 +96,109 @@ export function ShopList({ segment }: Props) {
             services: list.slice(0, isPet ? 4 : 3),
             fromPrice: prices.length ? Math.min(...prices) : null,
             rating: ratingMap[shop.id] || null,
-          }
+            coords: null,
+            distanceKm: null,
+          } satisfies ShopWithServices
         })
       )
 
-      setShops(withServices)
-      setLoading(false)
+      if (!cancelled) {
+        setShops(withServices)
+        setLoading(false)
+      }
     }
     load()
+    return () => {
+      cancelled = true
+    }
   }, [segment, isPet])
+
+  useEffect(() => {
+    let cancelled = false
+    async function locate() {
+      setGeoStatus('asking')
+      try {
+        const result = await getUserPlace()
+        if (cancelled) return
+        setUserCoords(result.coords)
+        setPlace(result.place)
+        setGeoStatus('ready')
+      } catch (err) {
+        if (cancelled) return
+        setUserCoords(null)
+        setPlace(null)
+        setGeoStatus(geoStatusFromError(err))
+      }
+    }
+    locate()
+    return () => {
+      cancelled = true
+    }
+  }, [segment, geoTick])
+
+  const shopKey = shops.map((shop) => shop.id).join('|')
+
+  useEffect(() => {
+    if (!shopKey || !userCoords) return
+    let cancelled = false
+    const snapshot = shops
+    async function locateShops() {
+      const located = await Promise.all(
+        snapshot.map(async (shop) => {
+          if (!shop.address) return { id: shop.id, coords: null as Coords | null }
+          const coords = await geocodeAddress(shop.address, userCoords)
+          return { id: shop.id, coords }
+        })
+      )
+      if (cancelled) return
+      setShops((current) =>
+        current.map((shop) => {
+          const match = located.find((item) => item.id === shop.id)
+          return match ? { ...shop, coords: match.coords } : shop
+        })
+      )
+    }
+    locateShops()
+    return () => {
+      cancelled = true
+    }
+  }, [shopKey, userCoords, segment])
+
+  const locatedShops = useMemo(() => {
+    return shops.map((shop) => {
+      const distanceKm =
+        userCoords && shop.coords ? haversineKm(userCoords, shop.coords) : null
+      const nearby =
+        (distanceKm != null && distanceKm <= NEARBY_KM) ||
+        addressMatchesPlace(shop.address, place)
+      return { ...shop, distanceKm, nearby }
+    })
+  }, [shops, userCoords, place])
+
+  const nearbyCount = locatedShops.filter((shop) => shop.nearby).length
+  const geoFilterOn = geoStatus === 'ready' && !showAll && nearbyCount > 0
+
+  const filteredShops = useMemo(() => {
+    const q = foldText(query)
+    const pool = geoFilterOn ? locatedShops.filter((shop) => shop.nearby) : locatedShops
+    const matched = pool.filter((shop) => {
+      if (!q) return true
+      const haystack = foldText(
+        [shop.name, shop.slogan, shop.address, ...shop.services.map((service) => service.name)]
+          .filter(Boolean)
+          .join(' ')
+      )
+      return haystack.includes(q)
+    })
+    return matched.sort((a, b) => {
+      if (a.distanceKm != null && b.distanceKm != null) return a.distanceKm - b.distanceKm
+      if (a.distanceKm != null) return -1
+      if (b.distanceKm != null) return 1
+      return a.name.localeCompare(b.name, 'pt-BR')
+    })
+  }, [locatedShops, query, geoFilterOn])
+
+  const hasSearch = Boolean(query.trim())
 
   if (loading) {
     return <p className="text-center text-ink-muted">Carregando...</p>
@@ -113,7 +212,7 @@ export function ShopList({ segment }: Props) {
         </Link>
       </div>
 
-      <div className="mb-10 text-center">
+      <div className="mb-8 text-center">
         <p className="text-xs uppercase tracking-[0.3em] text-brass font-medium mb-2">
           {meta.brandName}
         </p>
@@ -127,37 +226,70 @@ export function ShopList({ segment }: Props) {
         )}
       </div>
 
-      <div className="mb-8 grid gap-3 sm:grid-cols-[1fr_16rem]">
-        <label className="block">
-          <span className="mb-1.5 block text-xs uppercase tracking-widest text-ink-muted">
-            Pesquisar negócio
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-ink-muted">
+          {geoStatus === 'asking' && 'Pedindo permissão para ver sua localização...'}
+          {geoStatus === 'ready' && place && !showAll && nearbyCount > 0 && (
+            <>Perto de {place.label}</>
+          )}
+          {geoStatus === 'ready' && showAll && 'Mostrando todas as regiões'}
+          {geoStatus === 'ready' && !showAll && nearbyCount === 0 && (
+            <>
+              {place ? `Nenhum negócio perto de ${place.label}. ` : 'Nenhum negócio perto de você. '}
+              Mostrando todos.
+            </>
+          )}
+          {geoStatus === 'denied' && 'Localização bloqueada. Mostrando todos.'}
+          {geoStatus === 'unavailable' && 'Não foi possível obter sua localização. Mostrando todos.'}
+          {geoStatus === 'ready' && geoFilterOn && (
+            <>
+              {' · '}
+              <button
+                type="button"
+                onClick={() => setShowAll(true)}
+                className="text-brass hover:underline"
+              >
+                Ver todos
+              </button>
+            </>
+          )}
+          {geoStatus === 'ready' && showAll && (
+            <>
+              {' · '}
+              <button
+                type="button"
+                onClick={() => setShowAll(false)}
+                className="text-brass hover:underline"
+              >
+                Usar minha localização
+              </button>
+            </>
+          )}
+          {(geoStatus === 'denied' || geoStatus === 'unavailable') && (
+            <>
+              {' · '}
+              <button
+                type="button"
+                onClick={() => setGeoTick((n) => n + 1)}
+                className="text-brass hover:underline"
+              >
+                Permitir localização
+              </button>
+            </>
+          )}
+        </p>
+        <label className="relative block w-full sm:w-52">
+          <span className="sr-only">Buscar negócio</span>
+          <span className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center">
+            <SearchGlyph />
           </span>
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={
-              isPet ? 'Nome do pet shop ou serviço' : 'Nome da barbearia ou serviço'
-            }
-            className={inputClass}
+            placeholder="Buscar..."
+            className="w-full rounded-md border border-ink/10 bg-transparent py-1.5 pl-8 pr-3 text-sm text-ink placeholder:text-ink-muted/60 focus:border-brass/60 focus:outline-none"
           />
-        </label>
-        <label className="block">
-          <span className="mb-1.5 block text-xs uppercase tracking-widest text-ink-muted">
-            Localização
-          </span>
-          <select
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className={inputClass}
-          >
-            <option value="">Todas as localizações</option>
-            {locations.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
         </label>
       </div>
 
@@ -178,16 +310,13 @@ export function ShopList({ segment }: Props) {
       ) : filteredShops.length === 0 ? (
         <div className="py-12 text-center">
           <p className="text-ink-muted mb-4">Nenhum negócio encontrado para essa busca.</p>
-          {hasFilters && (
+          {hasSearch && (
             <button
               type="button"
-              onClick={() => {
-                setQuery('')
-                setLocation('')
-              }}
+              onClick={() => setQuery('')}
               className="text-sm text-brass hover:underline"
             >
-              Limpar filtros
+              Limpar busca
             </button>
           )}
         </div>
@@ -240,8 +369,13 @@ export function ShopList({ segment }: Props) {
                     )}
                   </div>
                 </div>
-                {shop.address && (
-                  <p className="text-sm text-ink-muted mt-3 line-clamp-1">{shop.address}</p>
+                {(shop.address || shop.distanceKm != null) && (
+                  <p className="text-sm text-ink-muted mt-3 line-clamp-1">
+                    {shop.distanceKm != null && (
+                      <span className="text-ink">a {formatDistanceKm(shop.distanceKm)} · </span>
+                    )}
+                    {shop.address}
+                  </p>
                 )}
                 {shop.services.length > 0 && (
                   <div className="mt-4 flex flex-wrap gap-2">
