@@ -250,7 +250,7 @@ function BookingCard({
         </p>
       )}
       {reviewed && (
-        <p className="mt-3 text-xs font-medium text-brass">✓ Você já avaliou este atendimento</p>
+        <p className="mt-3 text-xs font-medium text-brass">Você já avaliou este atendimento</p>
       )}
       {canReview && (
         <button

@@ -152,7 +152,7 @@ export function PackagesTab({ shopId }: Props) {
       <div>
         <h2 className="font-display text-2xl text-white mb-2">Pacotes</h2>
         <p className="text-sm text-charcoal-muted">
-          Controle de banho de pacote: quantidade, restantes e histórico — sem contador inconsistente.
+          Controle de banho de pacote: quantidade, restantes e histórico, sem contador inconsistente.
         </p>
       </div>
 
@@ -299,7 +299,7 @@ export function PackagesTab({ shopId }: Props) {
                     ) : (
                       usages.map((u) => (
                         <p key={u.id} className="text-sm text-charcoal-muted">
-                          {formatDate(u.used_at.slice(0, 10))} — {u.note || 'utilizado'}
+                          {formatDate(u.used_at.slice(0, 10))} · {u.note || 'utilizado'}
                           {u.booking_id ? ' · agendamento' : ''}
                         </p>
                       ))

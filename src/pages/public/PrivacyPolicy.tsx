@@ -24,7 +24,7 @@ export function PrivacyPolicy() {
             </a>
             . Esta Política descreve como tratamos dados pessoais de clientes finais e de
             profissionais que usam a plataforma, em conformidade com a Lei Geral de Proteção de
-            Dados (LGPD — Lei nº 13.709/2018).
+            Dados (LGPD, Lei nº 13.709/2018).
           </p>
         </section>
 

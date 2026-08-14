@@ -76,7 +76,7 @@ export function ShopList({ segment }: Props) {
     <div>
       <div className="mb-2">
         <Link to="/" className="text-xs uppercase tracking-widest text-brass hover:underline">
-          ← FIND
+          ‹ FIND
         </Link>
       </div>
 
@@ -105,11 +105,17 @@ export function ShopList({ segment }: Props) {
             to={`/painel?segment=${segment}&modo=cadastro`}
             className="text-sm text-brass hover:underline"
           >
-            Seja o primeiro — cadastre {segment === 'pet' ? 'seu pet shop' : 'sua barbearia'}
+            Seja o primeiro. Cadastre {segment === 'pet' ? 'seu pet shop' : 'sua barbearia'}
           </Link>
         </div>
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2">
+        <div
+          className={
+            shops.length === 1
+              ? 'max-w-md'
+              : 'grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-3'
+          }
+        >
           {shops.map((shop) => {
             const href = shop.slug
               ? `/b/${shop.slug}`
@@ -118,7 +124,7 @@ export function ShopList({ segment }: Props) {
               <Link
                 key={shop.id}
                 to={href}
-                className={`group block rounded-xl border border-paper-dark bg-white/90 p-6 shadow-sm transition-all hover:shadow-md hover:border-brass/40 ${
+                className={`group block h-full rounded-xl border border-paper-dark bg-white/90 p-4 shadow-sm transition-all hover:shadow-md hover:border-brass/40 sm:p-5 ${
                   isPet ? 'backdrop-blur-sm' : ''
                 }`}
               >
@@ -128,15 +134,15 @@ export function ShopList({ segment }: Props) {
                       src={shop.logo_url}
                       alt=""
                       loading="lazy"
-                      className="h-14 w-14 rounded-xl object-cover border border-paper-dark"
+                      className="h-12 w-12 shrink-0 rounded-lg object-cover border border-paper-dark sm:h-14 sm:w-14 sm:rounded-xl"
                     />
                   ) : (
-                    <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-paper-dark bg-paper font-display text-xl text-brass">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-paper-dark bg-paper font-display text-lg text-brass sm:h-14 sm:w-14 sm:rounded-xl sm:text-xl">
                       {shop.name.trim()[0]?.toUpperCase() || 'P'}
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <h2 className="font-display text-2xl text-ink group-hover:text-brass transition-colors">
+                    <h2 className="font-display text-xl leading-tight text-ink transition-colors group-hover:text-brass sm:text-2xl">
                       {shop.name}
                     </h2>
                     {shop.slogan && (
@@ -177,7 +183,7 @@ export function ShopList({ segment }: Props) {
                       'Ver serviços'
                     )}
                   </span>
-                  <span className="text-sm font-semibold text-brass">Agendar →</span>
+                  <span className="text-sm font-semibold text-brass">Agendar  ›</span>
                 </div>
               </Link>
             )

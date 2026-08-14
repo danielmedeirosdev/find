@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom'
 import { BarberPole } from '../../components/BarberPole'
+import { ListMark } from '../../components/SegmentMark'
 
 const steps = [
-  ['01', 'Escolha a solução', 'Barbearia ou pet shop — o ONEFIND se adapta ao seu negócio.'],
+  ['01', 'Escolha a solução', 'Barbearia ou pet shop. O ONEFIND se adapta ao seu negócio.'],
   ['02', 'Selecione o serviço', 'Escolha o que precisa e veja profissionais disponíveis.'],
   ['03', 'Escolha o horário', 'Veja os horários que estão livres de verdade.'],
   ['04', 'Confirme', 'Pronto. Seu horário fica reservado.'],
@@ -56,7 +57,7 @@ export function MarketingLanding() {
               to="/painel?modo=cadastro"
               className="rounded bg-ink px-6 py-3.5 text-sm font-semibold text-paper transition-colors hover:bg-accent-soft"
             >
-              Começar teste grátis →
+              Começar teste grátis  ›
             </Link>
             <a
               href="#solucoes"
@@ -86,19 +87,28 @@ export function MarketingLanding() {
               to="/barbearia"
               className="rounded-lg border border-paper-dark bg-white p-7 shadow-sm transition-colors hover:border-brass/60 sm:p-9"
             >
-              <p className="font-mono text-xs text-brass">01 — FIND BARBEARIA</p>
+              <p className="font-mono text-xs text-brass">01 · FIND BARBEARIA</p>
               <BarberPole className="mt-4 max-w-[7rem]" height="h-1" />
               <h3 className="mt-6 font-display text-4xl text-ink">BARBEARIA</h3>
               <p className="mt-4 text-sm leading-6 text-ink-muted">
                 Encontre sua barbearia, agende seu horário e cuide do seu visual.
               </p>
               <ul className="mt-5 space-y-2 text-sm text-ink-muted">
-                <li>✓ Busca e agendamento</li>
-                <li>✓ Serviços e profissionais</li>
-                <li>✓ Agenda, caixa e gestão</li>
+                <li className="flex items-start gap-2">
+                  <ListMark />
+                  Busca e agendamento
+                </li>
+                <li className="flex items-start gap-2">
+                  <ListMark />
+                  Serviços e profissionais
+                </li>
+                <li className="flex items-start gap-2">
+                  <ListMark />
+                  Agenda, caixa e gestão
+                </li>
               </ul>
               <span className="mt-8 inline-block text-sm font-semibold text-brass">
-                Ir para FIND BARBEARIA →
+                Ir para FIND BARBEARIA  ›
               </span>
             </Link>
 
@@ -106,19 +116,28 @@ export function MarketingLanding() {
               to="/pet"
               className="rounded-lg border border-paper-dark bg-white p-7 shadow-sm transition-colors hover:border-pet/60 sm:p-9"
             >
-              <p className="font-mono text-xs text-pet">02 — FIND PET</p>
+              <p className="font-mono text-xs text-pet">02 · FIND PET</p>
               <div className="mt-4 h-1 max-w-[7rem] rounded-full bg-pet" aria-hidden="true" />
               <h3 className="mt-6 font-display text-4xl text-ink">PET</h3>
               <p className="mt-4 text-sm leading-6 text-ink-muted">
                 Encontre seu pet shop, agende banho e tosa e cuide do seu pet.
               </p>
               <ul className="mt-5 space-y-2 text-sm text-ink-muted">
-                <li>✓ Banho, tosa e serviços por porte</li>
-                <li>✓ Cadastro de pets e tutores</li>
-                <li>✓ Pacotes, faltas e gestão</li>
+                <li className="flex items-start gap-2">
+                  <ListMark />
+                  Banho, tosa e serviços por porte
+                </li>
+                <li className="flex items-start gap-2">
+                  <ListMark />
+                  Cadastro de pets e tutores
+                </li>
+                <li className="flex items-start gap-2">
+                  <ListMark />
+                  Pacotes, faltas e gestão
+                </li>
               </ul>
               <span className="mt-8 inline-block text-sm font-semibold text-pet">
-                Ir para FIND PET →
+                Ir para FIND PET  ›
               </span>
             </Link>
           </div>
@@ -185,35 +204,53 @@ export function MarketingLanding() {
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <article className="rounded-lg border border-paper-dark bg-white p-7 shadow-sm sm:p-9">
-              <p className="font-mono text-xs text-ink-muted">01 — CLIENTES</p>
+              <p className="font-mono text-xs text-ink-muted">01 · CLIENTES</p>
               <h3 className="mt-6 font-display text-4xl text-ink">MARQUE EM SEGUNDOS</h3>
               <ul className="mt-5 space-y-3 text-sm text-ink-muted">
-                <li>✓ Encontrar uma barbearia</li>
-                <li>✓ Encontrar um pet shop</li>
-                <li>✓ Horários livres em tempo real</li>
+                <li className="flex items-start gap-2">
+                  <ListMark />
+                  Encontrar uma barbearia
+                </li>
+                <li className="flex items-start gap-2">
+                  <ListMark />
+                  Encontrar um pet shop
+                </li>
+                <li className="flex items-start gap-2">
+                  <ListMark />
+                  Horários livres em tempo real
+                </li>
               </ul>
               <div className="mt-8 flex flex-col gap-2">
                 <Link to="/barbearia" className="text-sm font-semibold text-brass hover:text-ink">
-                  FIND BARBEARIA →
+                  FIND BARBEARIA  ›
                 </Link>
                 <Link to="/pet" className="text-sm font-semibold text-pet hover:text-ink">
-                  FIND PET →
+                  FIND PET  ›
                 </Link>
               </div>
             </article>
             <article className="rounded-lg bg-ink p-7 text-paper shadow-sm sm:p-9">
-              <p className="font-mono text-xs text-paper/55">02 — ESTABELECIMENTOS</p>
+              <p className="font-mono text-xs text-paper/55">02 · ESTABELECIMENTOS</p>
               <h3 className="mt-6 font-display text-4xl">GERENCIE SEU NEGÓCIO</h3>
               <ul className="mt-5 space-y-3 text-sm text-paper/70">
-                <li>✓ Equipe, serviços e agenda</li>
-                <li>✓ Clientes, financeiro e relatórios</li>
-                <li>✓ No PET: pets, portes, pacotes e faltas</li>
+                <li className="flex items-start gap-2">
+                  <ListMark />
+                  Equipe, serviços e agenda
+                </li>
+                <li className="flex items-start gap-2">
+                  <ListMark />
+                  Clientes, financeiro e relatórios
+                </li>
+                <li className="flex items-start gap-2">
+                  <ListMark />
+                  No PET: pets, portes, pacotes e faltas
+                </li>
               </ul>
               <Link
                 to="/painel?modo=cadastro"
                 className="mt-8 inline-block text-sm font-semibold text-paper hover:text-paper/80"
               >
-                Testar área profissional →
+                Testar área profissional  ›
               </Link>
             </article>
           </div>
@@ -251,14 +288,14 @@ export function MarketingLanding() {
             EXPERIMENTE GRÁTIS POR 30 DIAS.
           </h2>
           <p className="mx-auto mt-5 max-w-md text-sm leading-6 text-paper/65">
-            Organize seu negócio no ONEFIND — barbearia ou pet shop — e ofereça uma experiência
+            Organize seu negócio no ONEFIND, barbearia ou pet shop, e ofereça uma experiência
             melhor para cada cliente.
           </p>
           <Link
             to="/painel?modo=cadastro"
             className="mt-8 inline-block rounded bg-paper px-6 py-3.5 text-sm font-semibold text-ink transition-colors hover:bg-paper-dark"
           >
-            Começar agora →
+            Começar agora  ›
           </Link>
         </div>
       </section>

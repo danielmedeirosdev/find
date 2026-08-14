@@ -165,7 +165,7 @@ export function OverviewTab({ shopId, onNavigate }: Props) {
                 className="flex justify-between rounded-lg bg-charcoal-light/30 px-4 py-3 text-sm"
               >
                 <span className="text-white">
-                  {formatDate(b.date)} {formatTime(b.time)} — {b.client_name}
+                  {formatDate(b.date)} {formatTime(b.time)} · {b.client_name}
                 </span>
                 <span className="text-charcoal-muted">
                   {bookingStatusLabel(b.status || 'scheduled')}

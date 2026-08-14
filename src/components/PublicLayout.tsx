@@ -9,6 +9,7 @@ export function PublicLayout() {
   const { user } = useAuth()
   const { pathname } = useLocation()
   const isHome = pathname === '/'
+  const isShopList = pathname === '/barbearia' || pathname === '/pet'
   const segmentMeta = getSegmentFromPath(pathname)
   const segmentId =
     segmentMeta?.id ||
@@ -79,17 +80,21 @@ export function PublicLayout() {
         </div>
         <BrandAccent height="h-1.5" segment={segmentId} />
       </header>
-      <main className={`mx-auto px-4 py-8 ${isHome ? 'max-w-4xl' : 'max-w-5xl'}`}>
+      <main
+        className={`mx-auto px-4 py-8 ${
+          isHome ? 'max-w-4xl' : isShopList ? 'max-w-6xl' : 'max-w-5xl'
+        }`}
+      >
         <Outlet />
       </main>
       <footer className="mt-16 border-t border-paper-dark py-6 text-center text-sm text-ink-muted">
         <BrandAccent className="mb-4 max-w-xs mx-auto" segment={segmentId} />
         <p>
           {isPet
-            ? 'FIND PET — banho, tosa e cuidados com profissionalismo'
+            ? 'FIND PET · banho, tosa e cuidados com profissionalismo'
             : segmentMeta
-              ? 'FIND BARBEARIA — agende com estilo'
-              : 'ONEFIND — uma plataforma, várias soluções'}
+              ? 'FIND BARBEARIA · agende com estilo'
+              : 'ONEFIND · uma plataforma, várias soluções'}
         </p>
         <p className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
           <Link to="/privacidade" className="hover:text-brass transition-colors">

@@ -254,7 +254,7 @@ export function ShopLinkTab({ shop, onUpdate }: Props) {
               to={publicShopPath(shop.slug || slug)}
               className="mt-3 block text-center text-xs text-brass hover:underline"
             >
-              Ver página completa →
+              Ver página completa  ›
             </Link>
           </div>
         </div>

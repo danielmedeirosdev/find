@@ -12,7 +12,7 @@ export interface SegmentDefinition {
   teamLabel: string
   customerLabel: string
   petLabel?: string
-  mark: string
+  mark: 'barbershop' | 'pet'
   ctaLabel: string
   headline: string
   description: string
@@ -53,7 +53,7 @@ export const SEGMENTS: Record<ShopSegment, SegmentDefinition> = {
     professionalPlural: 'Barbeiros',
     teamLabel: 'Equipe',
     customerLabel: 'Cliente',
-    mark: '💈',
+    mark: 'barbershop',
     ctaLabel: 'Acessar',
     headline: 'Agenda, clientes e gestão para barbearias.',
     description: 'Serviços, equipe, horários e agendamento online no mesmo FIND.',
@@ -89,11 +89,11 @@ export const SEGMENTS: Record<ShopSegment, SegmentDefinition> = {
     teamLabel: 'Equipe',
     customerLabel: 'Dono',
     petLabel: 'Pet',
-    mark: '🐾',
+    mark: 'pet',
     ctaLabel: 'Acessar',
     headline: 'Agenda, pets e donos para banho e tosa.',
     description:
-      'Porte, duração inteligente, histórico do pet e pacotes — feitos para banho e tosa.',
+      'Porte, duração inteligente, histórico do pet e pacotes. Feitos para banho e tosa.',
     listTitle: 'Encontre o pet shop ideal para o seu pet',
     listSubtitle: 'Agende banho, tosa e cuidados de forma simples.',
     defaultShopName: 'Meu Pet Shop',

@@ -6,6 +6,7 @@ import { completeGoogleCredentialLogin } from '../../lib/oauth'
 import { getSegment, parseSegmentParam, ACTIVE_SEGMENTS, SEGMENTS } from '../../lib/segments'
 import { BrandAccent } from '../../components/BrandAccent'
 import { AuthDivider, GoogleSignInButton } from '../../components/GoogleSignInButton'
+import { SegmentMark } from '../../components/SegmentMark'
 import {
   FieldHint,
   FieldLabel,
@@ -202,8 +203,8 @@ export function BarberAuth() {
                           : 'border border-charcoal-light text-charcoal-muted hover:text-white'
                       }`}
                     >
-                      <span className="block text-lg mb-1" aria-hidden>
-                        {s.mark}
+                      <span className="mb-1 flex justify-center" aria-hidden>
+                        <SegmentMark segment={s.mark} className="h-6 w-6" />
                       </span>
                       {s.shortName}
                     </button>
@@ -318,7 +319,7 @@ export function BarberAuth() {
 
       <p className="mt-4 text-center">
         <Link to="/" className="text-sm text-charcoal-muted hover:text-brass">
-          ← Voltar ao FIND
+          ‹ Voltar ao FIND
         </Link>
       </p>
     </div>

@@ -113,7 +113,7 @@ export function VerifiedBadge({ tone = 'light' }: { tone?: 'light' | 'dark' }) {
 
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium ${cls}`}>
-      <span aria-hidden>✓</span>
+      <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-sm bg-current" />
       Cliente verificado
     </span>
   )

@@ -87,8 +87,12 @@ export function PasswordRequirements({
             key={key}
             className={`flex items-start gap-2 text-xs transition-colors ${ok ? done : idle}`}
           >
-            <span className="mt-0.5 w-3.5 shrink-0 text-center" aria-hidden>
-              {ok ? '✓' : '○'}
+            <span className="mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center" aria-hidden>
+              {ok ? (
+                <span className="block h-1.5 w-1.5 rounded-sm bg-current" />
+              ) : (
+                <span className="block h-1.5 w-1.5 rounded-sm border border-current" />
+              )}
             </span>
             <span>{label}</span>
           </li>

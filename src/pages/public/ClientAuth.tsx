@@ -259,7 +259,7 @@ export function ClientAuth() {
 
       <p className="mt-4 text-center">
         <Link to="/" className="text-sm text-ink-muted hover:text-brass">
-          ← Voltar
+          ‹ Voltar
         </Link>
       </p>
     </div>

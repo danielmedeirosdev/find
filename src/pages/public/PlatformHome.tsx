@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ACTIVE_SEGMENTS, SEGMENTS } from '../../lib/segments'
 import { BrandAccent } from '../../components/BrandAccent'
+import { SegmentMark } from '../../components/SegmentMark'
 
 export function PlatformHome() {
   return (
@@ -41,8 +42,8 @@ export function PlatformHome() {
                   index === 0 ? 'platform-fade-delay-3' : 'platform-fade-delay-4'
                 }`}
               >
-                <span className="text-3xl" aria-hidden>
-                  {segment.mark}
+                <span className="text-brass">
+                  <SegmentMark segment={segment.mark} className="h-8 w-8" />
                 </span>
                 <h2 className="mt-4 font-display text-2xl tracking-wide text-ink group-hover:text-brass transition-colors">
                   {segment.brandName}
@@ -59,7 +60,7 @@ export function PlatformHome() {
         </div>
 
         <div className="platform-fade platform-fade-delay-4 mt-14 w-full max-w-lg border-t border-ink/10 pt-8">
-          <p className="text-sm text-ink-muted mb-4">Sou profissional — quero gerenciar meu negócio</p>
+          <p className="text-sm text-ink-muted mb-4">Sou profissional. Quero gerenciar meu negócio</p>
           <Link
             to="/painel?modo=cadastro"
             className="inline-flex rounded-lg border border-ink/15 px-5 py-2.5 text-sm text-ink-muted transition-colors hover:border-brass hover:text-brass"
@@ -72,7 +73,7 @@ export function PlatformHome() {
               to="/apresentacao"
               className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-ink px-5 py-3 text-sm font-semibold text-paper transition-colors hover:bg-accent-soft"
             >
-              Ver apresentação da plataforma →
+              Ver apresentação da plataforma  ›
             </Link>
           </div>
           <p className="mt-6 text-xs text-ink-muted/70">

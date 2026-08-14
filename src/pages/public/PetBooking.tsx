@@ -547,7 +547,9 @@ export function PetBooking() {
                           : 'border-paper-dark text-transparent'
                       }`}
                     >
-                      ✓
+                      {selected ? (
+                        <span className="block h-2 w-2 rounded-sm bg-white" />
+                      ) : null}
                     </span>
                     {pet.photo_url ? (
                       <img

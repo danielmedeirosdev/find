@@ -122,7 +122,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
               <option value="">Não debitar</option>
               {packages.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.service_packages?.name || 'Pacote'} —{' '}
+                  {p.service_packages?.name || 'Pacote'} ·{' '}
                   {packageRemaining(p.total_sessions, p.used_sessions)} restantes
                 </option>
               ))}
