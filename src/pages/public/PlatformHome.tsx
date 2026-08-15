@@ -59,33 +59,39 @@ export function PlatformHome() {
           })}
         </div>
 
-        <div className="platform-fade platform-fade-delay-4 mt-14 w-full max-w-lg border-t border-ink/10 pt-8">
-          <p className="text-sm text-ink-muted mb-4">Sou profissional. Quero gerenciar meu negócio</p>
-          <Link
-            to="/painel?modo=cadastro"
-            className="inline-flex rounded-lg border border-ink/15 px-5 py-2.5 text-sm text-ink-muted transition-colors hover:border-brass hover:text-brass"
-          >
-            Criar profissional
-          </Link>
-          <div className="mt-10 rounded-xl border border-ink/10 bg-white/70 px-5 py-5">
-            <p className="text-sm text-ink-muted">Quer entender melhor o ONEFIND?</p>
+        <div className="platform-fade platform-fade-delay-4 mt-14 w-full max-w-lg rounded-xl border border-ink/10 bg-white/70 px-5 py-6">
+          <p className="font-display text-xl tracking-wide text-ink">Sua empresa no ONEFIND</p>
+          <p className="mt-1 text-sm text-ink-muted">
+            Cadastre seu negócio ou conheça melhor a plataforma.
+          </p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <Link
+              to="/painel?modo=cadastro"
+              className="inline-flex items-center justify-center rounded-lg bg-brass px-4 py-3 text-sm font-semibold text-charcoal transition-colors hover:bg-brass-light"
+            >
+              Cadastre sua empresa
+            </Link>
             <Link
               to="/apresentacao"
-              className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-ink px-5 py-3 text-sm font-semibold text-paper transition-colors hover:bg-accent-soft"
+              className="inline-flex items-center justify-center rounded-lg bg-ink px-4 py-3 text-sm font-semibold text-paper transition-colors hover:bg-accent-soft"
             >
               Ver apresentação da plataforma
               <CtaArrow />
             </Link>
           </div>
-          <p className="mt-6 text-xs text-ink-muted/70">
+          <div className="mt-5 border-t border-ink/10 pt-4">
+            <p className="text-xs text-ink-muted/70">
+              ONEFIND · uma plataforma, várias soluções
+            </p>
+            <p className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-ink-muted">
             <Link to="/faq" className="underline-offset-2 hover:text-brass hover:underline">
               Perguntas frequentes
             </Link>
-            {' · '}
             <Link to="/privacidade" className="underline-offset-2 hover:text-brass hover:underline">
               Política de Privacidade
             </Link>
-          </p>
+            </p>
+          </div>
         </div>
       </section>
     </div>

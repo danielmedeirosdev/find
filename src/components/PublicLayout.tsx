@@ -92,29 +92,26 @@ export function PublicLayout() {
       >
         <Outlet />
       </main>
-      <footer className="mt-16 border-t border-paper-dark py-6 text-center text-sm text-ink-muted">
-        <BrandAccent className="mb-4 max-w-xs mx-auto" segment={segmentId} />
-        <p>
-          {isPet
-            ? 'FIND PET · banho, tosa e cuidados com profissionalismo'
-            : segmentMeta
-              ? 'FIND BARBEARIA · agende com estilo'
-              : 'ONEFIND · uma plataforma, várias soluções'}
-        </p>
-        <p className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-          <Link to="/faq" className="hover:text-brass transition-colors">
-            Perguntas frequentes
-          </Link>
-          <Link to="/privacidade" className="hover:text-brass transition-colors">
-            Política de Privacidade
-          </Link>
-          {isHome && (
-            <Link to="/apresentacao" className="hover:text-brass transition-colors">
-              Conhecer a plataforma
+      {!isHome && (
+        <footer className="mt-16 border-t border-paper-dark py-6 text-center text-sm text-ink-muted">
+          <BrandAccent className="mb-4 max-w-xs mx-auto" segment={segmentId} />
+          <p>
+            {isPet
+              ? 'FIND PET · banho, tosa e cuidados com profissionalismo'
+              : segmentMeta
+                ? 'FIND BARBEARIA · agende com estilo'
+                : 'ONEFIND · uma plataforma, várias soluções'}
+          </p>
+          <p className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+            <Link to="/faq" className="hover:text-brass transition-colors">
+              Perguntas frequentes
             </Link>
-          )}
-        </p>
-      </footer>
+            <Link to="/privacidade" className="hover:text-brass transition-colors">
+              Política de Privacidade
+            </Link>
+          </p>
+        </footer>
+      )}
     </div>
   )
 
