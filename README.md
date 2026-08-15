@@ -33,14 +33,17 @@ Edge Functions (secrets no Supabase Dashboard → Edge Functions):
 ```
 ASAAS_API_KEY=sua_chave_sandbox
 ASAAS_WEBHOOK_TOKEN=token_secreto_webhook
+CRON_SECRET=token_aleatorio_para_rotinas_agendadas
+HEAL_PET_SERVICES_TOKEN=token_aleatorio_exclusivo_para_manutencao
 ```
 
 ### 3. Edge Functions
 
 ```bash
-npx supabase functions deploy create-subscription
-npx supabase functions deploy asaas-webhook --no-verify-jwt
+./scripts/deploy-functions.sh
 ```
+
+O script apenas publica as funções. Ele nunca cria nem sobrescreve secrets remotos.
 
 Configure o webhook na Asaas apontando para:
 ```

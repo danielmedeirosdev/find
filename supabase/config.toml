@@ -6,3 +6,9 @@ verify_jwt = false
 
 [functions.expire-trials]
 verify_jwt = false
+
+[functions.send-reminders]
+verify_jwt = false
+
+[functions.heal-pet-services]
+verify_jwt = false
