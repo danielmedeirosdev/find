@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
 import { formatPhone } from '../../lib/format'
+import { getGuestReviewEligibility } from '../../lib/secureBooking'
 import { RATING_LABELS, submitGuestReview } from '../../lib/reviews'
 import { StarPicker } from '../../components/reviews/StarRating'
 import { FieldLabel } from '../../components/FormHints'
@@ -23,20 +23,20 @@ export function GuestReview() {
   useEffect(() => {
     if (!bookingId) return
     async function load() {
-      const { data } = await supabase
-        .from('bookings')
-        .select('status, review_status, shops(name), pets(name)')
-        .eq('id', bookingId)
-        .maybeSingle()
-
+      let data
+      try {
+        data = await getGuestReviewEligibility(bookingId!)
+      } catch {
+        data = null
+      }
       if (!data) {
         setLoading(false)
         return
       }
 
-      setShopName((data.shops as { name?: string } | null)?.name || 'FIND')
-      setPetName((data.pets as { name?: string } | null)?.name || null)
-      setEligible(data.status === 'completed' && data.review_status === 'awaiting')
+      setShopName(data.shop_name || 'FIND')
+      setPetName(data.pet_name || null)
+      setEligible(Boolean(data.eligible))
       setLoading(false)
     }
     load()

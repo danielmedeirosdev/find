@@ -12,6 +12,11 @@ import {
   loadOccupiedSlots,
 } from '../../lib/booking'
 import { formatPrice, formatDuration, formatPhone } from '../../lib/format'
+import {
+  createPublicBooking,
+  finalizePublicBooking,
+  rememberBookingPhone,
+} from '../../lib/secureBooking'
 import { DAY_NAMES } from '../../lib/types'
 import type {
   Shop,
@@ -189,22 +194,24 @@ export function ShopBooking() {
       }
     }
 
-    const { data: booking, error: bkError } = await supabase
-      .from('bookings')
-      .insert({
-        shop_id: shop.id,
-        barber_id: selectedBarberId,
-        client_id: user?.id || null,
-        client_name: clientName.trim(),
-        client_phone: clientPhone.replace(/\D/g, ''),
+    const normalizedPhone = clientPhone.replace(/\D/g, '')
+    let bookingId: string
+    try {
+      bookingId = await createPublicBooking({
+        shopId: shop.id,
+        barberId: selectedBarberId,
+        clientName,
+        clientPhone: normalizedPhone,
         date: selectedDate,
         time: selectedTime,
       })
-      .select()
-      .single()
-
-    if (bkError || !booking) {
-      const msg = bookingErrorMessage(bkError)
+      await finalizePublicBooking({
+        bookingId,
+        phone: normalizedPhone,
+        serviceIds: selectedServices.map((service) => service.id),
+      })
+    } catch (err) {
+      const msg = bookingErrorMessage(err)
       setError(msg)
       setSubmitting(false)
       if (/horário|reservado/i.test(msg) && shopId) {
@@ -216,19 +223,6 @@ export function ShopBooking() {
       return
     }
 
-    const serviceRows = selectedServices.map((s) => ({
-      booking_id: booking.id,
-      service_id: s.id,
-    }))
-
-    const { error: svcError } = await supabase.from('booking_services').insert(serviceRows)
-
-    if (svcError) {
-      setError('Erro ao salvar serviços.')
-      setSubmitting(false)
-      return
-    }
-
     const confirmationState: BookingConfirmationState = {
       shopName: shop.name,
       shopAddress: shop.address,
@@ -237,11 +231,12 @@ export function ShopBooking() {
       date: selectedDate,
       time: selectedTime,
       clientName: clientName.trim(),
-      clientPhone: clientPhone.replace(/\D/g, ''),
+      clientPhone: normalizedPhone,
       services: selectedServices,
     }
 
-    navigate(`/confirmacao/${booking.id}`, { state: confirmationState })
+    rememberBookingPhone(bookingId, normalizedPhone)
+    navigate(`/confirmacao/${bookingId}`, { state: confirmationState })
   }
 
   if (loading) return <p className="text-center text-ink-muted">Carregando...</p>

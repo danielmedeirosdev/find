@@ -110,9 +110,16 @@ export function Dashboard() {
         )
         return
       }
-      const opened = window.open(result.paymentLink, '_blank', 'noopener,noreferrer')
+      const paymentUrl = new URL(result.paymentLink)
+      if (
+        paymentUrl.protocol !== 'https:' ||
+        (paymentUrl.hostname !== 'asaas.com' && !paymentUrl.hostname.endsWith('.asaas.com'))
+      ) {
+        throw new Error('O provedor retornou um endereço de pagamento inválido.')
+      }
+      const opened = window.open(paymentUrl.href, '_blank', 'noopener,noreferrer')
       if (!opened) {
-        window.location.assign(result.paymentLink)
+        window.location.assign(paymentUrl.href)
       }
       await loadShop()
     } catch (err) {

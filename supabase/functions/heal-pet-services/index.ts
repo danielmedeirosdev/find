@@ -1,20 +1,16 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 
-const cors = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-heal-token',
-}
-
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
+  const jsonHeaders = { 'Content-Type': 'application/json' }
+  if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 })
 
   try {
     const token = req.headers.get('x-heal-token') || ''
-    const expected = Deno.env.get('HEAL_PET_SERVICES_TOKEN') || Deno.env.get('ASAAS_WEBHOOK_TOKEN') || ''
+    const expected = Deno.env.get('HEAL_PET_SERVICES_TOKEN') || ''
     if (!expected || token !== expected) {
       return new Response(JSON.stringify({ error: 'unauthorized' }), {
         status: 401,
-        headers: { ...cors, 'Content-Type': 'application/json' },
+        headers: jsonHeaders,
       })
     }
 
@@ -35,7 +31,7 @@ Deno.serve(async (req) => {
     if (!shop) {
       return new Response(JSON.stringify({ error: 'shop_not_found', slug }), {
         status: 404,
-        headers: { ...cors, 'Content-Type': 'application/json' },
+        headers: jsonHeaders,
       })
     }
 
@@ -114,12 +110,12 @@ Deno.serve(async (req) => {
         inserted,
         services: after,
       }),
-      { headers: { ...cors, 'Content-Type': 'application/json' } }
+      { headers: jsonHeaders }
     )
   } catch (err) {
     return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : String(err) }),
-      { status: 500, headers: { ...cors, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: 'internal_error' }),
+      { status: 500, headers: jsonHeaders }
     )
   }
 })

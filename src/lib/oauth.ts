@@ -137,17 +137,11 @@ export async function completeGoogleCredentialLogin(
 
   rememberOAuthIntent(role, shopName, segment)
 
-  const attempt = async (withNonce: boolean) =>
-    supabase.auth.signInWithIdToken({
-      provider: 'google',
-      token: response.credential,
-      ...(withNonce ? { nonce } : {}),
-    })
-
-  let { error } = await attempt(Boolean(nonce))
-  if (error && nonce && /nonce/i.test(error.message)) {
-    ;({ error } = await attempt(false))
-  }
+  const { error } = await supabase.auth.signInWithIdToken({
+    provider: 'google',
+    token: response.credential,
+    nonce,
+  })
 
   if (error) {
     clearOAuthIntent()

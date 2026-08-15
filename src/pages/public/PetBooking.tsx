@@ -10,7 +10,14 @@ import {
   loadOccupiedSlots,
 } from '../../lib/booking'
 import { getPetServicesDuration, getPetServicesPrice, petSizeLabel } from '../../lib/pet'
-import { notifyShopOwner } from '../../lib/notifications'
+import {
+  createPetForCustomer,
+  createPublicBooking,
+  finalizePublicBooking,
+  lookupPetCustomer as lookupPetCustomerSecure,
+  rememberBookingPhone,
+  upsertPetCustomer,
+} from '../../lib/secureBooking'
 import { formatDuration, formatPhone, formatPrice } from '../../lib/format'
 import { DefaultAvatar } from '../../components/MediaUI'
 import { BrandAccent } from '../../components/BrandAccent'
@@ -202,29 +209,21 @@ export function PetBooking() {
       return
     }
     setError('')
-    const { data } = await supabase
-      .from('shop_customers')
-      .select('*')
-      .eq('shop_id', shopId)
-      .eq('phone', digits)
-      .maybeSingle()
-
-    if (data) {
-      setCustomer(data as ShopCustomer)
-      setCustomerName(data.name)
-      const { data: petList } = await supabase
-        .from('pets')
-        .select('*')
-        .eq('shop_id', shopId)
-        .eq('customer_id', data.id)
-        .order('name')
-      setPets((petList as Pet[]) || [])
-    } else {
-      setCustomer(null)
-      setPets([])
+    try {
+      const result = await lookupPetCustomerSecure(shopId, digits)
+      if (result.customer) {
+        setCustomer(result.customer)
+        setCustomerName(result.customer.name)
+        setPets(result.pets)
+      } else {
+        setCustomer(null)
+        setPets([])
+      }
+      setLookupDone(true)
+      setStep(2)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível localizar o cadastro.')
     }
-    setLookupDone(true)
-    setStep(2)
   }
 
   const ensureCustomer = async (): Promise<ShopCustomer | null> => {
@@ -235,54 +234,33 @@ export function PetBooking() {
       setError('Informe seu nome.')
       return null
     }
-    const { data, error: err } = await supabase
-      .from('shop_customers')
-      .insert({
-        shop_id: shopId,
-        name: customerName.trim(),
-        phone: digits,
-      })
-      .select('*')
-      .single()
-    if (err || !data) {
-      // race: already exists
-      const { data: again } = await supabase
-        .from('shop_customers')
-        .select('*')
-        .eq('shop_id', shopId)
-        .eq('phone', digits)
-        .maybeSingle()
-      if (again) {
-        setCustomer(again as ShopCustomer)
-        return again as ShopCustomer
-      }
-      setError(err?.message || 'Erro ao salvar cliente.')
+    try {
+      const data = await upsertPetCustomer(shopId, digits, customerName)
+      setCustomer(data)
+      return data
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao salvar cliente.')
       return null
     }
-    setCustomer(data as ShopCustomer)
-    return data as ShopCustomer
   }
 
   const createPet = async () => {
     const cust = await ensureCustomer()
     if (!cust || !shopId || !newPetName.trim()) return
-    const { data, error: err } = await supabase
-      .from('pets')
-      .insert({
-        shop_id: shopId,
-        customer_id: cust.id,
-        name: newPetName.trim(),
+    let data: Pet
+    try {
+      data = await createPetForCustomer({
+        shopId,
+        phone,
+        name: newPetName,
         size: newPetSize,
-        breed: newPetBreed.trim() || null,
-        species: 'cao',
+        breed: newPetBreed,
       })
-      .select('*')
-      .single()
-    if (err || !data) {
-      setError(err?.message || 'Erro ao cadastrar pet.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao cadastrar pet.')
       return
     }
-    setPets((prev) => [...prev, data as Pet])
+    setPets((prev) => [...prev, data])
     setSelectedPetIds((prev) => {
       const next = new Set(prev)
       if (next.size < 2) next.add(data.id)
@@ -347,27 +325,28 @@ export function PetBooking() {
     const primaryPet = selectedPets[0]
     const notesValue = notes.trim() || null
 
-    const { data: booking, error: bkError } = await supabase
-      .from('bookings')
-      .insert({
-        shop_id: shop.id,
-        barber_id: selectedBarberId,
-        client_id: user?.id || null,
-        client_name: cust.name,
-        client_phone: cust.phone,
+    let bookingId: string
+    try {
+      bookingId = await createPublicBooking({
+        shopId: shop.id,
+        barberId: selectedBarberId,
+        clientName: cust.name,
+        clientPhone: cust.phone,
         date: selectedDate,
         time: selectedTime,
-        pet_id: primaryPet.id,
-        shop_customer_id: cust.id,
-        duration_minutes: duration,
+        petId: primaryPet.id,
+        shopCustomerId: cust.id,
+        durationMinutes: duration,
         notes: notesValue,
-        status: 'scheduled',
       })
-      .select()
-      .single()
-
-    if (bkError || !booking) {
-      const msg = bookingErrorMessage(bkError)
+      await finalizePublicBooking({
+        bookingId,
+        phone: cust.phone,
+        serviceIds: selectedServices.map((service) => service.id),
+        petIds: selectedPets.map((pet) => pet.id),
+      })
+    } catch (err) {
+      const msg = bookingErrorMessage(err)
       setError(msg)
       setSubmitting(false)
       if (/horário|reservado/i.test(msg) && shopId) {
@@ -379,37 +358,7 @@ export function PetBooking() {
       return
     }
 
-    const { error: petsLinkError } = await supabase.from('booking_pets').insert(
-      selectedPets.map((pet) => ({
-        booking_id: booking.id,
-        pet_id: pet.id,
-      }))
-    )
-    if (petsLinkError) {
-      setError(petsLinkError.message)
-      setSubmitting(false)
-      return
-    }
-
-    if (selectedServices.length > 0) {
-      await supabase.from('booking_services').insert(
-        selectedServices.map((s) => ({
-          booking_id: booking.id,
-          service_id: s.id,
-        }))
-      )
-    }
-
     const petNames = selectedPets.map((p) => p.name).join(' · ')
-    await notifyShopOwner({
-      shopId: shop.id,
-      kind: 'new_booking',
-      title: 'Novo agendamento',
-      body: `${petNames} · ${cust.name} · ${selectedDate} ${selectedTime}${
-        notesValue ? ` · ${notesValue}` : ''
-      }`,
-      bookingId: booking.id,
-    })
 
     const confirmationState: BookingConfirmationState = {
       shopName: shop.name,
@@ -437,7 +386,8 @@ export function PetBooking() {
       notes: notesValue || undefined,
     }
 
-    navigate(`/confirmacao/${booking.id}`, { state: confirmationState })
+    rememberBookingPhone(bookingId, cust.phone)
+    navigate(`/confirmacao/${bookingId}`, { state: confirmationState })
   }
 
   if (loading) return <p className="text-center text-ink-muted">Carregando...</p>

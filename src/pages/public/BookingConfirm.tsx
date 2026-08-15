@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams, useLocation } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
 import { formatPrice, formatDate, formatTime, formatDuration } from '../../lib/format'
 import { getTotalDuration, getTotalPrice } from '../../lib/booking'
+import { getBookingReceipt, readBookingPhone } from '../../lib/secureBooking'
 import type { BookingConfirmationState, BookingWithDetails } from '../../lib/types'
 import { BrandAccent } from '../../components/BrandAccent'
 import { useAuth } from '../../contexts/AuthContext'
@@ -19,18 +19,17 @@ export function BookingConfirm() {
     if (confirmationState || !bookingId) return
 
     async function load() {
-      const { data } = await supabase
-        .from('bookings')
-        .select(`
-          *,
-          shops(name, address, phone),
-          barbers(name),
-          booking_services(service_id, services(*))
-        `)
-        .eq('id', bookingId)
-        .single()
-
-      setBooking(data as BookingWithDetails)
+      const phone = readBookingPhone(bookingId!)
+      if (!phone) {
+        setLoading(false)
+        return
+      }
+      try {
+        const data = await getBookingReceipt(bookingId!, phone)
+        setBooking(data)
+      } catch {
+        setBooking(null)
+      }
       setLoading(false)
     }
     load()

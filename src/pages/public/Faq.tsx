@@ -240,35 +240,13 @@ const GROUPS: FaqGroup[] = [
   },
 ]
 
-const ALL_ITEMS = GROUPS.flatMap((group) => group.items)
-
 export function Faq() {
   useEffect(() => {
     const previousTitle = document.title
     document.title = 'Perguntas frequentes · ONEFIND'
 
-    const schema = {
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: ALL_ITEMS.map((item) => ({
-        '@type': 'Question',
-        name: item.q,
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: item.text,
-        },
-      })),
-    }
-
-    const script = document.createElement('script')
-    script.type = 'application/ld+json'
-    script.id = 'faq-jsonld'
-    script.text = JSON.stringify(schema)
-    document.head.appendChild(script)
-
     return () => {
       document.title = previousTitle
-      script.remove()
     }
   }, [])
 

@@ -27,6 +27,16 @@ if (!url || !anon) {
   console.error('Missing VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY')
   process.exit(1)
 }
+if (
+  !/localhost|127\.0\.0\.1/.test(url) &&
+  env.ALLOW_LIVE_SECURITY_TESTS !== '1'
+) {
+  console.error(
+    'Refusing to create test accounts on a remote Supabase project. ' +
+      'Use a local project or set ALLOW_LIVE_SECURITY_TESTS=1 explicitly.'
+  )
+  process.exit(1)
+}
 
 const BARBER_DEFAULTS = new Set(['Corte', 'Barba', 'Corte + Barba'])
 const PET_DEFAULTS = ['Banho', 'Tosa', 'Banho + Tosa', 'Hidratação']
@@ -134,8 +144,8 @@ async function ensureShop(supabase, userId, shopName, segment) {
 
 async function createAndCheck(segment, shopName) {
   const supabase = createClient(url, anon)
-  const email = `find_${segment}_${Date.now()}@mailinator.com`
-  const password = 'TestShop1!a'
+  const email = `find_${segment}_${Date.now()}@onefind.invalid`
+  const password = `T9!${crypto.randomUUID()}`
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -174,7 +184,7 @@ async function createAndCheck(segment, shopName) {
     )
   )
   if (!ok) process.exitCode = 1
-  return { ok, email, password, shopId }
+  return { ok, email, shopId }
 }
 
 async function healBarkMia() {

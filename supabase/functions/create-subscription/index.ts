@@ -4,14 +4,52 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const ASAAS_API_URL = Deno.env.get("ASAAS_API_URL") ?? "https://api.asaas.com/v3";
 const SUBSCRIPTION_VALUE = 60;
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = new Set([
+  "https://www.onefind.com.br",
+  "https://onefind.com.br",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+]);
+
+function corsFor(req: Request) {
+  const origin = req.headers.get("Origin") ?? "";
+  return {
+    allowed: !origin || ALLOWED_ORIGINS.has(origin),
+    headers: {
+      "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin)
+        ? origin
+        : "https://www.onefind.com.br",
+      "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Vary": "Origin",
+    },
+  };
+}
+
+function isAllowedPaymentUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" &&
+      (url.hostname === "asaas.com" || url.hostname.endsWith(".asaas.com"));
+  } catch {
+    return false;
+  }
+}
 
 Deno.serve(async (req) => {
+  const cors = corsFor(req);
+  const corsHeaders = cors.headers;
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response(cors.allowed ? "ok" : "Forbidden", {
+      status: cors.allowed ? 200 : 403,
+      headers: corsHeaders,
+    });
+  }
+  if (!cors.allowed) {
+    return new Response(JSON.stringify({ error: "Forbidden origin" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {
@@ -96,8 +134,8 @@ Deno.serve(async (req) => {
       });
 
       if (!customerRes.ok) {
-        const err = await customerRes.text();
-        return new Response(JSON.stringify({ error: "Failed to create Asaas customer", details: err }), {
+        console.error("Asaas customer creation failed", customerRes.status);
+        return new Response(JSON.stringify({ error: "Failed to create Asaas customer" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -135,8 +173,8 @@ Deno.serve(async (req) => {
     });
 
     if (!subscriptionRes.ok) {
-      const err = await subscriptionRes.text();
-      return new Response(JSON.stringify({ error: "Failed to create subscription", details: err }), {
+      console.error("Asaas subscription creation failed", subscriptionRes.status);
+      return new Response(JSON.stringify({ error: "Failed to create subscription" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -184,11 +222,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (!paymentLink) {
+    if (!paymentLink || !isAllowedPaymentUrl(paymentLink)) {
       return new Response(
         JSON.stringify({
-          error: "Payment link not found",
-          details: "Assinatura criada, mas o Asaas não retornou URL de pagamento.",
+          error: "Valid payment link not found",
           subscriptionId: subscription.id,
         }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
