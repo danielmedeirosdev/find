@@ -437,12 +437,12 @@ BEGIN
   INSERT INTO public.booking_services (booking_id, service_id)
   SELECT p_booking_id, sid
   FROM unnest(COALESCE(p_service_ids, '{}'::UUID[])) sid
-  ON CONFLICT DO NOTHING;
+  ON CONFLICT (booking_id, service_id) DO NOTHING;
 
   INSERT INTO public.booking_pets (booking_id, pet_id)
   SELECT p_booking_id, pid
   FROM unnest(COALESCE(p_pet_ids, '{}'::UUID[])) pid
-  ON CONFLICT DO NOTHING;
+  ON CONFLICT (booking_id, pet_id) DO NOTHING;
 
   IF NOT EXISTS (
     SELECT 1 FROM public.notifications n
@@ -559,12 +559,20 @@ $$;
 REVOKE ALL ON FUNCTION public.get_guest_review_eligibility(UUID) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_guest_review_eligibility(UUID) TO anon, authenticated;
 
+-- Needed for finalize_public_booking ON CONFLICT (booking_id, service_id).
+CREATE UNIQUE INDEX IF NOT EXISTS booking_services_booking_id_service_id_uidx
+  ON public.booking_services (booking_id, service_id);
+
 -- Remove broad anonymous table access. Owners and authenticated clients retain
--- their existing scoped policies.
+-- their existing scoped policies. Cover both English and Portuguese policy names.
 DROP POLICY IF EXISTS "Public can read bookings for availability" ON public.bookings;
 DROP POLICY IF EXISTS "Anyone can create bookings on active shops" ON public.bookings;
+DROP POLICY IF EXISTS "publico le horarios ocupados" ON public.bookings;
+DROP POLICY IF EXISTS "publico cria booking" ON public.bookings;
 DROP POLICY IF EXISTS "Public can read booking services" ON public.booking_services;
 DROP POLICY IF EXISTS "Anyone can insert booking services" ON public.booking_services;
+DROP POLICY IF EXISTS "publico le booking_services" ON public.booking_services;
+DROP POLICY IF EXISTS "publico cria booking_services" ON public.booking_services;
 DROP POLICY IF EXISTS "Public read shop customers for booking" ON public.shop_customers;
 DROP POLICY IF EXISTS "Public insert shop customers" ON public.shop_customers;
 DROP POLICY IF EXISTS "Public update shop customers" ON public.shop_customers;
@@ -574,9 +582,41 @@ DROP POLICY IF EXISTS "Public read own-ish customer packages" ON public.customer
 DROP POLICY IF EXISTS "Public read booking pets" ON public.booking_pets;
 DROP POLICY IF EXISTS "Anyone can insert booking pets" ON public.booking_pets;
 
--- Client-side notification calls are no longer accepted. Trusted DB functions
--- owned by the function owner can still call notify_shop_owner internally.
+-- Owner/client access for nested dashboard selects (anon uses SECURITY DEFINER RPCs).
+DROP POLICY IF EXISTS "Owners manage own booking services" ON public.booking_services;
+CREATE POLICY "Owners manage own booking services"
+  ON public.booking_services FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.bookings bk
+      WHERE bk.id = booking_services.booking_id
+        AND public.is_shop_owner(bk.shop_id)
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.bookings bk
+      WHERE bk.id = booking_services.booking_id
+        AND public.is_shop_owner(bk.shop_id)
+    )
+  );
+
+DROP POLICY IF EXISTS "Logged clients read own booking services" ON public.booking_services;
+CREATE POLICY "Logged clients read own booking services"
+  ON public.booking_services FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.bookings bk
+      WHERE bk.id = booking_services.booking_id
+        AND bk.client_id = auth.uid()
+    )
+  );
+
+-- Client-side notification calls are no longer accepted. Cron/edge (service_role)
+-- and SECURITY DEFINER helpers can still call notify_shop_owner.
 REVOKE EXECUTE ON FUNCTION public.notify_shop_owner(UUID, TEXT, TEXT, TEXT, UUID)
-  FROM anon, authenticated;
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.notify_shop_owner(UUID, TEXT, TEXT, TEXT, UUID)
+  TO service_role;
 
 COMMIT;
