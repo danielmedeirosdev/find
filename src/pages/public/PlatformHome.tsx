@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ACTIVE_SEGMENTS, SEGMENTS } from '../../lib/segments'
 import { BrandAccent } from '../../components/BrandAccent'
-import { SegmentMark } from '../../components/SegmentMark'
+import { SegmentMark, CtaArrow } from '../../components/SegmentMark'
 
 export function PlatformHome() {
   return (
@@ -73,7 +73,8 @@ export function PlatformHome() {
               to="/apresentacao"
               className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-ink px-5 py-3 text-sm font-semibold text-paper transition-colors hover:bg-accent-soft"
             >
-              Ver apresentação da plataforma  ›
+              Ver apresentação da plataforma
+              <CtaArrow />
             </Link>
           </div>
           <p className="mt-6 text-xs text-ink-muted/70">

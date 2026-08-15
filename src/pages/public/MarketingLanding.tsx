@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { BarberPole } from '../../components/BarberPole'
-import { ListMark } from '../../components/SegmentMark'
+import { CtaArrow, ListMark } from '../../components/SegmentMark'
 
 const steps = [
   ['01', 'Escolha a solução', 'Barbearia ou pet shop. O ONEFIND se adapta ao seu negócio.'],
@@ -57,7 +57,8 @@ export function MarketingLanding() {
               to="/painel?modo=cadastro"
               className="rounded bg-ink px-6 py-3.5 text-sm font-semibold text-paper transition-colors hover:bg-accent-soft"
             >
-              Começar teste grátis  ›
+              Começar teste grátis
+              <CtaArrow />
             </Link>
             <a
               href="#solucoes"
@@ -108,7 +109,8 @@ export function MarketingLanding() {
                 </li>
               </ul>
               <span className="mt-8 inline-block text-sm font-semibold text-brass">
-                Ir para FIND BARBEARIA  ›
+                Ir para FIND BARBEARIA
+                <CtaArrow />
               </span>
             </Link>
 
@@ -137,7 +139,8 @@ export function MarketingLanding() {
                 </li>
               </ul>
               <span className="mt-8 inline-block text-sm font-semibold text-pet">
-                Ir para FIND PET  ›
+                Ir para FIND PET
+                <CtaArrow />
               </span>
             </Link>
           </div>
@@ -222,10 +225,12 @@ export function MarketingLanding() {
               </ul>
               <div className="mt-8 flex flex-col gap-2">
                 <Link to="/barbearia" className="text-sm font-semibold text-brass hover:text-ink">
-                  FIND BARBEARIA  ›
+                  FIND BARBEARIA
+                  <CtaArrow />
                 </Link>
                 <Link to="/pet" className="text-sm font-semibold text-pet hover:text-ink">
-                  FIND PET  ›
+                  FIND PET
+                  <CtaArrow />
                 </Link>
               </div>
             </article>
@@ -250,7 +255,8 @@ export function MarketingLanding() {
                 to="/painel?modo=cadastro"
                 className="mt-8 inline-block text-sm font-semibold text-paper hover:text-paper/80"
               >
-                Testar área profissional  ›
+                Testar área profissional
+                <CtaArrow />
               </Link>
             </article>
           </div>
@@ -295,7 +301,8 @@ export function MarketingLanding() {
             to="/painel?modo=cadastro"
             className="mt-8 inline-block rounded bg-paper px-6 py-3.5 text-sm font-semibold text-ink transition-colors hover:bg-paper-dark"
           >
-            Começar agora  ›
+            Começar agora
+            <CtaArrow />
           </Link>
         </div>
       </section>

@@ -10,6 +10,7 @@ import {
 import { publicSiteHost } from '../../../../lib/site'
 import { Toast } from '../../../../components/MediaUI'
 import { FieldHint } from '../../../../components/FormHints'
+import { CtaArrow } from '../../../../components/SegmentMark'
 import type { Barber, Shop, ShopPhoto } from '../../../../lib/types'
 
 interface Props {
@@ -258,7 +259,8 @@ export function PetShopLink({ shop, onUpdate }: Props) {
               to={publicShopPath(shop.slug || slug)}
               className="mt-3 block text-center text-xs text-brass hover:underline"
             >
-              Ver página completa  ›
+              Ver página completa
+              <CtaArrow />
             </Link>
           </div>
         </div>

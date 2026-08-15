@@ -19,6 +19,7 @@ import { fetchShopRatingStatsMap } from '../../lib/reviews'
 import { getSegment, publicBookingPathForSegment } from '../../lib/segments'
 import type { Shop, Service, ShopSegment, ShopRatingStats } from '../../lib/types'
 import { BrandAccent } from '../../components/BrandAccent'
+import { CtaArrow, BackArrow, SearchMark } from '../../components/SegmentMark'
 import { RatingBadge } from '../../components/reviews/StarRating'
 
 interface ShopWithServices extends Shop {
@@ -31,15 +32,6 @@ interface ShopWithServices extends Shop {
 
 interface Props {
   segment: ShopSegment
-}
-
-function SearchGlyph() {
-  return (
-    <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 text-ink-muted" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.6">
-      <circle cx="8.5" cy="8.5" r="5.5" />
-      <path d="M12.8 12.8 17 17" strokeLinecap="round" />
-    </svg>
-  )
 }
 
 export function ShopList({ segment }: Props) {
@@ -204,8 +196,9 @@ export function ShopList({ segment }: Props) {
   return (
     <div>
       <div className="mb-2">
-        <Link to="/" className="text-xs uppercase tracking-widest text-brass hover:underline">
-          ‹ FIND
+        <Link to="/" className="inline-flex items-center text-xs uppercase tracking-widest text-brass hover:underline">
+          <BackArrow className="h-2.5 w-2.5" />
+          FIND
         </Link>
       </div>
 
@@ -227,8 +220,8 @@ export function ShopList({ segment }: Props) {
         <div className="mb-8 flex justify-end">
           <label className="relative block w-full sm:w-52">
             <span className="sr-only">Buscar negócio</span>
-            <span className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center">
-              <SearchGlyph />
+            <span className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-ink-muted">
+              <SearchMark />
             </span>
             <input
               type="search"
@@ -348,7 +341,10 @@ export function ShopList({ segment }: Props) {
                       'Ver serviços'
                     )}
                   </span>
-                  <span className="text-sm font-semibold text-brass">Agendar  ›</span>
+                  <span className="inline-flex items-center text-sm font-semibold text-brass">
+                    Agendar
+                    <CtaArrow />
+                  </span>
                 </div>
               </Link>
             )

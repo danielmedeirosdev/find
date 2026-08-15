@@ -5,6 +5,7 @@ import { ensureAuthSession } from '../../lib/auth'
 import { completeGoogleCredentialLogin } from '../../lib/oauth'
 import { formatPhone } from '../../lib/format'
 import { BrandAccent } from '../../components/BrandAccent'
+import { BackArrow } from '../../components/SegmentMark'
 import { AuthDivider, GoogleSignInButton } from '../../components/GoogleSignInButton'
 import {
   FieldHint,
@@ -258,8 +259,9 @@ export function ClientAuth() {
       </p>
 
       <p className="mt-4 text-center">
-        <Link to="/" className="text-sm text-ink-muted hover:text-brass">
-          ‹ Voltar
+        <Link to="/" className="inline-flex items-center text-sm text-ink-muted hover:text-brass">
+          <BackArrow />
+          Voltar
         </Link>
       </p>
     </div>

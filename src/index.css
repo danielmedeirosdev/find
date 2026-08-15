@@ -390,14 +390,17 @@ body {
 }
 
 .faq-summary::after {
-  content: '+';
+  content: '';
   flex-shrink: 0;
-  font-family: var(--font-display);
-  font-size: 1.35rem;
-  line-height: 1;
+  width: 0.7rem;
+  height: 0.7rem;
+  margin-top: 0.35rem;
+  background:
+    linear-gradient(currentColor, currentColor) center / 0.7rem 1.5px no-repeat,
+    linear-gradient(currentColor, currentColor) center / 1.5px 0.7rem no-repeat;
   color: var(--color-brass);
 }
 
 .faq-item[open] .faq-summary::after {
-  content: '-';
+  background: linear-gradient(currentColor, currentColor) center / 0.7rem 1.5px no-repeat;
 }
