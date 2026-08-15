@@ -3,6 +3,10 @@
 
 BEGIN;
 
+-- Some early production projects were created before this schema field existed.
+ALTER TABLE public.services
+  ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true;
+
 -- Public availability remains readable, but only through this PII-free view.
 CREATE OR REPLACE VIEW public.public_booking_slots
 WITH (security_invoker = false, security_barrier = true)
