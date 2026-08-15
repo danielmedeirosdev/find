@@ -84,12 +84,12 @@ export function PlatformHome() {
               ONEFIND · uma plataforma, várias soluções
             </p>
             <p className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-ink-muted">
-            <Link to="/faq" className="underline-offset-2 hover:text-brass hover:underline">
-              Perguntas frequentes
-            </Link>
-            <Link to="/privacidade" className="underline-offset-2 hover:text-brass hover:underline">
-              Política de Privacidade
-            </Link>
+              <Link to="/faq" className="underline-offset-2 hover:text-brass hover:underline">
+                Perguntas frequentes
+              </Link>
+              <Link to="/privacidade" className="underline-offset-2 hover:text-brass hover:underline">
+                Política de Privacidade
+              </Link>
             </p>
           </div>
         </div>
