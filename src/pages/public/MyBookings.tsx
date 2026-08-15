@@ -31,7 +31,8 @@ export function MyBookings() {
         *,
         shops(name, address, segment),
         barbers(name),
-        pets(name, size),
+        pets!bookings_pet_id_fkey(name, size),
+        booking_pets(pet_id, pets(name, size)),
         booking_services(service_id, services(name, price))
       `)
       .order('date', { ascending: true })

@@ -69,7 +69,8 @@ export function CustomersTab({ shopId }: Props) {
         .from('bookings')
         .select(`
           *,
-          pets(id, name, size),
+          pets!bookings_pet_id_fkey(id, name, size),
+          booking_pets(pet_id, pets(id, name, size)),
           barbers(name),
           booking_services(service_id, services(name, price))
         `)

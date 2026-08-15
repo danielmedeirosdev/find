@@ -28,13 +28,14 @@ export function PetOverview({ shopId, onNavigate }: Props) {
       const select = `
         *,
         barbers(name),
-        pets(id, name, size, photo_url, breed),
+        pets!bookings_pet_id_fkey(id, name, size, photo_url, breed),
+        booking_pets(pet_id, pets(id, name, size, photo_url, breed)),
         booking_services(service_id, services(name, price, duration_minutes))
       `
 
       const [
-        { data: todayData },
-        { data: upData },
+        { data: todayData, error: todayError },
+        { data: upData, error: upError },
         { data: tx },
         { count: custCount },
         { count: petCount },
@@ -67,6 +68,9 @@ export function PetOverview({ shopId, onNavigate }: Props) {
         supabase.from('pets').select('*', { count: 'exact', head: true }).eq('shop_id', shopId),
       ])
 
+      if (todayError || upError) {
+        console.error('[PetOverview] bookings load', todayError || upError)
+      }
       setTodayBookings((todayData as BookingWithDetails[]) || [])
       setUpcoming((upData as BookingWithDetails[]) || [])
       setRevenue(((tx as { amount: number }[]) || []).reduce((s, t) => s + Number(t.amount), 0))

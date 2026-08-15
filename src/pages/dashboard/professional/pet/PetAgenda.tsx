@@ -26,11 +26,12 @@ export function PetAgenda({ shopId }: Props) {
   const [clientHistory, setClientHistory] = useState<BookingWithDetails[]>([])
   const [searching, setSearching] = useState(false)
   const [actionError, setActionError] = useState('')
+  const [loadError, setLoadError] = useState('')
 
   const bookingSelect = `
     *,
     barbers(name),
-    pets(id, name, size, photo_url, breed),
+    pets!bookings_pet_id_fkey(id, name, size, photo_url, breed),
     booking_pets(pet_id, pets(id, name, size, photo_url, breed)),
     booking_services(service_id, services(name, price, duration_minutes))
   `
@@ -45,7 +46,8 @@ export function PetAgenda({ shopId }: Props) {
 
   const load = useCallback(async () => {
     const today = new Date().toISOString().slice(0, 10)
-    const [{ data }, { data: svc }] = await Promise.all([
+    setLoadError('')
+    const [{ data, error }, { data: svc }] = await Promise.all([
       supabase
         .from('bookings')
         .select(bookingSelect)
@@ -56,7 +58,12 @@ export function PetAgenda({ shopId }: Props) {
       supabase.from('services').select('*').eq('shop_id', shopId).order('name'),
     ])
 
-    setBookings((data as BookingWithDetails[]) || [])
+    if (error) {
+      setLoadError(error.message)
+      setBookings([])
+    } else {
+      setBookings((data as BookingWithDetails[]) || [])
+    }
     setShopServices(svc || [])
     setLoading(false)
   }, [shopId])
@@ -122,7 +129,9 @@ export function PetAgenda({ shopId }: Props) {
       <p className="text-sm text-charcoal-muted mb-4">
         Veja pet, porte, duração e serviço. Finalize para registrar no histórico e no caixa.
       </p>
-      {actionError && <p className="mb-4 text-sm text-red-400">{actionError}</p>}
+      {(actionError || loadError) && (
+        <p className="mb-4 text-sm text-red-400">{actionError || loadError}</p>
+      )}
 
       <div className="mb-8 rounded-lg border border-charcoal-light p-4">
         <h3 className="font-medium text-white mb-3">Histórico do cliente / pet</h3>

@@ -223,7 +223,7 @@ export async function getBookingReceipt(
         *,
         shops(name, address, phone, segment),
         barbers(name),
-        pets(name, size),
+        pets!bookings_pet_id_fkey(name, size),
         booking_services(service_id, services(*))
       `)
       .eq('id', bookingId)
@@ -247,7 +247,7 @@ export async function getGuestReviewEligibility(bookingId: string): Promise<{
   if (error && isMissingSecurityRpc(error)) {
     const { data: booking, error: selectError } = await supabase
       .from('bookings')
-      .select('status, review_status, shops(name), pets(name)')
+      .select('status, review_status, shops(name), pets!bookings_pet_id_fkey(name)')
       .eq('id', bookingId)
       .maybeSingle()
     if (selectError) throw selectError
