@@ -28,6 +28,8 @@ import type {
   ShopPhoto,
 } from '../../lib/types'
 import { BrandAccent } from '../../components/BrandAccent'
+import { BookingStepper } from '../../components/public/BookingStepper'
+import { PageLoader } from '../../components/public/PageLoader'
 import { DefaultAvatar } from '../../components/MediaUI'
 import { RatingBadge } from '../../components/reviews/StarRating'
 import { useAuth } from '../../contexts/AuthContext'
@@ -239,7 +241,7 @@ export function ShopBooking() {
     navigate(`/confirmacao/${bookingId}`, { state: confirmationState })
   }
 
-  if (loading) return <p className="text-center text-ink-muted">Carregando...</p>
+  if (loading) return <PageLoader label="Carregando agendamento" />
   if (!shop) return <p className="text-center text-ink-muted">Estabelecimento não encontrado.</p>
 
   const steps: { n: Step; label: string }[] = [
@@ -292,24 +294,9 @@ export function ShopBooking() {
         <BrandAccent className="mt-2 max-w-md" />
       </div>
 
-      <div className="mb-8 flex gap-2">
-        {steps.map(({ n, label }) => (
-          <div
-            key={n}
-            className={`flex-1 rounded-t-lg px-3 py-2 text-center text-sm font-medium ${
-              step === n
-                ? 'bg-brass text-white'
-                : step > n
-                  ? 'bg-paper-dark text-ink'
-                  : 'bg-paper-dark/50 text-ink-muted'
-            }`}
-          >
-            {n}. {label}
-          </div>
-        ))}
-      </div>
+      <BookingStepper steps={steps} current={step} />
 
-      <div className="rounded-lg border border-paper-dark bg-white p-6">
+      <div className="rounded-2xl border border-paper-dark bg-white p-6 shadow-sm">
         {step === 1 && (
           <div>
             <h2 className="font-display text-2xl mb-4">Escolha os serviços</h2>
@@ -350,7 +337,7 @@ export function ShopBooking() {
             <button
               onClick={() => setStep(2)}
               disabled={selectedServices.length === 0}
-              className="mt-6 w-full rounded-lg bg-brass py-3 font-semibold text-white disabled:opacity-40"
+              className="btn-primary mt-6 w-full"
             >
               Continuar
             </button>
@@ -422,7 +409,7 @@ export function ShopBooking() {
                       }}
                       className={`rounded-lg px-4 py-2 text-sm ${
                         selectedDay === d
-                          ? 'bg-brass text-white'
+                          ? 'bg-brass text-charcoal'
                           : 'bg-paper text-ink hover:bg-paper-dark'
                       }`}
                     >
@@ -433,13 +420,13 @@ export function ShopBooking() {
               </div>
             )}
             <div className="mt-6 flex gap-3">
-              <button onClick={() => setStep(1)} className="flex-1 rounded-lg border py-3">
+              <button onClick={() => setStep(1)} className="btn-secondary flex-1">
                 Voltar
               </button>
               <button
                 onClick={() => setStep(3)}
                 disabled={!selectedBarberId || selectedDay === null}
-                className="flex-1 rounded-lg bg-brass py-3 font-semibold text-white disabled:opacity-40"
+                className="btn-primary flex-1"
               >
                 Continuar
               </button>
@@ -464,7 +451,7 @@ export function ShopBooking() {
                   }}
                   className={`rounded-lg px-3 py-2 text-sm font-mono ${
                     selectedDate === d
-                      ? 'bg-brass text-white'
+                      ? 'bg-brass text-charcoal'
                       : 'bg-paper text-ink hover:bg-paper-dark'
                   }`}
                 >
@@ -489,7 +476,7 @@ export function ShopBooking() {
                         onClick={() => setSelectedTime(t)}
                         className={`rounded-lg py-2 font-mono text-sm ${
                           selectedTime === t
-                            ? 'bg-brass text-white'
+                            ? 'bg-brass text-charcoal'
                             : 'bg-paper hover:bg-paper-dark'
                         }`}
                       >
@@ -502,13 +489,13 @@ export function ShopBooking() {
             )}
 
             <div className="mt-6 flex gap-3">
-              <button onClick={() => setStep(2)} className="flex-1 rounded-lg border py-3">
+              <button onClick={() => setStep(2)} className="btn-secondary flex-1">
                 Voltar
               </button>
               <button
                 onClick={() => setStep(4)}
                 disabled={!selectedDate || !selectedTime}
-                className="flex-1 rounded-lg bg-brass py-3 font-semibold text-white disabled:opacity-40"
+                className="btn-primary flex-1"
               >
                 Continuar
               </button>
@@ -559,13 +546,13 @@ export function ShopBooking() {
             {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
             <div className="mt-6 flex gap-3">
-              <button onClick={() => setStep(3)} className="flex-1 rounded-lg border py-3">
+              <button onClick={() => setStep(3)} className="btn-secondary flex-1">
                 Voltar
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="flex-1 rounded-lg bg-brass py-3 font-semibold text-white disabled:opacity-40"
+                className="btn-primary flex-1"
               >
                 {submitting ? 'Confirmando...' : 'Confirmar agendamento'}
               </button>

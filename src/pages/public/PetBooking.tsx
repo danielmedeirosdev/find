@@ -21,6 +21,8 @@ import {
 import { formatDuration, formatPhone, formatPrice } from '../../lib/format'
 import { DefaultAvatar } from '../../components/MediaUI'
 import { BrandAccent } from '../../components/BrandAccent'
+import { BookingStepper } from '../../components/public/BookingStepper'
+import { PageLoader } from '../../components/public/PageLoader'
 import { SegmentProvider } from '../../contexts/SegmentContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { DAY_NAMES, PET_SIZES } from '../../lib/types'
@@ -390,7 +392,7 @@ export function PetBooking() {
     navigate(`/confirmacao/${bookingId}`, { state: confirmationState })
   }
 
-  if (loading) return <p className="text-center text-ink-muted">Carregando...</p>
+  if (loading) return <PageLoader label="Carregando agendamento" />
   if (!shop) return <p className="text-center text-ink-muted">Pet shop não encontrado.</p>
 
   const steps: { n: Step; label: string }[] = [
@@ -416,24 +418,9 @@ export function PetBooking() {
         </div>
       </div>
 
-      <div className="mb-6 flex gap-1 overflow-x-auto">
-        {steps.map(({ n, label }) => (
-          <div
-            key={n}
-            className={`shrink-0 rounded-t-lg px-3 py-2 text-center text-xs font-medium sm:text-sm ${
-              step === n
-                ? 'bg-brass text-white'
-                : step > n
-                  ? 'bg-paper-dark text-ink'
-                  : 'bg-paper-dark/50 text-ink-muted'
-            }`}
-          >
-            {n}. {label}
-          </div>
-        ))}
-      </div>
+      <BookingStepper steps={steps} current={step} />
 
-      <div className="rounded-lg border border-paper-dark bg-white p-6">
+      <div className="rounded-2xl border border-paper-dark bg-white p-6 shadow-sm">
         {step === 1 && (
           <div className="space-y-4">
             <h2 className="font-display text-2xl">Seu WhatsApp</h2>
@@ -450,7 +437,7 @@ export function PetBooking() {
             {error && <p className="text-sm text-red-600">{error}</p>}
             <button
               onClick={lookupCustomer}
-              className="w-full rounded-lg bg-brass py-3 font-semibold text-white"
+              className="btn-primary w-full"
             >
               Continuar
             </button>
@@ -550,7 +537,7 @@ export function PetBooking() {
                       type="button"
                       onClick={() => setNewPetSize(s.value)}
                       className={`rounded-lg px-3 py-1.5 text-sm ${
-                        newPetSize === s.value ? 'bg-brass text-white' : 'bg-paper'
+                        newPetSize === s.value ? 'bg-brass text-charcoal' : 'bg-paper'
                       }`}
                     >
                       {s.label}
@@ -560,7 +547,7 @@ export function PetBooking() {
                 <button
                   type="button"
                   onClick={createPet}
-                  className="rounded-lg bg-brass px-4 py-2 text-sm font-semibold text-white"
+                  className="btn-primary px-4 py-2 text-sm"
                 >
                   Salvar pet
                 </button>
@@ -569,13 +556,13 @@ export function PetBooking() {
 
             {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
             <div className="flex gap-3">
-              <button onClick={() => setStep(1)} className="flex-1 rounded-lg border py-3">
+              <button onClick={() => setStep(1)} className="btn-secondary flex-1">
                 Voltar
               </button>
               <button
                 onClick={() => setStep(3)}
                 disabled={selectedPetIds.size === 0}
-                className="flex-1 rounded-lg bg-brass py-3 font-semibold text-white disabled:opacity-40"
+                className="btn-primary flex-1"
               >
                 Continuar
               </button>
@@ -635,13 +622,13 @@ export function PetBooking() {
               </div>
             )}
             <div className="mt-6 flex gap-3">
-              <button onClick={() => setStep(2)} className="flex-1 rounded-lg border py-3">
+              <button onClick={() => setStep(2)} className="btn-secondary flex-1">
                 Voltar
               </button>
               <button
                 onClick={() => setStep(4)}
                 disabled={selectedServices.length === 0}
-                className="flex-1 rounded-lg bg-brass py-3 font-semibold text-white disabled:opacity-40"
+                className="btn-primary flex-1"
               >
                 Continuar
               </button>
@@ -671,7 +658,7 @@ export function PetBooking() {
                         setSelectedTime(null)
                       }}
                       className={`rounded-lg px-3 py-2 text-sm ${
-                        selectedBarberId === b.id ? 'bg-brass text-white' : 'bg-paper'
+                        selectedBarberId === b.id ? 'bg-brass text-charcoal' : 'bg-paper'
                       }`}
                     >
                       {b.name}
@@ -694,7 +681,7 @@ export function PetBooking() {
                         setSelectedTime(null)
                       }}
                       className={`rounded-lg px-3 py-2 text-sm ${
-                        selectedDay === d ? 'bg-brass text-white' : 'bg-paper'
+                        selectedDay === d ? 'bg-brass text-charcoal' : 'bg-paper'
                       }`}
                     >
                       {DAY_NAMES[d].slice(0, 3)}
@@ -713,7 +700,7 @@ export function PetBooking() {
                           setSelectedTime(null)
                         }}
                         className={`rounded-lg px-3 py-2 font-mono text-sm ${
-                          selectedDate === d ? 'bg-brass text-white' : 'bg-paper'
+                          selectedDate === d ? 'bg-brass text-charcoal' : 'bg-paper'
                         }`}
                       >
                         {new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', {
@@ -739,7 +726,7 @@ export function PetBooking() {
                             type="button"
                             onClick={() => setSelectedTime(t)}
                             className={`rounded-lg py-2 font-mono text-sm ${
-                              selectedTime === t ? 'bg-brass text-white' : 'bg-paper'
+                              selectedTime === t ? 'bg-brass text-charcoal' : 'bg-paper'
                             }`}
                           >
                             {t}
@@ -753,13 +740,13 @@ export function PetBooking() {
             )}
 
             <div className="mt-6 flex gap-3">
-              <button onClick={() => setStep(3)} className="flex-1 rounded-lg border py-3">
+              <button onClick={() => setStep(3)} className="btn-secondary flex-1">
                 Voltar
               </button>
               <button
                 onClick={() => setStep(5)}
                 disabled={!selectedDate || !selectedTime || !selectedBarberId}
-                className="flex-1 rounded-lg bg-brass py-3 font-semibold text-white disabled:opacity-40"
+                className="btn-primary flex-1"
               >
                 Continuar
               </button>
@@ -812,13 +799,13 @@ export function PetBooking() {
 
             {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
             <div className="flex gap-3">
-              <button onClick={() => setStep(4)} className="flex-1 rounded-lg border py-3">
+              <button onClick={() => setStep(4)} className="btn-secondary flex-1">
                 Voltar
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="flex-1 rounded-lg bg-brass py-3 font-semibold text-white disabled:opacity-40"
+                className="btn-primary flex-1"
               >
                 {submitting ? 'Confirmando...' : 'Confirmar agendamento'}
               </button>

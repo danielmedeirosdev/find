@@ -1,11 +1,59 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams, useLocation } from 'react-router-dom'
-import { formatPrice, formatDate, formatTime, formatDuration } from '../../lib/format'
-import { getTotalDuration, getTotalPrice } from '../../lib/booking'
+import { useParams, useLocation } from 'react-router-dom'
+import { getTotalDuration } from '../../lib/booking'
 import { getBookingReceipt, readBookingPhone } from '../../lib/secureBooking'
+import { petSizeLabel } from '../../lib/pet'
+import { ConfirmReceipt, type ReceiptView } from '../../components/public/ConfirmReceipt'
+import { PageLoader } from '../../components/public/PageLoader'
 import type { BookingConfirmationState, BookingWithDetails } from '../../lib/types'
-import { BrandAccent } from '../../components/BrandAccent'
 import { useAuth } from '../../contexts/AuthContext'
+
+function viewFromState(state: BookingConfirmationState): ReceiptView {
+  const isPet = Boolean(state.petName)
+  return {
+    isPet,
+    shopName: state.shopName,
+    shopAddress: state.shopAddress,
+    barberName: state.barberName,
+    date: state.date,
+    time: state.time,
+    durationMinutes: state.durationMinutes ?? getTotalDuration(state.services),
+    clientName: state.clientName,
+    clientPhone: state.clientPhone,
+    services: state.services.map((s) => ({
+      id: s.id,
+      name: s.name,
+      price: Number(s.price),
+    })),
+    petName: state.petName,
+    petSize: state.petSize,
+    notes: state.notes,
+  }
+}
+
+function viewFromBooking(booking: BookingWithDetails): ReceiptView {
+  const services = (booking.booking_services || []).map((bs) => bs.services)
+  const isPet = booking.shops?.segment === 'pet' || Boolean(booking.pets?.name)
+  return {
+    isPet,
+    shopName: booking.shops?.name || 'Estabelecimento',
+    shopAddress: booking.shops?.address,
+    barberName: booking.barbers?.name,
+    date: booking.date,
+    time: booking.time,
+    durationMinutes: getTotalDuration(services),
+    clientName: booking.client_name,
+    clientPhone: booking.client_phone,
+    services: services.map((s) => ({
+      id: s.id,
+      name: s.name,
+      price: Number(s.price),
+    })),
+    petName: booking.pets?.name,
+    petSize: booking.pets?.size ? petSizeLabel(booking.pets.size) : null,
+    notes: booking.notes,
+  }
+}
 
 export function BookingConfirm() {
   const { bookingId } = useParams<{ bookingId: string }>()
@@ -35,201 +83,19 @@ export function BookingConfirm() {
     load()
   }, [bookingId, confirmationState])
 
-  if (loading) return <p className="text-center text-ink-muted">Carregando...</p>
+  if (loading) return <PageLoader label="Carregando comprovante" />
 
   if (confirmationState) {
-    const totalPrice = getTotalPrice(confirmationState.services)
-    const totalDuration =
-      confirmationState.durationMinutes ?? getTotalDuration(confirmationState.services)
-    const isPet = Boolean(confirmationState.petName)
+    return <ConfirmReceipt view={viewFromState(confirmationState)} signedIn={Boolean(user)} />
+  }
 
+  if (!booking) {
     return (
-      <div className="mx-auto max-w-md">
-        <div className="rounded-lg border-2 border-dashed border-ink/20 bg-white p-8 shadow-sm">
-          <div className="text-center mb-6">
-            <p className="font-display text-sm tracking-widest text-ink-muted">
-              {isPet ? 'FIND PET' : 'COMANDA'}
-            </p>
-            <BrandAccent className="my-3" height="h-2" segment={isPet ? 'pet' : 'barbershop'} />
-            <h1 className="font-display text-3xl text-ink">Agendamento confirmado!</h1>
-          </div>
-
-          <div className="space-y-4 font-mono text-sm">
-            <div className="border-b border-dashed border-ink/10 pb-3">
-              <p className="text-ink-muted text-xs uppercase">
-                {isPet ? 'Pet Shop' : 'Barbearia'}
-              </p>
-              <p className="text-lg font-semibold text-ink">{confirmationState.shopName}</p>
-              {confirmationState.shopAddress && (
-                <p className="text-ink-muted">{confirmationState.shopAddress}</p>
-              )}
-            </div>
-
-            {isPet && (
-              <div className="border-b border-dashed border-ink/10 pb-3">
-                <p className="text-ink-muted text-xs uppercase">
-                  {confirmationState.petName?.includes('·') ? 'Pets' : 'Pet'}
-                </p>
-                <p className="text-lg font-semibold">{confirmationState.petName}</p>
-                {confirmationState.petSize && (
-                  <p className="text-ink-muted">Porte {confirmationState.petSize}</p>
-                )}
-              </div>
-            )}
-
-            {confirmationState.notes && (
-              <div className="border-b border-dashed border-ink/10 pb-3">
-                <p className="text-ink-muted text-xs uppercase">Observação</p>
-                <p>{confirmationState.notes}</p>
-              </div>
-            )}
-
-            <div className="border-b border-dashed border-ink/10 pb-3">
-              <p className="text-ink-muted text-xs uppercase">Profissional</p>
-              <p>{confirmationState.barberName}</p>
-            </div>
-
-            <div className="border-b border-dashed border-ink/10 pb-3">
-              <p className="text-ink-muted text-xs uppercase">Data e hora</p>
-              <p>{formatDate(confirmationState.date)}</p>
-              <p className="text-brass text-lg">{formatTime(confirmationState.time)}</p>
-              <p className="text-ink-muted">{formatDuration(totalDuration)}</p>
-            </div>
-
-            <div className="border-b border-dashed border-ink/10 pb-3">
-              <p className="text-ink-muted text-xs uppercase">Serviços</p>
-              {confirmationState.services.map((s) => (
-                <div key={s.id} className="flex justify-between">
-                  <span>{s.name}</span>
-                  <span>{formatPrice(Number(s.price))}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="border-b border-dashed border-ink/10 pb-3">
-              <p className="text-ink-muted text-xs uppercase">Cliente</p>
-              <p>{confirmationState.clientName}</p>
-              <p className="text-ink-muted">{confirmationState.clientPhone}</p>
-            </div>
-
-            <div className="flex justify-between text-lg font-semibold text-brass pt-2">
-              <span>TOTAL</span>
-              <span>{formatPrice(totalPrice)}</span>
-            </div>
-          </div>
-
-          <BrandAccent className="my-6" height="h-1" segment={isPet ? 'pet' : 'barbershop'} />
-
-          {!user && (
-            <div className="rounded-lg bg-paper p-4 text-center text-sm">
-              <p className="mb-3">Quer acompanhar suas reservas?</p>
-              <Link
-                to="/cadastro"
-                className="inline-block rounded-lg bg-brass px-6 py-2 font-semibold text-white hover:bg-brass-light transition-colors"
-              >
-                Crie uma conta rápida
-              </Link>
-            </div>
-          )}
-
-          <div className="mt-6 flex flex-col gap-2 text-center text-sm">
-            <Link to={isPet ? '/pet' : '/barbearia'} className="text-brass hover:underline">
-              {isPet ? 'Voltar à lista de pet shops' : 'Voltar à lista de barbearias'}
-            </Link>
-            {user && (
-              <Link to="/minhas-reservas" className="text-ink-muted hover:text-brass">
-                Ver minhas reservas
-              </Link>
-            )}
-          </div>
-        </div>
-      </div>
+      <p className="py-16 text-center text-ink-muted">
+        Agendamento não encontrado. Se você acabou de marcar, volte pela confirmação na tela anterior.
+      </p>
     )
   }
 
-  if (!booking) return <p className="text-center text-ink-muted">Agendamento não encontrado.</p>
-
-  const services = (booking.booking_services || []).map((bs) => bs.services)
-  const totalPrice = getTotalPrice(services)
-  const totalDuration = getTotalDuration(services)
-
-  return (
-    <div className="mx-auto max-w-md">
-      <div className="rounded-lg border-2 border-dashed border-ink/20 bg-white p-8 shadow-sm">
-        <div className="text-center mb-6">
-          <p className="font-display text-sm tracking-widest text-ink-muted">COMANDA</p>
-          <BrandAccent className="my-3" height="h-2" />
-          <h1 className="font-display text-3xl text-ink">Agendamento confirmado!</h1>
-        </div>
-
-        <div className="space-y-4 font-mono text-sm">
-          <div className="border-b border-dashed border-ink/10 pb-3">
-            <p className="text-ink-muted text-xs uppercase">Barbearia</p>
-            <p className="text-lg font-semibold text-ink">{booking.shops?.name}</p>
-            {booking.shops?.address && (
-              <p className="text-ink-muted">{booking.shops.address}</p>
-            )}
-          </div>
-
-          <div className="border-b border-dashed border-ink/10 pb-3">
-            <p className="text-ink-muted text-xs uppercase">Profissional</p>
-            <p>{booking.barbers?.name}</p>
-          </div>
-
-          <div className="border-b border-dashed border-ink/10 pb-3">
-            <p className="text-ink-muted text-xs uppercase">Data e hora</p>
-            <p>{formatDate(booking.date)}</p>
-            <p className="text-brass text-lg">{formatTime(booking.time)}</p>
-            <p className="text-ink-muted">{formatDuration(totalDuration)}</p>
-          </div>
-
-          <div className="border-b border-dashed border-ink/10 pb-3">
-            <p className="text-ink-muted text-xs uppercase">Serviços</p>
-            {services.map((s) => (
-              <div key={s.id} className="flex justify-between">
-                <span>{s.name}</span>
-                <span>{formatPrice(Number(s.price))}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="border-b border-dashed border-ink/10 pb-3">
-            <p className="text-ink-muted text-xs uppercase">Cliente</p>
-            <p>{booking.client_name}</p>
-            <p className="text-ink-muted">{booking.client_phone}</p>
-          </div>
-
-          <div className="flex justify-between text-lg font-semibold text-brass pt-2">
-            <span>TOTAL</span>
-            <span>{formatPrice(totalPrice)}</span>
-          </div>
-        </div>
-
-        <BrandAccent className="my-6" height="h-1" />
-
-        {!user && (
-          <div className="rounded-lg bg-paper p-4 text-center text-sm">
-            <p className="mb-3">Quer acompanhar suas reservas?</p>
-            <Link
-              to="/cadastro"
-              className="inline-block rounded-lg bg-brass px-6 py-2 font-semibold text-white hover:bg-brass-light transition-colors"
-            >
-              Crie uma conta rápida
-            </Link>
-          </div>
-        )}
-
-        <div className="mt-6 flex flex-col gap-2 text-center text-sm">
-          <Link to="/barbearia" className="text-brass hover:underline">
-            Voltar à lista de barbearias
-          </Link>
-          {user && (
-            <Link to="/minhas-reservas" className="text-ink-muted hover:text-brass">
-              Ver minhas reservas
-            </Link>
-          )}
-        </div>
-      </div>
-    </div>
-  )
+  return <ConfirmReceipt view={viewFromBooking(booking)} signedIn={Boolean(user)} />
 }

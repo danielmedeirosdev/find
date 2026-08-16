@@ -104,13 +104,21 @@ export function MyBookings() {
       </div>
 
       {loading ? (
-        <p className="text-center text-ink-muted">Carregando...</p>
+        <p className="text-center text-ink-muted">Carregando suas reservas...</p>
       ) : bookings.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-ink-muted mb-4">Você ainda não tem reservas.</p>
-          <Link to="/" className="text-brass hover:underline">
-            Encontrar um estabelecimento
-          </Link>
+        <div className="mx-auto max-w-lg rounded-2xl border border-ink/10 bg-white px-6 py-10 text-center">
+          <p className="font-display text-2xl text-ink">Nenhuma reserva ainda</p>
+          <p className="mt-2 text-sm text-ink-muted">
+            Escolha um estabelecimento e marque o horário em poucos passos.
+          </p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <Link to="/barbearia" className="btn-primary">
+              Barbearias
+            </Link>
+            <Link to="/pet" className="btn-secondary">
+              Pet shops
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="space-y-8">

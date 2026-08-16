@@ -21,6 +21,7 @@ import type { Shop, Service, ShopSegment, ShopRatingStats } from '../../lib/type
 import { BrandAccent } from '../../components/BrandAccent'
 import { CtaArrow, BackArrow, SearchMark } from '../../components/SegmentMark'
 import { RatingBadge } from '../../components/reviews/StarRating'
+import { PageLoader, ShopCardSkeleton } from '../../components/public/PageLoader'
 
 interface ShopWithServices extends Shop {
   services: Service[]
@@ -190,15 +191,24 @@ export function ShopList({ segment }: Props) {
   const hasSearch = Boolean(query.trim())
 
   if (loading) {
-    return <p className="text-center text-ink-muted">Carregando...</p>
+    return (
+      <div>
+        <PageLoader label={`Carregando ${isPet ? 'pet shops' : 'barbearias'}`} />
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-3">
+          <ShopCardSkeleton />
+          <ShopCardSkeleton />
+          <ShopCardSkeleton />
+        </div>
+      </div>
+    )
   }
 
   return (
     <div>
       <div className="mb-2">
-        <Link to="/" className="inline-flex items-center text-xs uppercase tracking-widest text-brass hover:underline">
+        <Link to="/" className="inline-flex items-center text-xs font-semibold uppercase tracking-widest text-brass hover:underline">
           <BackArrow className="h-2.5 w-2.5" />
-          FIND
+          Início
         </Link>
       </div>
 
@@ -211,24 +221,30 @@ export function ShopList({ segment }: Props) {
         <p className="text-ink-muted max-w-xl mx-auto">{meta.listSubtitle}</p>
         {isPet && (
           <p className="mt-3 text-xs uppercase tracking-widest text-ink-muted">
-            Pet shops · Banho e tosa · Cuidados
+            Banho · Tosa · Cuidados
+          </p>
+        )}
+        {geoStatus === 'ready' && place?.label && (
+          <p className="mt-3 text-sm text-ink-muted">
+            Perto de <span className="font-medium text-ink">{place.label}</span>
+            {geoFilterOn ? ' · mostrando os mais próximos' : ''}
           </p>
         )}
       </div>
 
       {shops.length > 0 && (
-        <div className="mb-8 flex justify-end">
-          <label className="relative block w-full sm:w-52">
-            <span className="sr-only">Buscar negócio</span>
-            <span className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-ink-muted">
+        <div className="mb-8">
+          <label className="relative mx-auto block w-full max-w-xl">
+            <span className="sr-only">Buscar {isPet ? 'pet shop' : 'barbearia'}</span>
+            <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-ink-muted">
               <SearchMark />
             </span>
             <input
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar..."
-              className="w-full rounded-md border border-ink/10 bg-transparent py-1.5 pl-8 pr-3 text-sm text-ink placeholder:text-ink-muted/60 focus:border-brass/60 focus:outline-none"
+              placeholder={isPet ? 'Buscar pet shop, bairro ou serviço' : 'Buscar barbearia, bairro ou serviço'}
+              className="w-full rounded-xl border border-ink/10 bg-white/90 py-3 pl-10 pr-4 text-sm text-ink shadow-sm placeholder:text-ink-muted/60 focus:border-brass/60 focus:outline-none"
             />
           </label>
         </div>
@@ -277,7 +293,7 @@ export function ShopList({ segment }: Props) {
               <Link
                 key={shop.id}
                 to={href}
-                className={`group block h-full rounded-xl border border-paper-dark bg-white/90 p-4 shadow-sm transition-all hover:shadow-md hover:border-brass/40 sm:p-5 ${
+                className={`group block h-full rounded-2xl border border-paper-dark bg-white/95 p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brass/40 hover:shadow-md sm:p-5 ${
                   isPet ? 'backdrop-blur-sm' : ''
                 }`}
               >
@@ -335,13 +351,13 @@ export function ShopList({ segment }: Props) {
                     {shop.fromPrice != null ? (
                       <>
                         A partir de{' '}
-                        <span className="font-mono text-ink">{formatPrice(shop.fromPrice)}</span>
+                        <span className="font-semibold tabular-nums text-ink">{formatPrice(shop.fromPrice)}</span>
                       </>
                     ) : (
                       'Ver serviços'
                     )}
                   </span>
-                  <span className="inline-flex items-center text-sm font-semibold text-brass">
+                  <span className="inline-flex items-center rounded-md bg-brass px-3 py-1.5 text-sm font-semibold text-charcoal">
                     Agendar
                     <CtaArrow />
                   </span>

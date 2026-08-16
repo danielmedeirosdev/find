@@ -24,6 +24,45 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+.btn-primary {
+  border-radius: 0.55rem;
+  background-color: var(--color-brass);
+  padding: 0.75rem 1.15rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-charcoal);
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-brass-light);
+}
+
+.btn-primary:disabled {
+  opacity: 0.4;
+}
+
+.btn-secondary {
+  border-radius: 0.55rem;
+  border: 1px solid rgba(44, 36, 22, 0.14);
+  padding: 0.75rem 1.15rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-secondary:hover {
+  border-color: var(--color-brass);
+  color: var(--color-brass);
+}
+
+.public-shell {
+  background:
+    radial-gradient(ellipse 90% 50% at 50% -18%, rgba(201, 162, 39, 0.1), transparent 58%),
+    linear-gradient(180deg, #f7f3ec 0%, #efe8db 100%);
+}
+
 .font-display {
   font-family: var(--font-display);
   letter-spacing: 0.04em;

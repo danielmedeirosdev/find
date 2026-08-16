@@ -27,34 +27,32 @@ export function PublicLayout() {
   const isPet = segmentId === 'pet'
 
   const content = (
-    <div className={`min-h-screen text-ink ${isPet ? 'bg-paper' : 'bg-paper'}`}>
+    <div className={`public-shell min-h-screen text-ink ${isPet ? 'bg-paper' : ''}`}>
       <SetupBanner />
-      <header className="border-b border-paper-dark bg-paper/90 backdrop-blur-sm">
+      <header className="sticky top-0 z-30 border-b border-paper-dark/80 bg-paper/90 backdrop-blur-md">
         <div
-          className={`mx-auto flex items-center justify-between gap-3 px-4 py-4 ${
+          className={`mx-auto flex items-center justify-between gap-3 px-4 py-3.5 ${
             isShopList ? 'max-w-6xl' : 'max-w-5xl'
           }`}
         >
-          <div className="flex items-baseline gap-3">
-            <Link to="/" className="font-display text-3xl tracking-wider text-ink">
-              {isHome ? 'ONEFIND' : 'FIND'}
-            </Link>
+          <Link to="/" className="min-w-0">
+            <span className="font-display text-3xl tracking-[0.12em] text-ink">ONEFIND</span>
             {segmentMeta && (
-              <span className="text-xs uppercase tracking-widest text-brass font-medium">
+              <span className="ml-2 hidden align-middle text-[11px] font-semibold uppercase tracking-[0.22em] text-brass sm:inline">
                 {segmentMeta.shortName}
               </span>
             )}
-          </div>
+          </Link>
           <nav className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 text-sm">
             {!isHome && (
-              <Link to="/" className="text-ink-muted hover:text-brass transition-colors">
+              <Link to="/" className="hidden text-ink-muted transition-colors hover:text-brass sm:inline">
                 Início
               </Link>
             )}
             {segmentMeta && !isShopList && (
               <Link
                 to={segmentMeta.path}
-                className="hidden text-ink-muted hover:text-brass transition-colors sm:inline"
+                className="hidden text-ink-muted transition-colors hover:text-brass sm:inline"
               >
                 {isPet ? 'Pet shops' : 'Barbearias'}
               </Link>
@@ -62,13 +60,13 @@ export function PublicLayout() {
             {user ? (
               <Link
                 to="/minhas-reservas"
-                className="text-ink-muted hover:text-brass transition-colors"
+                className="text-ink-muted transition-colors hover:text-brass"
               >
-                Minhas Reservas
+                Minhas reservas
               </Link>
             ) : (
-              <Link to="/entrar" className="text-ink-muted hover:text-brass transition-colors">
-                Entrar/Inscrever-se
+              <Link to="/entrar" className="text-ink-muted transition-colors hover:text-brass">
+                Entrar
               </Link>
             )}
             <Link
@@ -77,13 +75,13 @@ export function PublicLayout() {
                   ? `/painel?segment=${segmentMeta.id}&modo=cadastro`
                   : '/painel?modo=cadastro'
               }
-              className="rounded border border-ink/20 px-3 py-1.5 text-ink-muted hover:border-brass hover:text-brass transition-colors"
+              className="rounded-md border border-ink/15 px-3 py-1.5 text-ink-muted transition-colors hover:border-brass hover:text-brass"
             >
-              Cadastre sua empresa
+              Para empresas
             </Link>
           </nav>
         </div>
-        <BrandAccent height="h-1.5" segment={segmentId} />
+        <BrandAccent height="h-1" segment={segmentId} />
       </header>
       <main
         className={`mx-auto px-4 py-8 ${
@@ -93,21 +91,21 @@ export function PublicLayout() {
         <Outlet />
       </main>
       {!isHome && (
-        <footer className="mt-16 border-t border-paper-dark py-6 text-center text-sm text-ink-muted">
-          <BrandAccent className="mb-4 max-w-xs mx-auto" segment={segmentId} />
-          <p>
+        <footer className="mt-16 border-t border-paper-dark/80 py-8 text-center text-sm text-ink-muted">
+          <p className="font-display text-lg tracking-[0.18em] text-ink">ONEFIND</p>
+          <p className="mx-auto mt-2 max-w-md">
             {isPet
-              ? 'FIND PET · banho, tosa e cuidados com profissionalismo'
+              ? 'Agendamento online para banho, tosa e cuidados.'
               : segmentMeta
-                ? 'FIND BARBEARIA · agende com estilo'
-                : 'ONEFIND · uma plataforma, várias soluções'}
+                ? 'Agendamento online para barbearias, sem fila e sem aplicativo.'
+                : 'Agendamento online para barbearias e pet shops.'}
           </p>
-          <p className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-            <Link to="/faq" className="hover:text-brass transition-colors">
+          <p className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+            <Link to="/faq" className="transition-colors hover:text-brass">
               Perguntas frequentes
             </Link>
-            <Link to="/privacidade" className="hover:text-brass transition-colors">
-              Política de Privacidade
+            <Link to="/privacidade" className="transition-colors hover:text-brass">
+              Privacidade
             </Link>
           </p>
         </footer>

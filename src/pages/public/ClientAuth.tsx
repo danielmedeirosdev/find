@@ -143,11 +143,11 @@ export function ClientAuth() {
         </h1>
         <BrandAccent className="mx-auto max-w-xs mt-4" segment="platform" />
         <p className="text-ink-muted mt-2 text-sm">
-          Acompanhe seus agendamentos em pet shops e barbearias FIND.
+          Acompanhe seus horários em barbearias e pet shops.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="rounded-lg border border-paper-dark bg-white p-6 space-y-4">
+      <form onSubmit={handleSubmit} className="rounded-2xl border border-paper-dark bg-white p-6 space-y-4 shadow-sm">
         {mode === 'signup' && (
           <>
             <div>
@@ -208,7 +208,7 @@ export function ClientAuth() {
         <button
           type="submit"
           disabled={loading || googleLoading || (mode === 'signup' && !isPasswordStrong(password))}
-          className="w-full rounded-lg bg-brass py-3 font-semibold text-white disabled:opacity-50"
+          className="btn-primary w-full disabled:opacity-50"
         >
           {loading ? 'Aguarde...' : mode === 'login' ? 'Entrar' : 'Criar conta'}
         </button>

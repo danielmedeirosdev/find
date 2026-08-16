@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { formatPrice } from '../../lib/format'
+import { formatPrice, formatDuration } from '../../lib/format'
 import {
   emptyRatingStats,
   fetchBarberRatingStatsMap,
@@ -12,6 +12,7 @@ import { getSegment, publicBookingPathForSegment } from '../../lib/segments'
 import { SegmentProvider } from '../../contexts/SegmentContext'
 import { DefaultAvatar, Skeleton } from '../../components/MediaUI'
 import { BrandAccent } from '../../components/BrandAccent'
+import { BackArrow } from '../../components/SegmentMark'
 import { RatingBadge } from '../../components/reviews/StarRating'
 import { ReviewsSection } from '../../components/reviews/ReviewsSection'
 import type {
@@ -95,7 +96,14 @@ export function ShopPublic() {
 
   return (
     <SegmentProvider segment={shop.segment}>
-    <div className={isPet ? 'pet-hero-glow -mx-4 px-4 py-6 rounded-2xl' : undefined}>
+    <div className={`${isPet ? 'pet-hero-glow -mx-4 px-4 py-6 rounded-2xl' : ''} pb-24 sm:pb-0`}>
+      <Link
+        to={seg.path}
+        className="mb-5 inline-flex items-center text-xs font-semibold uppercase tracking-widest text-brass hover:underline"
+      >
+        <BackArrow className="h-2.5 w-2.5" />
+        {isPet ? 'Pet shops' : 'Barbearias'}
+      </Link>
       <header className="mb-8">
         <div className="flex flex-wrap items-start gap-4">
           {shop.logo_url ? (
@@ -130,10 +138,7 @@ export function ShopPublic() {
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link
-            to={bookPath}
-            className="rounded-lg bg-brass px-6 py-3 font-semibold text-charcoal hover:bg-brass-light transition-colors"
-          >
+          <Link to={bookPath} className="btn-primary">
             Agendar horário
           </Link>
           {shop.phone && (
@@ -141,7 +146,7 @@ export function ShopPublic() {
               href={`https://wa.me/55${shop.phone.replace(/\D/g, '')}`}
               target="_blank"
               rel="noreferrer"
-              className="rounded-lg border border-paper-dark px-6 py-3 text-ink hover:border-brass transition-colors"
+              className="btn-secondary"
             >
               WhatsApp
             </a>
@@ -150,10 +155,31 @@ export function ShopPublic() {
       </header>
 
       {(shop.address || shop.hours_text || shop.phone) && (
-        <div className="mb-10 rounded-lg border border-paper-dark bg-white p-5 text-sm text-ink-muted space-y-1">
-          {shop.address && <p>{shop.address}</p>}
-          {shop.hours_text && <p className="font-mono">{shop.hours_text}</p>}
-          {shop.phone && <p>{shop.phone}</p>}
+        <div className="mb-10 grid gap-3 rounded-2xl border border-paper-dark bg-white p-5 text-sm sm:grid-cols-3">
+          {shop.address && (
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                Endereço
+              </p>
+              <p className="mt-1 text-ink">{shop.address}</p>
+            </div>
+          )}
+          {shop.hours_text && (
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                Horário
+              </p>
+              <p className="mt-1 text-ink">{shop.hours_text}</p>
+            </div>
+          )}
+          {shop.phone && (
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                Telefone
+              </p>
+              <p className="mt-1 text-ink">{shop.phone}</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -223,17 +249,17 @@ export function ShopPublic() {
             {services.map((s) => (
               <div
                 key={s.id}
-                className="flex justify-between rounded-lg border border-paper-dark bg-white px-4 py-3"
+                className="flex items-center justify-between gap-4 rounded-xl border border-paper-dark bg-white px-4 py-3.5"
               >
-                <span className="text-ink">{s.name}</span>
-                <span className="font-mono text-brass">{formatPrice(Number(s.price))}</span>
+                <div>
+                  <p className="font-medium text-ink">{s.name}</p>
+                  <p className="text-xs text-ink-muted">{formatDuration(s.duration_minutes)}</p>
+                </div>
+                <span className="tabular-nums font-semibold text-brass">{formatPrice(Number(s.price))}</span>
               </div>
             ))}
           </div>
-          <Link
-            to={bookPath}
-            className="mt-6 inline-block rounded-lg bg-brass px-6 py-3 font-semibold text-charcoal"
-          >
+          <Link to={bookPath} className="btn-primary mt-6 inline-flex">
             Agendar agora
           </Link>
         </section>
@@ -245,6 +271,12 @@ export function ShopPublic() {
         showBarberName
         className="mb-10"
       />
+
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-paper-dark bg-paper/95 p-3 backdrop-blur sm:hidden">
+        <Link to={bookPath} className="btn-primary flex w-full justify-center">
+          Agendar horário
+        </Link>
+      </div>
     </div>
     </SegmentProvider>
   )
