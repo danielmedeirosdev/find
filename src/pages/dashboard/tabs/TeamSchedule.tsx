@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { deleteShopMedia, uploadShopMedia } from '../../../lib/media'
 import { DefaultAvatar, ImageDropzone, ProgressBar, Toast } from '../../../components/MediaUI'
-import { DAY_NAMES } from '../../../lib/types'
+import { ProfessionalWeekSchedule } from '../../../components/ProfessionalWeekSchedule'
 import type { Barber, BarberSchedule } from '../../../lib/types'
 
 interface Props {
@@ -127,7 +127,33 @@ export function TeamScheduleTab({ shopId }: Props) {
         end_time: field === 'end_time' ? value : '18:00',
       })
     }
-    load()
+    await load()
+  }
+
+  const applyHours = async (
+    barberId: string,
+    days: number[],
+    startTime: string,
+    endTime: string
+  ) => {
+    for (const day of days) {
+      const existing = getSchedule(barberId, day)
+      if (existing) {
+        await supabase
+          .from('barber_schedule')
+          .update({ is_active: true, start_time: startTime, end_time: endTime })
+          .eq('id', existing.id)
+      } else {
+        await supabase.from('barber_schedule').insert({
+          barber_id: barberId,
+          day_of_week: day,
+          is_active: true,
+          start_time: startTime,
+          end_time: endTime,
+        })
+      }
+    }
+    await load()
   }
 
   if (loading) return <p className="text-charcoal-muted">Carregando...</p>
@@ -235,51 +261,12 @@ export function TeamScheduleTab({ shopId }: Props) {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                {DAY_NAMES.map((dayName, dayIndex) => {
-                  const sched = getSchedule(barber.id, dayIndex)
-                  const isActive = sched?.is_active ?? false
-                  return (
-                    <div
-                      key={dayIndex}
-                      className="flex flex-wrap items-center gap-3 rounded bg-charcoal-light/30 p-3"
-                    >
-                      <label className="flex items-center gap-2 w-28">
-                        <input
-                          type="checkbox"
-                          checked={isActive}
-                          onChange={(e) =>
-                            updateSchedule(barber.id, dayIndex, 'is_active', e.target.checked)
-                          }
-                          className="accent-brass"
-                        />
-                        <span className="text-sm">{dayName}</span>
-                      </label>
-                      {isActive && (
-                        <>
-                          <input
-                            type="time"
-                            value={sched?.start_time?.slice(0, 5) || '09:00'}
-                            onChange={(e) =>
-                              updateSchedule(barber.id, dayIndex, 'start_time', e.target.value)
-                            }
-                            className="rounded border border-charcoal-light bg-charcoal px-2 py-1 font-mono text-sm text-white"
-                          />
-                          <span className="text-charcoal-muted">até</span>
-                          <input
-                            type="time"
-                            value={sched?.end_time?.slice(0, 5) || '18:00'}
-                            onChange={(e) =>
-                              updateSchedule(barber.id, dayIndex, 'end_time', e.target.value)
-                            }
-                            className="rounded border border-charcoal-light bg-charcoal px-2 py-1 font-mono text-sm text-white"
-                          />
-                        </>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
+              <ProfessionalWeekSchedule
+                barberId={barber.id}
+                schedules={schedules}
+                onUpdate={updateSchedule}
+                onApplyHours={applyHours}
+              />
             </div>
           ))}
         </div>

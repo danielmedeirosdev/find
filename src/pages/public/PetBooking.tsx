@@ -23,6 +23,7 @@ import { DefaultAvatar } from '../../components/MediaUI'
 import { BrandAccent } from '../../components/BrandAccent'
 import { BookingStepper } from '../../components/public/BookingStepper'
 import { PageLoader } from '../../components/public/PageLoader'
+import { TimeSlotGrid } from '../../components/TimeSlotGrid'
 import { SegmentProvider } from '../../contexts/SegmentContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { DAY_NAMES, PET_SIZES } from '../../lib/types'
@@ -699,14 +700,23 @@ export function PetBooking() {
                           setSelectedDate(d)
                           setSelectedTime(null)
                         }}
-                        className={`rounded-lg px-3 py-2 font-mono text-sm ${
-                          selectedDate === d ? 'bg-brass text-charcoal' : 'bg-paper'
+                        className={`rounded-xl border px-3.5 py-2.5 text-sm transition-all ${
+                          selectedDate === d
+                            ? 'border-brass bg-brass font-medium text-charcoal shadow-sm'
+                            : 'border-transparent bg-paper text-ink hover:border-brass/40 hover:bg-paper-dark'
                         }`}
                       >
-                        {new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', {
-                          day: '2-digit',
-                          month: 'short',
-                        })}
+                        <span className="block text-[11px] uppercase tracking-wide opacity-70">
+                          {new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', {
+                            weekday: 'short',
+                          })}
+                        </span>
+                        <span className="font-mono">
+                          {new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', {
+                            day: '2-digit',
+                            month: 'short',
+                          })}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -714,26 +724,13 @@ export function PetBooking() {
 
                 {selectedDate && (
                   <div>
-                    {availableSlots.length === 0 ? (
-                      <p className="text-sm text-ink-muted">
-                        Nenhum horário com tempo suficiente nesta data.
-                      </p>
-                    ) : (
-                      <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-                        {availableSlots.map((t) => (
-                          <button
-                            key={t}
-                            type="button"
-                            onClick={() => setSelectedTime(t)}
-                            className={`rounded-lg py-2 font-mono text-sm ${
-                              selectedTime === t ? 'bg-brass text-charcoal' : 'bg-paper'
-                            }`}
-                          >
-                            {t}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                    <h3 className="mb-3 font-medium">Horários disponíveis</h3>
+                    <TimeSlotGrid
+                      slots={availableSlots}
+                      selected={selectedTime}
+                      onSelect={setSelectedTime}
+                      emptyMessage="Nenhum horário com tempo suficiente nesta data."
+                    />
                   </div>
                 )}
               </>

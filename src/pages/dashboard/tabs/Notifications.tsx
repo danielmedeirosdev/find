@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { notificationKindLabel } from '../../../lib/notifications'
 import { supabase } from '../../../lib/supabase'
 import type { AppNotification } from '../../../lib/types'
 
@@ -90,7 +91,9 @@ export function NotificationsTab({ shopId }: Props) {
                 </span>
               </div>
               {n.body && <p className="mt-1 text-sm text-charcoal-muted">{n.body}</p>}
-              <p className="mt-2 text-[10px] uppercase tracking-widest text-charcoal-muted">{n.kind}</p>
+              <p className="mt-2 text-[10px] uppercase tracking-widest text-charcoal-muted">
+                {notificationKindLabel(n.kind)}
+              </p>
             </button>
           ))}
         </div>

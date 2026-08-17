@@ -13,10 +13,12 @@ import {
   PasswordRequirements,
   isPasswordStrong,
 } from '../../components/FormHints'
+import { useAuth } from '../../contexts/AuthContext'
 import type { ShopSegment } from '../../lib/types'
 
 export function BarberAuth() {
   const navigate = useNavigate()
+  const { user, loading: authLoading } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
@@ -26,6 +28,12 @@ export function BarberAuth() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/painel/dashboard', { replace: true })
+    }
+  }, [authLoading, user, navigate])
 
   useEffect(() => {
     const fromUrl = parseSegmentParam(searchParams.get('segment'))
@@ -43,6 +51,10 @@ export function BarberAuth() {
 
   const meta = getSegment(segment)
   const defaultShopName = meta.defaultShopName
+
+  if (authLoading || user) {
+    return <p className="text-center text-charcoal-muted">Carregando...</p>
+  }
 
   const handleGoogleCredential = async (
     response: { credential: string },
