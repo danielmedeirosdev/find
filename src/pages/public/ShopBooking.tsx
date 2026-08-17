@@ -292,7 +292,7 @@ export function ShopBooking() {
             ))}
           </div>
         )}
-        <BrandAccent className="mt-2 max-w-md" />
+        <BrandAccent className="mt-2 max-w-md" segment="barbershop" />
       </div>
 
       <BookingStepper steps={steps} current={step} />

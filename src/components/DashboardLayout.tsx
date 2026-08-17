@@ -13,15 +13,12 @@ export function DashboardLayout() {
   const [params] = useSearchParams()
   const segmentParam = parseSegmentParam(params.get('segment'))
   const [shopSegment, setShopSegment] = useState<ShopSegment | null>(null)
-  const [segmentResolved, setSegmentResolved] = useState(false)
 
   useEffect(() => {
     if (!user) {
       setShopSegment(null)
-      setSegmentResolved(true)
       return
     }
-    setSegmentResolved(false)
     let cancelled = false
     supabase
       .from('shops')
@@ -30,16 +27,22 @@ export function DashboardLayout() {
       .maybeSingle()
       .then(({ data }) => {
         if (cancelled) return
-        setShopSegment(data ? normalizeSegment(data.segment) : null)
-        setSegmentResolved(true)
+        const fromShop = data?.segment != null ? normalizeSegment(data.segment) : null
+        const fromMeta = normalizeSegment(
+          (user.user_metadata as { segment?: string } | undefined)?.segment
+        )
+        // Prioriza o segmento da loja; metadata só como fallback (ex.: cadastro PET).
+        setShopSegment(fromShop ?? (fromMeta === 'pet' ? 'pet' : null))
       })
     return () => {
       cancelled = true
     }
   }, [user])
 
+  // Nunca assume barbearia enquanto o segmento real não for conhecido —
+  // isso evitava a faixa de barbearia no painel PET.
   const segmentId: ShopSegment | 'platform' =
-    segmentParam || shopSegment || (segmentResolved ? 'barbershop' : 'platform')
+    segmentParam || shopSegment || 'platform'
   const meta = getSegment(segmentId === 'platform' ? 'barbershop' : segmentId)
   const showSegmentMark = Boolean(segmentParam || shopSegment)
   const themeClass =

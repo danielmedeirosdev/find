@@ -396,7 +396,8 @@ body {
 
 /* Nunca mostre barber-pole dentro de superfícies PET */
 .segment-pet .barber-pole-stripe,
-[data-segment='pet'] .barber-pole-stripe {
+[data-segment='pet'] .barber-pole-stripe,
+[data-professional='pet'] .barber-pole-stripe {
   background: linear-gradient(
     90deg,
     #4f5e2c 0%,
@@ -405,6 +406,8 @@ body {
     #6a7d3a 65%,
     #4f5e2c 100%
   ) !important;
+  animation: petAccentShift 9s ease-in-out infinite;
+  background-size: 220% 100%;
 }
 
 .faq-item summary::-webkit-details-marker {
