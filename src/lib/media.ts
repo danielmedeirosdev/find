@@ -141,13 +141,19 @@ export async function uploadShopMedia(
   shopId: string,
   file: File,
   folder: MediaFolder,
-  onProgress?: (pct: number) => void
+  onProgress?: (pct: number) => void,
+  /** When folder is `barbers`, path becomes {shopId}/barbers/{barberId}/… for staff RLS. */
+  barberId?: string
 ): Promise<string> {
   onProgress?.(10)
   const { blob, contentType, ext } = await prepareImage(file, folder)
   onProgress?.(45)
 
-  const path = `${shopId}/${folder}/${crypto.randomUUID()}.${ext}`
+  const path =
+    folder === 'barbers' && barberId
+      ? `${shopId}/${folder}/${barberId}/${crypto.randomUUID()}.${ext}`
+      : `${shopId}/${folder}/${crypto.randomUUID()}.${ext}`
+
   const { error } = await supabase.storage.from('shop-media').upload(path, blob, {
     contentType,
     upsert: false,
@@ -170,7 +176,11 @@ export function storagePathFromUrl(url: string): string | null {
 export async function deleteShopMedia(url: string): Promise<void> {
   const path = storagePathFromUrl(url)
   if (!path) return
-  await supabase.storage.from('shop-media').remove([path])
+  const { error } = await supabase.storage.from('shop-media').remove([path])
+  // Soft-fail: staff may lack DELETE on legacy owner paths; caller still updates photo_url.
+  if (error) {
+    console.warn('deleteShopMedia:', error.message)
+  }
 }
 
 /** Caminho de agendamento público conforme o segmento da loja. */

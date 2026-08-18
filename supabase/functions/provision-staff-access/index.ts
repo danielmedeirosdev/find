@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { corsFor } from "./_shared/cors.ts";
 
 function json(corsHeaders: HeadersInit, body: unknown, status = 200) {
@@ -21,6 +21,54 @@ function isStrongPassword(password: string): boolean {
     /[a-z]/.test(password) &&
     /[0-9]/.test(password)
   );
+}
+
+function isDuplicateEmailError(message: string | undefined | null): boolean {
+  if (!message) return false;
+  return /already\s+(been\s+)?registered|already\s+exists|email.?exists|duplicate|user_already_exists/i
+    .test(message);
+}
+
+/** Exact email → auth.users.id via SECURITY DEFINER RPC (no listUsers pagination). */
+async function findAuthUserIdByEmail(
+  admin: SupabaseClient,
+  email: string,
+): Promise<string | null> {
+  const { data, error } = await admin.rpc("auth_user_id_by_email", {
+    p_email: email,
+  });
+  if (error) {
+    console.error("auth_user_id_by_email failed", error.message);
+    return null;
+  }
+  return typeof data === "string" && uuidLike(data) ? data : null;
+}
+
+async function assertLinkableStaffUser(
+  admin: SupabaseClient,
+  userId: string,
+  barberId: string,
+): Promise<string | null> {
+  const { data: ownedShop } = await admin
+    .from("shops")
+    .select("id")
+    .eq("owner_user_id", userId)
+    .maybeSingle();
+  if (ownedShop) {
+    return "Este e-mail já é dono de um estabelecimento e não pode ser usado como profissional.";
+  }
+
+  const { data: otherLink } = await admin
+    .from("barbers")
+    .select("id")
+    .eq("user_id", userId)
+    .neq("id", barberId)
+    .maybeSingle();
+  if (otherLink) {
+    return "Este e-mail já está vinculado a outro profissional.";
+  }
+
+  return null;
 }
 
 Deno.serve(async (req) => {
@@ -89,13 +137,18 @@ Deno.serve(async (req) => {
     .eq("id", barber.shop_id)
     .maybeSingle();
 
+  // Owner of THIS shop only — blocks cross-tenant and staff self-provision.
   if (!shop || shop.owner_user_id !== user.id) {
     return json(corsHeaders, { error: "Sem permissão para gerenciar este profissional" }, 403);
   }
 
   if (action === "revoke") {
     if (!barber.user_id) {
-      return json(corsHeaders, { ok: true, revoked: false, message: "Este profissional já não tinha acesso." });
+      return json(corsHeaders, {
+        ok: true,
+        revoked: false,
+        message: "Este profissional já não tinha acesso.",
+      });
     }
     const { error: unlinkError } = await admin
       .from("barbers")
@@ -124,7 +177,6 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Never allow linking the shop owner account as staff.
   if (email === (user.email || "").toLowerCase()) {
     return json(
       corsHeaders,
@@ -133,97 +185,92 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Look up existing auth user by email via admin list (paginate lightly).
+  const staffMeta = {
+    role: "staff",
+    barber_id: barber.id,
+    shop_id: shop.id,
+    staff_name: barber.name,
+  };
+
   let targetUserId: string | null = barber.user_id;
   let created = false;
 
-  if (!targetUserId) {
-    const { data: listed } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
-    const existing = (listed?.users || []).find((u) => (u.email || "").toLowerCase() === email);
+  if (targetUserId) {
+    // Already linked: reset password / email on the linked account only.
+    const { error: pwError } = await admin.auth.admin.updateUserById(targetUserId, {
+      password,
+      email,
+      email_confirm: true,
+      user_metadata: staffMeta,
+    });
+    if (pwError) {
+      return json(corsHeaders, { error: "Não foi possível atualizar o acesso." }, 500);
+    }
+  } else {
+    // Prefer create; on duplicate email resolve via exact RPC lookup (no listUsers).
+    const { data: createdUser, error: createError } = await admin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: staffMeta,
+    });
 
-    if (existing) {
-      // Reject if this user already owns a shop (would mix roles).
-      const { data: ownedShop } = await admin
-        .from("shops")
-        .select("id")
-        .eq("owner_user_id", existing.id)
-        .maybeSingle();
-      if (ownedShop) {
+    if (!createError && createdUser.user) {
+      targetUserId = createdUser.user.id;
+      created = true;
+    } else if (isDuplicateEmailError(createError?.message)) {
+      const existingId = await findAuthUserIdByEmail(admin, email);
+      if (!existingId) {
         return json(
           corsHeaders,
-          { error: "Este e-mail já é dono de um estabelecimento e não pode ser usado como profissional." },
+          { error: "Este e-mail já está em uso, mas não foi possível localizar a conta." },
           409,
         );
       }
 
-      // Reject if already linked to another barber.
-      const { data: otherLink } = await admin
-        .from("barbers")
-        .select("id")
-        .eq("user_id", existing.id)
-        .neq("id", barber.id)
-        .maybeSingle();
-      if (otherLink) {
-        return json(
-          corsHeaders,
-          { error: "Este e-mail já está vinculado a outro profissional." },
-          409,
-        );
+      const linkBlock = await assertLinkableStaffUser(admin, existingId, barber.id);
+      if (linkBlock) {
+        return json(corsHeaders, { error: linkBlock }, 409);
       }
 
-      targetUserId = existing.id;
-      const { error: pwError } = await admin.auth.admin.updateUserById(existing.id, {
+      const { error: pwError } = await admin.auth.admin.updateUserById(existingId, {
         password,
         email_confirm: true,
-        user_metadata: {
-          ...(existing.user_metadata || {}),
-          role: "staff",
-          barber_id: barber.id,
-          shop_id: shop.id,
-          staff_name: barber.name,
-        },
+        user_metadata: staffMeta,
       });
       if (pwError) {
         return json(corsHeaders, { error: "Não foi possível atualizar a senha deste acesso." }, 500);
       }
+      targetUserId = existingId;
     } else {
-      const { data: createdUser, error: createError } = await admin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: {
-          role: "staff",
-          barber_id: barber.id,
-          shop_id: shop.id,
-          staff_name: barber.name,
-        },
-      });
-      if (createError || !createdUser.user) {
+      // Ambiguous create failure: try exact lookup once more (race / alternate messages).
+      const existingId = await findAuthUserIdByEmail(admin, email);
+      if (existingId) {
+        const linkBlock = await assertLinkableStaffUser(admin, existingId, barber.id);
+        if (linkBlock) {
+          return json(corsHeaders, { error: linkBlock }, 409);
+        }
+        const { error: pwError } = await admin.auth.admin.updateUserById(existingId, {
+          password,
+          email_confirm: true,
+          user_metadata: staffMeta,
+        });
+        if (pwError) {
+          return json(corsHeaders, { error: "Não foi possível atualizar a senha deste acesso." }, 500);
+        }
+        targetUserId = existingId;
+      } else {
         return json(
           corsHeaders,
           { error: createError?.message || "Não foi possível criar o acesso do profissional." },
           500,
         );
       }
-      targetUserId = createdUser.user.id;
-      created = true;
     }
-  } else {
-    // Reset password for existing linked user.
-    const { error: pwError } = await admin.auth.admin.updateUserById(targetUserId, {
-      password,
-      email,
-      email_confirm: true,
-      user_metadata: {
-        role: "staff",
-        barber_id: barber.id,
-        shop_id: shop.id,
-        staff_name: barber.name,
-      },
-    });
-    if (pwError) {
-      return json(corsHeaders, { error: "Não foi possível atualizar o acesso." }, 500);
-    }
+  }
+
+  if (!targetUserId) {
+    return json(corsHeaders, { error: "Não foi possível resolver o usuário do profissional." }, 500);
   }
 
   const { error: linkError } = await admin

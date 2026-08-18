@@ -79,7 +79,7 @@ export function PetTeam({ shopId }: Props) {
     setUploadingId(barber.id)
     setProgress(0)
     try {
-      const url = await uploadShopMedia(shopId, file, 'barbers', setProgress)
+      const url = await uploadShopMedia(shopId, file, 'barbers', setProgress, barber.id)
       if (barber.photo_url) await deleteShopMedia(barber.photo_url)
       await supabase.from('barbers').update({ photo_url: url }).eq('id', barber.id)
       setToast('Foto atualizada.')

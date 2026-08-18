@@ -67,7 +67,7 @@ export function StaffProfileTab({ shop, barber, onUpdate }: Props) {
     setProgress(0)
     setError('')
     try {
-      const url = await uploadShopMedia(shop.id, file, 'barbers', setProgress)
+      const url = await uploadShopMedia(shop.id, file, 'barbers', setProgress, barber.id)
       if (barber.photo_url) await deleteShopMedia(barber.photo_url)
       const { error: updateError } = await supabase
         .from('barbers')
