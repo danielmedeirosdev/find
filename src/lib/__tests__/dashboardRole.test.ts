@@ -140,3 +140,11 @@ describe('multi-tenant shop identity', () => {
     expect(shopA.owner_user_id).not.toBe(shopB.owner_user_id)
   })
 })
+
+describe('new shops start with an empty catalog', () => {
+  it('does not auto-seed barbershop or pet services', async () => {
+    const { defaultServicesForSegment } = await import('../defaultServices')
+    expect(defaultServicesForSegment('barbershop')).toEqual([])
+    expect(defaultServicesForSegment('pet')).toEqual([])
+  })
+})

@@ -44,7 +44,6 @@ Deno.serve(async (req) => {
 
     const barberNames = new Set(['Corte', 'Barba', 'Corte + Barba'])
     const bad = (services ?? []).filter((s) => barberNames.has(s.name))
-    const good = (services ?? []).filter((s) => !barberNames.has(s.name))
 
     if (bad.length) {
       const ids = bad.map((s) => s.id)
@@ -53,48 +52,7 @@ Deno.serve(async (req) => {
       await supabase.from('services').delete().in('id', ids)
     }
 
-    const needSeed =
-      good.length === 0 ||
-      !['Banho', 'Tosa', 'Banho + Tosa'].every((n) => good.some((s) => s.name === n))
-
     const inserted: string[] = []
-    if (needSeed && good.length === 0) {
-      const defaults = [
-        { name: 'Banho', price: 50, duration_minutes: 60 },
-        { name: 'Tosa', price: 60, duration_minutes: 90 },
-        { name: 'Banho + Tosa', price: 100, duration_minutes: 120 },
-      ]
-      for (const svc of defaults) {
-        const { data } = await supabase
-          .from('services')
-          .insert({ shop_id: shop.id, ...svc })
-          .select('id, name')
-          .single()
-        if (data) {
-          inserted.push(data.name)
-          await supabase.from('service_size_rules').insert([
-            {
-              service_id: data.id,
-              size: 'pequeno',
-              duration_minutes: Math.max(30, Math.round(svc.duration_minutes * 0.75)),
-              price: svc.price,
-            },
-            {
-              service_id: data.id,
-              size: 'medio',
-              duration_minutes: svc.duration_minutes,
-              price: svc.price,
-            },
-            {
-              service_id: data.id,
-              size: 'grande',
-              duration_minutes: Math.round(svc.duration_minutes * 1.5),
-              price: Math.round(svc.price * 1.25 * 100) / 100,
-            },
-          ])
-        }
-      }
-    }
 
     const { data: after } = await supabase
       .from('services')
