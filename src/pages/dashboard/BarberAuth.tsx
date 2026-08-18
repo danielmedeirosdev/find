@@ -16,13 +16,12 @@ import {
 import { useAuth } from '../../contexts/AuthContext'
 import type { ShopSegment } from '../../lib/types'
 import { readStoredReferralCode } from '../../lib/referral'
-import { requestPasswordReset } from '../../lib/passwordReset'
 
 export function BarberAuth() {
   const navigate = useNavigate()
   const { user, loading: authLoading } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login')
+  const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [shopName, setShopName] = useState('')
@@ -97,13 +96,6 @@ export function BarberAuth() {
     }
 
     try {
-      if (mode === 'forgot') {
-        await requestPasswordReset(email)
-        setInfo('Se este e-mail existir, enviamos um link para redefinir a senha.')
-        setLoading(false)
-        return
-      }
-
       if (mode === 'signup') {
         if (!isPasswordStrong(password)) {
           setError('A senha ainda não atende a todos os requisitos.')
@@ -176,14 +168,24 @@ export function BarberAuth() {
             .select('id, segment, name')
             .eq('owner_user_id', user.id)
             .maybeSingle()
-          if (!shop) {
-            await ensureBarberShop(user.id, defaultShopName, segment)
-          } else {
-            // Preserva PET existente; só força PET quando o fluxo atual é PET
-            // (corrige lojas criadas pelo trigger antigo como barbershop).
+          if (shop) {
             const intended: ShopSegment =
               segment === 'pet' || shop.segment === 'pet' ? 'pet' : 'barbershop'
             await ensureBarberShop(user.id, shop.name || defaultShopName, intended)
+          } else {
+            const { data: staffLink } = await supabase
+              .from('barbers')
+              .select('id')
+              .eq('user_id', user.id)
+              .maybeSingle()
+            if (!staffLink) {
+              setError(
+                'Esta conta não tem acesso ao painel. Cadastre seu negócio ou peça ao dono para criar seu acesso de profissional.'
+              )
+              await supabase.auth.signOut()
+              setLoading(false)
+              return
+            }
           }
         }
         navigate('/painel/dashboard')
@@ -200,7 +202,7 @@ export function BarberAuth() {
       <div className="text-center mb-8">
         <p className="text-xs uppercase tracking-[0.3em] text-brass mb-2">FIND</p>
         <h1 className="font-display text-4xl text-brass">
-          {mode === 'login' ? 'Área do profissional' : 'Criar profissional'}
+          {mode === 'login' ? 'Entrar no painel' : 'Cadastrar negócio'}
         </h1>
         <BrandAccent className="mx-auto max-w-xs mt-4" segment={segment} />
         <p className="text-charcoal-muted mt-2 text-sm">{meta.description}</p>
@@ -269,40 +271,19 @@ export function BarberAuth() {
           <FieldHint>Usado para entrar no painel e receber avisos da assinatura.</FieldHint>
         </div>
 
-        {mode !== 'forgot' && (
-          <div>
-            <FieldLabel>Senha</FieldLabel>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={mode === 'signup' ? 8 : 6}
-              placeholder={mode === 'signup' ? 'Crie uma senha forte' : 'Sua senha'}
-              className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
-            />
-            {mode === 'signup' && <PasswordRequirements password={password} />}
-            {mode === 'login' && (
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('forgot')
-                  setError('')
-                  setInfo('')
-                }}
-                className="mt-2 text-xs text-brass hover:underline"
-              >
-                Esqueci minha senha
-              </button>
-            )}
-          </div>
-        )}
-
-        {mode === 'forgot' && (
-          <p className="text-sm text-charcoal-muted">
-            Enviaremos um link para o e-mail da conta. Depois você cria uma senha nova.
-          </p>
-        )}
+        <div>
+          <FieldLabel>Senha</FieldLabel>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={mode === 'signup' ? 8 : 6}
+            placeholder={mode === 'signup' ? 'Crie uma senha forte' : 'Sua senha'}
+            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
+          />
+          {mode === 'signup' && <PasswordRequirements password={password} />}
+        </div>
 
         {error && <p className="text-sm text-red-400">{error}</p>}
         {info && <p className="text-sm text-brass">{info}</p>}
@@ -316,26 +297,20 @@ export function BarberAuth() {
             ? 'Aguarde...'
             : mode === 'login'
               ? 'Entrar'
-              : mode === 'forgot'
-                ? 'Enviar link de recuperação'
-                : 'Criar conta'}
+              : 'Criar conta'}
         </button>
 
-        {mode !== 'forgot' && (
-          <>
-            <AuthDivider tone="dark" />
+        <AuthDivider tone="dark" />
 
-            <GoogleSignInButton
-              tone="dark"
-              disabled={loading || googleLoading}
-              onCredential={handleGoogleCredential}
-              onError={(message) => {
-                setError(message)
-                setGoogleLoading(false)
-              }}
-            />
-          </>
-        )}
+        <GoogleSignInButton
+          tone="dark"
+          disabled={loading || googleLoading}
+          onCredential={handleGoogleCredential}
+          onError={(message) => {
+            setError(message)
+            setGoogleLoading(false)
+          }}
+        />
       </form>
 
       <p className="mt-4 text-center text-sm text-charcoal-muted">
@@ -352,21 +327,6 @@ export function BarberAuth() {
               className="text-brass hover:underline"
             >
               Cadastre seu negócio
-            </button>
-          </>
-        ) : mode === 'forgot' ? (
-          <>
-            Lembrou a senha?{' '}
-            <button
-              type="button"
-              onClick={() => {
-                setMode('login')
-                setError('')
-                setInfo('')
-              }}
-              className="text-brass hover:underline"
-            >
-              Entrar
             </button>
           </>
         ) : (

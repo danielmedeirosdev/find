@@ -15,10 +15,10 @@ import { ClientAuth } from './pages/public/ClientAuth'
 import { MyBookings } from './pages/public/MyBookings'
 import { PrivacyPolicy } from './pages/public/PrivacyPolicy'
 import { Faq } from './pages/public/Faq'
+import { NotFound } from './pages/public/NotFound'
 import { AuthCallback } from './pages/AuthCallback'
 import { BarberAuth } from './pages/dashboard/BarberAuth'
 import { Dashboard } from './pages/dashboard/Dashboard'
-import { ResetPassword } from './pages/public/ResetPassword'
 
 export default function App() {
   return (
@@ -40,17 +40,19 @@ export default function App() {
             <Route path="avaliar/:bookingId" element={<GuestReview />} />
             <Route path="entrar" element={<ClientAuth />} />
             <Route path="cadastro" element={<ClientAuth />} />
-            <Route path="redefinir-senha" element={<ResetPassword />} />
             <Route path="auth/callback" element={<AuthCallback />} />
             <Route path="minhas-reservas" element={<MyBookings />} />
             <Route path="privacidade" element={<PrivacyPolicy />} />
             <Route path="faq" element={<Faq />} />
+            <Route path="*" element={<NotFound />} />
           </Route>
 
           <Route path="painel" element={<DashboardLayout />}>
             <Route index element={<BarberAuth />} />
             <Route path="dashboard" element={<Dashboard />} />
           </Route>
+
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

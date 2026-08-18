@@ -3,6 +3,8 @@ import { supabase } from '../../../lib/supabase'
 import { deleteShopMedia, uploadShopMedia } from '../../../lib/media'
 import { DefaultAvatar, ImageDropzone, ProgressBar, Toast } from '../../../components/MediaUI'
 import { ProfessionalWeekSchedule } from '../../../components/ProfessionalWeekSchedule'
+import { StaffAccessPanel } from '../../../components/StaffAccessPanel'
+import { EmptyState, LoadingBlock } from '../../../components/EmptyState'
 import type { Barber, BarberSchedule } from '../../../lib/types'
 
 interface Props {
@@ -156,15 +158,15 @@ export function TeamScheduleTab({ shopId }: Props) {
     await load()
   }
 
-  if (loading) return <p className="text-charcoal-muted">Carregando...</p>
+  if (loading) return <LoadingBlock label="Carregando equipe..." />
 
   return (
     <div>
       <Toast message={toast} onClose={() => setToast(null)} />
       <h2 className="font-display text-2xl text-white mb-2">Equipe e horários</h2>
       <p className="text-sm text-charcoal-muted mb-6">
-        Cada funcionário pode ter foto, cargo e horários próprios. No futuro, cada um terá agenda
-        individual.
+        Cadastre a equipe, horários e, se quiser, um acesso individual ao painel (só a própria
+        agenda — sem financeiro ou assinatura).
       </p>
 
       <div className="mb-8 flex flex-wrap gap-2">
@@ -189,7 +191,10 @@ export function TeamScheduleTab({ shopId }: Props) {
       </div>
 
       {barbers.length === 0 ? (
-        <p className="text-charcoal-muted">Nenhum funcionário cadastrado.</p>
+        <EmptyState
+          title="Ainda não há profissionais cadastrados."
+          description="Adicione o primeiro membro da equipe para organizar horários e agenda."
+        />
       ) : (
         <div className="space-y-8">
           {barbers.map((barber) => (
@@ -267,6 +272,8 @@ export function TeamScheduleTab({ shopId }: Props) {
                 onUpdate={updateSchedule}
                 onApplyHours={applyHours}
               />
+
+              <StaffAccessPanel barber={barber} onChanged={load} />
             </div>
           ))}
         </div>

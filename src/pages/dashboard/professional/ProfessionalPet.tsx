@@ -84,7 +84,7 @@ export function ProfessionalPet({
       activeTab={activeTab}
       onTabChange={setTab}
       title={shop.name?.trim() || 'Meu Pet Shop'}
-      subtitle="Banho, tosa e cuidados"
+      subtitle="Área do dono · banho, tosa e cuidados"
     >
       {activeTab === 'overview' && <PetOverview shopId={shop.id} onNavigate={setTab} />}
       {activeTab === 'info' && <PetShopInfo shop={shop} onUpdate={onUpdate} />}

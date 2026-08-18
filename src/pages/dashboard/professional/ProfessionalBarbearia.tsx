@@ -14,22 +14,38 @@ import { ShopLinkTab } from '../tabs/ShopLink'
 import { SubscriptionTab } from '../tabs/Subscription'
 import { ReferralTab } from '../tabs/Referral'
 
-const BARBEARIA_TABS = [
-  { id: 'overview', label: 'Visão geral' },
-  { id: 'info', label: 'Informações' },
-  { id: 'team', label: 'Equipe e horários' },
-  { id: 'services', label: 'Serviços' },
-  { id: 'agenda', label: 'Agenda' },
-  { id: 'notifications', label: 'Notificações' },
-  { id: 'cashflow', label: 'Fluxo de Caixa' },
-  { id: 'reports', label: 'Relatórios' },
-  { id: 'reviews', label: 'Avaliações' },
-  { id: 'link', label: 'Link da Barbearia' },
-  { id: 'referral', label: 'Indique e ganhe' },
-  { id: 'subscription', label: 'Assinatura' },
-] as const
+const BARBEARIA_TAB_GROUPS: { label: string; tabs: { id: string; label: string }[] }[] = [
+  {
+    label: 'Dia a dia',
+    tabs: [
+      { id: 'overview', label: 'Visão geral' },
+      { id: 'agenda', label: 'Agenda' },
+      { id: 'notifications', label: 'Notificações' },
+    ],
+  },
+  {
+    label: 'Cadastros',
+    tabs: [
+      { id: 'team', label: 'Equipe e horários' },
+      { id: 'services', label: 'Serviços' },
+    ],
+  },
+  {
+    label: 'Negócio',
+    tabs: [
+      { id: 'cashflow', label: 'Fluxo de Caixa' },
+      { id: 'reports', label: 'Relatórios' },
+      { id: 'reviews', label: 'Avaliações' },
+      { id: 'info', label: 'Informações' },
+      { id: 'link', label: 'Link da Barbearia' },
+      { id: 'referral', label: 'Indique e ganhe' },
+      { id: 'subscription', label: 'Assinatura' },
+    ],
+  },
+]
 
-type BarbeariaTabId = (typeof BARBEARIA_TABS)[number]['id']
+const BARBEARIA_TABS = BARBEARIA_TAB_GROUPS.flatMap((g) => g.tabs)
+type BarbeariaTabId = string
 
 interface Props {
   shop: Shop
@@ -39,7 +55,7 @@ interface Props {
   subscribeError: string
 }
 
-/** Experiência profissional FIND BARBEARIA — preserva o produto atual. */
+/** Experiência do dono — FIND BARBEARIA. */
 export function ProfessionalBarbearia({
   shop,
   onUpdate,
@@ -59,10 +75,12 @@ export function ProfessionalBarbearia({
     <ProfessionalShell
       shop={shop}
       segment="barbershop"
-      tabs={[...BARBEARIA_TABS]}
+      tabs={BARBEARIA_TABS}
+      tabGroups={BARBEARIA_TAB_GROUPS}
       activeTab={activeTab}
       onTabChange={setTab}
       title={shop.name}
+      subtitle="Área do dono"
     >
       {activeTab === 'overview' && (
         <OverviewTab shopId={shop.id} onNavigate={setTab} />

@@ -47,7 +47,7 @@ export function ProfessionalShell({
   return (
     <SegmentProvider segment={segment}>
       <div className={meta.themeClass} data-segment={segment} data-professional={segment}>
-        <div className="mb-8 flex items-center gap-4">
+        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center">
           {shop.logo_url ? (
             <img
               src={shop.logo_url}
@@ -55,11 +55,11 @@ export function ProfessionalShell({
               className="h-14 w-14 rounded-xl object-cover border border-charcoal-light"
             />
           ) : null}
-          <div>
+          <div className="min-w-0">
             <p className="text-xs uppercase tracking-widest text-brass/80 mb-1">
               {meta.panelEyebrow}
             </p>
-            <h1 className="font-display text-4xl text-brass">{title}</h1>
+            <h1 className="font-display text-3xl sm:text-4xl text-brass break-words">{title}</h1>
             <p className="text-charcoal-muted text-sm mt-1">
               {subtitle || meta.panelSubtitle}
             </p>
@@ -75,13 +75,13 @@ export function ProfessionalShell({
                 <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-charcoal-muted/80">
                   {group.label}
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
                   {group.tabs.map((tab) => (
                     <button
                       key={tab.id}
                       type="button"
                       onClick={() => onTabChange(tab.id)}
-                      className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                      className={`shrink-0 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors min-h-[44px] ${
                         activeTab === tab.id
                           ? 'bg-brass text-charcoal'
                           : 'text-charcoal-muted hover:text-white hover:bg-charcoal-light'
@@ -96,7 +96,7 @@ export function ProfessionalShell({
           </nav>
         ) : (
           <nav
-            className="mb-8 flex flex-wrap gap-2 border-b border-charcoal-light pb-4"
+            className="mb-8 flex gap-2 overflow-x-auto border-b border-charcoal-light pb-4 -mx-1 px-1"
             aria-label={`Navegação ${meta.brandName}`}
           >
             {tabs.map((tab) => (
@@ -104,7 +104,7 @@ export function ProfessionalShell({
                 key={tab.id}
                 type="button"
                 onClick={() => onTabChange(tab.id)}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                className={`shrink-0 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors min-h-[44px] ${
                   activeTab === tab.id
                     ? 'bg-brass text-charcoal'
                     : 'text-charcoal-muted hover:text-white hover:bg-charcoal-light'

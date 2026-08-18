@@ -34,7 +34,22 @@ export function authErrorMessage(err: unknown): string {
   if (err instanceof TypeError && /fetch|load failed|network/i.test(err.message)) {
     return 'Não foi possível conectar ao servidor. Verifique sua conexão com a internet e tente novamente.'
   }
-  if (err instanceof Error) return err.message
+  if (err instanceof Error) {
+    const msg = err.message || ''
+    if (/PGRST|42501|permission denied|row-level security/i.test(msg)) {
+      return 'Você não tem permissão para esta ação.'
+    }
+    if (/Invalid login credentials/i.test(msg)) {
+      return 'E-mail ou senha incorretos.'
+    }
+    if (/Email not confirmed/i.test(msg)) {
+      return 'Confirme seu e-mail antes de entrar, ou desative a confirmação no Supabase Auth.'
+    }
+    if (/User already registered/i.test(msg)) {
+      return 'Este e-mail já está cadastrado. Tente entrar.'
+    }
+    return msg
+  }
   return 'Erro inesperado. Tente novamente.'
 }
 

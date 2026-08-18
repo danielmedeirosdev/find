@@ -3,6 +3,8 @@ import { supabase } from '../../../../lib/supabase'
 import { deleteShopMedia, uploadShopMedia } from '../../../../lib/media'
 import { DefaultAvatar, ImageDropzone, ProgressBar, Toast } from '../../../../components/MediaUI'
 import { ProfessionalWeekSchedule } from '../../../../components/ProfessionalWeekSchedule'
+import { StaffAccessPanel } from '../../../../components/StaffAccessPanel'
+import { EmptyState, LoadingBlock } from '../../../../components/EmptyState'
 import type { Barber, BarberSchedule } from '../../../../lib/types'
 
 interface Props {
@@ -156,7 +158,7 @@ export function PetTeam({ shopId }: Props) {
     await load()
   }
 
-  if (loading) return <p className="text-charcoal-muted">Carregando...</p>
+  if (loading) return <LoadingBlock label="Carregando equipe..." />
 
   return (
     <div>
@@ -188,7 +190,10 @@ export function PetTeam({ shopId }: Props) {
       </div>
 
       {barbers.length === 0 ? (
-        <p className="text-charcoal-muted">Nenhum funcionário cadastrado.</p>
+        <EmptyState
+          title="Ainda não há profissionais cadastrados."
+          description="Adicione o primeiro membro da equipe para organizar horários e agenda."
+        />
       ) : (
         <div className="space-y-8">
           {barbers.map((barber) => (
@@ -266,6 +271,8 @@ export function PetTeam({ shopId }: Props) {
                 onUpdate={updateSchedule}
                 onApplyHours={applyHours}
               />
+
+              <StaffAccessPanel barber={barber} onChanged={load} />
             </div>
           ))}
         </div>

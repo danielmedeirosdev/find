@@ -45,6 +45,8 @@ export interface Barber {
   photo_url?: string | null
   role?: string | null
   commission_percent?: number | null
+  /** Linked auth user for staff panel login (set only via edge function). */
+  user_id?: string | null
 }
 
 export type BookingStatus =

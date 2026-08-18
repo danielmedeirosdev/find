@@ -11,13 +11,24 @@ import {
 import { petSizeLabel } from '../../../../lib/pet'
 import { CompleteBookingModal } from '../../../../components/CompleteBookingModal'
 import { DefaultAvatar } from '../../../../components/MediaUI'
+import { EmptyState, InlineError, LoadingBlock } from '../../../../components/EmptyState'
+import { userFacingError } from '../../../../lib/userFacingError'
 import type { BookingWithDetails, Service } from '../../../../lib/types'
 
 interface Props {
   shopId: string
+  barberId?: string
 }
 
-export function PetAgenda({ shopId }: Props) {
+type DayFilter = 'today' | 'tomorrow' | 'upcoming'
+
+function addDaysIso(days: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
+export function PetAgenda({ shopId, barberId }: Props) {
   const [bookings, setBookings] = useState<BookingWithDetails[]>([])
   const [shopServices, setShopServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
@@ -27,6 +38,9 @@ export function PetAgenda({ shopId }: Props) {
   const [searching, setSearching] = useState(false)
   const [actionError, setActionError] = useState('')
   const [loadError, setLoadError] = useState('')
+  const [dayFilter, setDayFilter] = useState<DayFilter>('today')
+  const today = addDaysIso(0)
+  const tomorrow = addDaysIso(1)
 
   const bookingSelect = `
     *,
@@ -45,28 +59,30 @@ export function PetAgenda({ shopId }: Props) {
   }
 
   const load = useCallback(async () => {
-    const today = new Date().toISOString().slice(0, 10)
     setLoadError('')
+    let query = supabase
+      .from('bookings')
+      .select(bookingSelect)
+      .eq('shop_id', shopId)
+      .gte('date', today)
+      .order('date')
+      .order('time')
+    if (barberId) query = query.eq('barber_id', barberId)
+
     const [{ data, error }, { data: svc }] = await Promise.all([
-      supabase
-        .from('bookings')
-        .select(bookingSelect)
-        .eq('shop_id', shopId)
-        .gte('date', today)
-        .order('date')
-        .order('time'),
+      query,
       supabase.from('services').select('*').eq('shop_id', shopId).order('name'),
     ])
 
     if (error) {
-      setLoadError(error.message)
+      setLoadError(userFacingError(error, 'Não foi possível carregar a agenda.'))
       setBookings([])
     } else {
       setBookings((data as BookingWithDetails[]) || [])
     }
     setShopServices(svc || [])
     setLoading(false)
-  }, [shopId])
+  }, [shopId, barberId, today])
 
   useEffect(() => {
     load()
@@ -82,7 +98,7 @@ export function PetAgenda({ shopId }: Props) {
       p_status: status,
     })
     if (error) {
-      setActionError(error.message)
+      setActionError(userFacingError(error, 'Não foi possível atualizar o atendimento.'))
       return
     }
     load()
@@ -101,6 +117,8 @@ export function PetAgenda({ shopId }: Props) {
       .order('date', { ascending: false })
       .order('time', { ascending: false })
 
+    if (barberId) q = q.eq('barber_id', barberId)
+
     if (digits.length >= 8) {
       q = q.ilike('client_phone', `%${digits}%`)
     } else {
@@ -112,7 +130,7 @@ export function PetAgenda({ shopId }: Props) {
     setSearching(false)
   }
 
-  if (loading) return <p className="text-charcoal-muted">Carregando...</p>
+  if (loading) return <LoadingBlock label="Carregando agenda..." />
 
   const activeBookings = bookings.filter(
     (b) =>
@@ -122,40 +140,80 @@ export function PetAgenda({ shopId }: Props) {
       b.status === 'awaiting_payment' ||
       !b.status
   )
+  const filtered =
+    dayFilter === 'today'
+      ? activeBookings.filter((b) => b.date === today)
+      : dayFilter === 'tomorrow'
+        ? activeBookings.filter((b) => b.date === tomorrow)
+        : activeBookings
+  const nextUp = activeBookings[0] || null
 
   return (
-    <div>
-      <h2 className="font-display text-2xl text-white mb-2">Agenda</h2>
+    <div className="overflow-x-hidden">
+      <h2 className="font-display text-2xl text-white mb-2">
+        {barberId ? 'Minha agenda' : 'Agenda'}
+      </h2>
       <p className="text-sm text-charcoal-muted mb-4">
         Veja pet, porte, duração e serviço. Finalize para registrar no histórico e no caixa.
       </p>
       {(actionError || loadError) && (
-        <p className="mb-4 text-sm text-red-400">{actionError || loadError}</p>
+        <div className="mb-4">
+          <InlineError message={actionError || loadError} />
+        </div>
       )}
+
+      {nextUp && (
+        <section className="mb-6 rounded-xl border border-brass/40 bg-brass/5 p-4">
+          <p className="text-[11px] uppercase tracking-widest text-brass/90">Próximo atendimento</p>
+          <p className="mt-2 font-mono text-2xl text-brass">{formatTime(nextUp.time)}</p>
+          <p className="text-sm text-charcoal-muted">{formatDate(nextUp.date)}</p>
+          <p className="mt-2 text-lg font-medium text-white">{nextUp.client_name}</p>
+        </section>
+      )}
+
+      <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+        {([['today', 'Hoje'], ['tomorrow', 'Amanhã'], ['upcoming', 'Próximos']] as const).map(
+          ([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setDayFilter(key)}
+              className={`shrink-0 rounded-lg px-4 py-2.5 text-sm min-h-[44px] ${
+                dayFilter === key
+                  ? 'bg-brass text-charcoal font-semibold'
+                  : 'border border-charcoal-light text-charcoal-muted'
+              }`}
+            >
+              {label}
+            </button>
+          )
+        )}
+      </div>
 
       <div className="mb-8 rounded-lg border border-charcoal-light p-4">
         <h3 className="font-medium text-white mb-3">Histórico do cliente / pet</h3>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <input
             value={clientSearch}
             onChange={(e) => setClientSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && searchClientHistory()}
             placeholder="Buscar por nome ou telefone"
-            className="flex-1 rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white focus:border-brass focus:outline-none"
+            className="w-full flex-1 rounded-lg border border-charcoal-light bg-charcoal px-4 py-2.5 text-white focus:border-brass focus:outline-none min-h-[44px]"
           />
           <button
+            type="button"
             onClick={searchClientHistory}
             disabled={searching}
-            className="rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal disabled:opacity-50"
+            className="rounded-lg bg-brass px-4 py-2.5 font-semibold text-charcoal disabled:opacity-50 min-h-[44px]"
           >
-            {searching ? '...' : 'Buscar'}
+            {searching ? 'Buscando...' : 'Buscar'}
           </button>
         </div>
         {clientHistory.length > 0 && (
           <div className="mt-4 space-y-3">
             {clientHistory.map((b) => {
               const services = (b.booking_services || []).map((bs) => bs.services)
-              const total = services.reduce((sum, s) => sum + Number(s.price), 0)
+              const total = services.reduce((sum, s) => sum + Number(s?.price || 0), 0)
               const petList = petsForBooking(b)
               const petLabel = petList.map((p) => p.name).join(' · ')
               return (
@@ -179,17 +237,20 @@ export function PetAgenda({ shopId }: Props) {
         )}
       </div>
 
-      {activeBookings.length === 0 ? (
-        <p className="text-charcoal-muted">Nenhum agendamento pendente.</p>
+      {filtered.length === 0 ? (
+        <EmptyState
+          title="Nenhum agendamento neste período."
+          description="Quando houver reservas, elas aparecem aqui com pet, horário e serviço."
+        />
       ) : (
         <div className="space-y-4">
-          {activeBookings.map((b) => {
+          {filtered.map((b) => {
             const services = Array.from(
               new Map(
                 (b.booking_services || []).map((bs) => [bs.service_id, bs.services])
               ).values()
             )
-            const total = services.reduce((sum, s) => sum + Number(s.price), 0)
+            const total = services.reduce((sum, s) => sum + Number(s?.price || 0), 0)
             const status = b.status || 'scheduled'
             const duration =
               b.duration_minutes ||
@@ -263,7 +324,7 @@ export function PetAgenda({ shopId }: Props) {
                   {(status === 'scheduled' || !b.status) && (
                     <button
                       onClick={() => updateStatus(b.id, 'confirmed')}
-                      className="rounded-lg border border-charcoal-light px-4 py-2 text-sm text-charcoal-muted hover:text-white"
+                      className="min-h-[44px] rounded-lg border border-charcoal-light px-4 py-2.5 text-sm text-charcoal-muted hover:text-white"
                     >
                       Confirmar
                     </button>
@@ -271,7 +332,7 @@ export function PetAgenda({ shopId }: Props) {
                   {(status === 'scheduled' || status === 'confirmed') && (
                     <button
                       onClick={() => updateStatus(b.id, 'in_progress')}
-                      className="rounded-lg border border-charcoal-light px-4 py-2 text-sm text-charcoal-muted hover:text-white"
+                      className="min-h-[44px] rounded-lg border border-charcoal-light px-4 py-2.5 text-sm text-charcoal-muted hover:text-white"
                     >
                       Iniciar
                     </button>
@@ -279,26 +340,26 @@ export function PetAgenda({ shopId }: Props) {
                   {(status === 'in_progress' || status === 'confirmed' || status === 'scheduled') && (
                     <button
                       onClick={() => updateStatus(b.id, 'awaiting_payment')}
-                      className="rounded-lg border border-charcoal-light px-4 py-2 text-sm text-charcoal-muted hover:text-white"
+                      className="min-h-[44px] rounded-lg border border-charcoal-light px-4 py-2.5 text-sm text-charcoal-muted hover:text-white"
                     >
                       Aguardando pagamento
                     </button>
                   )}
                   <button
                     onClick={() => setCompletingBooking(b)}
-                    className="rounded-lg bg-brass px-4 py-2 text-sm font-semibold text-charcoal"
+                    className="min-h-[44px] rounded-lg bg-brass px-4 py-2.5 text-sm font-semibold text-charcoal"
                   >
                     Finalizar atendimento
                   </button>
                   <button
                     onClick={() => updateStatus(b.id, 'no_show')}
-                    className="rounded-lg border border-charcoal-light px-4 py-2 text-sm text-charcoal-muted hover:text-white"
+                    className="min-h-[44px] rounded-lg border border-charcoal-light px-4 py-2.5 text-sm text-charcoal-muted hover:text-white"
                   >
                     Não compareceu
                   </button>
                   <button
                     onClick={() => updateStatus(b.id, 'cancelled')}
-                    className="rounded-lg border border-red-400/50 px-4 py-2 text-sm text-red-400 hover:bg-red-400/10"
+                    className="min-h-[44px] rounded-lg border border-red-400/50 px-4 py-2.5 text-sm text-red-400 hover:bg-red-400/10"
                   >
                     Cancelado
                   </button>

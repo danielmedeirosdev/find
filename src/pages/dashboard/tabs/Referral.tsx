@@ -337,7 +337,8 @@ export function ReferralTab({ shop, onUpdate }: Props) {
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-charcoal-light">
+          <>
+          <div className="overflow-x-auto rounded-xl border border-charcoal-light hidden md:block">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-charcoal-light text-xs uppercase tracking-wider text-charcoal-muted">
                 <tr>
@@ -363,6 +364,20 @@ export function ReferralTab({ shop, onUpdate }: Props) {
               </tbody>
             </table>
           </div>
+          <ul className="space-y-3 md:hidden">
+            {data.referrals.map((row) => (
+              <li key={row.id} className="rounded-xl border border-charcoal-light px-4 py-3">
+                <p className="font-medium text-white">{row.company}</p>
+                <p className="mt-1 text-sm text-charcoal-muted">
+                  {segmentLabel(String(row.segment))} · {formatDate(row.created_at)}
+                </p>
+                <p className="mt-2 text-sm text-charcoal-muted">
+                  {referralStatusLabel(row)} · {referralRewardLabel(row)}
+                </p>
+              </li>
+            ))}
+          </ul>
+          </>
         )}
       </section>
     </div>

@@ -171,7 +171,19 @@ export function CashFlowTab({ shopId }: Props) {
       {loading ? (
         <p className="text-charcoal-muted">Carregando...</p>
       ) : transactions.length === 0 ? (
-        <p className="text-charcoal-muted">Nenhum lançamento neste período.</p>
+        <div className="rounded-xl border border-dashed border-charcoal-light px-5 py-10 text-center">
+          <p className="text-white font-medium">Nenhum lançamento neste período.</p>
+          <p className="mt-2 text-sm text-charcoal-muted">
+            Atendimentos finalizados e despesas manuais aparecem aqui.
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            className="mt-5 rounded-lg bg-brass px-4 py-2.5 text-sm font-semibold text-charcoal"
+          >
+            Registrar despesa
+          </button>
+        </div>
       ) : (
         <div className="space-y-3">
           {transactions.map((t) => (
