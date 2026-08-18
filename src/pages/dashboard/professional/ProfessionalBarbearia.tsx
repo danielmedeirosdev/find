@@ -12,6 +12,7 @@ import { ReportsTab } from '../tabs/Reports'
 import { ReviewsTab } from '../tabs/Reviews'
 import { ShopLinkTab } from '../tabs/ShopLink'
 import { SubscriptionTab } from '../tabs/Subscription'
+import { ReferralTab } from '../tabs/Referral'
 
 const BARBEARIA_TABS = [
   { id: 'overview', label: 'Visão geral' },
@@ -24,6 +25,7 @@ const BARBEARIA_TABS = [
   { id: 'reports', label: 'Relatórios' },
   { id: 'reviews', label: 'Avaliações' },
   { id: 'link', label: 'Link da Barbearia' },
+  { id: 'referral', label: 'Indique e ganhe' },
   { id: 'subscription', label: 'Assinatura' },
 ] as const
 
@@ -74,6 +76,7 @@ export function ProfessionalBarbearia({
       {activeTab === 'reports' && <ReportsTab shopId={shop.id} />}
       {activeTab === 'reviews' && <ReviewsTab shopId={shop.id} segment="barbershop" />}
       {activeTab === 'link' && <ShopLinkTab shop={shop} onUpdate={onUpdate} />}
+      {activeTab === 'referral' && <ReferralTab shop={shop} onUpdate={onUpdate} />}
       {activeTab === 'subscription' && (
         <SubscriptionTab
           shop={shop}

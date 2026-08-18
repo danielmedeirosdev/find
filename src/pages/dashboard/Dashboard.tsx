@@ -71,7 +71,8 @@ export function Dashboard() {
     if (
       resolved.subscription_status === 'trial' &&
       resolved.trial_ends_at &&
-      new Date(resolved.trial_ends_at) <= new Date()
+      new Date(resolved.trial_ends_at) <= new Date() &&
+      !(resolved.complimentary_until && new Date(resolved.complimentary_until) > new Date())
     ) {
       const { data: updated } = await supabase
         .from('shops')
@@ -136,8 +137,10 @@ export function Dashboard() {
   if (!shop) return <Navigate to="/painel" replace />
 
   const isPet = normalizeSegment(shop.segment) === 'pet'
+  const complimentaryActive =
+    Boolean(shop.complimentary_until) && new Date(shop.complimentary_until as string) > new Date()
 
-  if (shop.subscription_status === 'blocked') {
+  if (shop.subscription_status === 'blocked' && !complimentaryActive) {
     const blockReason = shop.asaas_customer_id ? 'payment_overdue' : 'trial_expired'
     return (
       <SegmentProvider segment={isPet ? 'pet' : 'barbershop'}>

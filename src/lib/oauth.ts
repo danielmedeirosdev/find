@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabase'
 import { ensureBarberShop } from './auth'
 import { getSegment } from './segments'
+import { readStoredReferralCode } from './referral'
 import type { GoogleCredentialResponse } from './google'
 import type { ShopSegment } from './types'
 
@@ -101,11 +102,14 @@ export async function finalizeOAuthLogin(roleHint?: string | null) {
   const user = session.user
   const displayName = googleDisplayName(user)
 
+  const referralCode = readStoredReferralCode()
   await supabase.auth.updateUser({
     data: {
       role,
       name: displayName,
-      ...(role === 'barber' ? { shop_name: shopName, segment } : {}),
+      ...(role === 'barber'
+        ? { shop_name: shopName, segment, ...(referralCode ? { referral_code: referralCode } : {}) }
+        : {}),
     },
   })
 

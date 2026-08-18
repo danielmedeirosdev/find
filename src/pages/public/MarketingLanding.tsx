@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { BarberPole } from '../../components/BarberPole'
 import { CtaArrow, ListMark } from '../../components/SegmentMark'
+import { ReferralLandingSection } from '../../components/ReferralLandingSection'
 
 const steps = [
   ['01', 'Escolha a solução', 'Barbearia ou pet shop. O ONEFIND se adapta ao seu negócio.'],
@@ -282,6 +283,12 @@ export function MarketingLanding() {
               </article>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="bg-paper px-4 py-16 sm:py-20">
+        <div className="mx-auto max-w-5xl">
+          <ReferralLandingSection variant="platform" />
         </div>
       </section>
 

@@ -15,6 +15,7 @@ import {
 } from '../../components/FormHints'
 import { useAuth } from '../../contexts/AuthContext'
 import type { ShopSegment } from '../../lib/types'
+import { readStoredReferralCode } from '../../lib/referral'
 
 export function BarberAuth() {
   const navigate = useNavigate()
@@ -101,6 +102,7 @@ export function BarberAuth() {
         }
 
         const shopNameValue = shopName.trim() || defaultShopName
+        const referralCode = readStoredReferralCode()
 
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
@@ -110,6 +112,7 @@ export function BarberAuth() {
               role: 'barber',
               shop_name: shopNameValue,
               segment,
+              ...(referralCode ? { referral_code: referralCode } : {}),
             },
           },
         })

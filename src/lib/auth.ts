@@ -5,6 +5,7 @@ import {
   isOnlyBarbershopDefaultServices,
 } from './defaultServices'
 import { defaultSizeRules } from './pet'
+import { attachStoredReferral } from './referral'
 import { supabase } from './supabase'
 import type { ShopSegment } from './types'
 
@@ -88,6 +89,7 @@ export async function ensureBarberShop(
       if (error) throw error
     }
     await seedDefaultServices(existing.id, segment)
+    await attachStoredReferral()
     return { id: existing.id }
   }
 
@@ -111,5 +113,6 @@ export async function ensureBarberShop(
 
   if (error) throw error
   if (created) await seedDefaultServices(created.id, segment)
+  await attachStoredReferral()
   return created
 }

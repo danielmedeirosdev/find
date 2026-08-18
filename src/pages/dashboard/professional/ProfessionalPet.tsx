@@ -14,6 +14,7 @@ import { PackagesTab } from '../tabs/Packages'
 import { CashFlowTab } from '../tabs/CashFlow'
 import { ReportsTab } from '../tabs/Reports'
 import { SubscriptionTab } from '../tabs/Subscription'
+import { ReferralTab } from '../tabs/Referral'
 
 const PET_TAB_GROUPS: { label: string; tabs: { id: string; label: string }[] }[] = [
   {
@@ -41,6 +42,7 @@ const PET_TAB_GROUPS: { label: string; tabs: { id: string; label: string }[] }[]
       { id: 'reviews', label: 'Avaliações' },
       { id: 'info', label: 'Meu pet shop' },
       { id: 'link', label: 'Link público' },
+      { id: 'referral', label: 'Indique e ganhe' },
       { id: 'subscription', label: 'Plano' },
     ],
   },
@@ -96,6 +98,7 @@ export function ProfessionalPet({
       {activeTab === 'reports' && <ReportsTab shopId={shop.id} />}
       {activeTab === 'reviews' && <PetReviews shopId={shop.id} />}
       {activeTab === 'link' && <PetShopLink shop={shop} onUpdate={onUpdate} />}
+      {activeTab === 'referral' && <ReferralTab shop={shop} onUpdate={onUpdate} />}
       {activeTab === 'subscription' && (
         <SubscriptionTab
           shop={shop}

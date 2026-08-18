@@ -47,11 +47,26 @@ export function SubscriptionTab({ shop, onUpdate, onSubscribe, subscribing, subs
 
   const trialDays = shop.subscription_status === 'trial' ? getTrialDaysRemaining(shop.trial_ends_at) : null
   const trialUrgent = trialDays !== null && trialDays <= 3
+  const complimentaryActive =
+    Boolean(shop.complimentary_until) && new Date(shop.complimentary_until as string) > new Date()
+  const complimentaryDays = shop.complimentary_until
+    ? Math.max(0, Math.ceil((new Date(shop.complimentary_until).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null
 
   return (
     <div className="max-w-lg">
       <h2 className="font-display text-2xl text-white mb-6">Assinatura</h2>
 
+      {complimentaryActive && (
+        <div className="rounded-lg border border-brass/40 bg-brass/5 p-4 mb-6">
+          <p className="text-sm font-medium text-white">Mês grátis de indicação ativo</p>
+          <p className="text-xs text-charcoal-muted mt-1">
+            {complimentaryDays === 1
+              ? 'Seu crédito termina amanhã.'
+              : `Seu crédito vale por mais ${complimentaryDays} dias.`}
+          </p>
+        </div>
+      )}
       {shop.subscription_status === 'trial' && trialDays !== null && (
         <div
           className={`rounded-lg border p-4 mb-6 ${

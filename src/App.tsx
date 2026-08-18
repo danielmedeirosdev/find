@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
+import { ReferralCapture } from './components/ReferralCapture'
 import { PublicLayout } from './components/PublicLayout'
 import { DashboardLayout } from './components/DashboardLayout'
 import { PlatformHome } from './pages/public/PlatformHome'
@@ -22,6 +23,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <ReferralCapture />
         <Routes>
           <Route path="apresentacao" element={<MarketingLanding />} />
           <Route path="solucoes" element={<Navigate to="/" replace />} />

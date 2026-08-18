@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { ACTIVE_SEGMENTS, SEGMENTS } from '../../lib/segments'
 import { BrandAccent } from '../../components/BrandAccent'
 import { SegmentMark, CtaArrow } from '../../components/SegmentMark'
+import { ReferralLandingSection } from '../../components/ReferralLandingSection'
 
 const TRUST = [
   { title: 'Sem aplicativo', text: 'Agende pelo site, no celular ou no computador.' },
@@ -91,6 +92,10 @@ export function PlatformHome() {
               </li>
             ))}
           </ol>
+        </div>
+
+        <div className="platform-fade platform-fade-delay-4 mt-12 w-full rounded-2xl border border-ink/10 bg-white/80 px-5 py-7 text-left sm:px-8">
+          <ReferralLandingSection variant="platform" />
         </div>
 
         <div className="platform-fade platform-fade-delay-4 mt-10 w-full max-w-lg rounded-xl border border-ink/10 bg-white/70 px-5 py-6">

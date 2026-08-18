@@ -18,14 +18,33 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { data, error } = await supabase
+    const now = new Date();
+    const { data: trials, error } = await supabase
       .from("shops")
-      .update({ subscription_status: "blocked" })
+      .select("id, complimentary_until")
       .eq("subscription_status", "trial")
-      .lt("trial_ends_at", new Date().toISOString())
-      .select("id");
+      .lt("trial_ends_at", now.toISOString());
 
     if (error) throw error;
+
+    const toBlock = (trials || []).filter((shop) => {
+      if (!shop.complimentary_until) return true;
+      return new Date(shop.complimentary_until) <= now;
+    }).map((shop) => shop.id);
+
+    if (toBlock.length === 0) {
+      return new Response(JSON.stringify({ expired: 0 }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const { data, error: updateError } = await supabase
+      .from("shops")
+      .update({ subscription_status: "blocked" })
+      .in("id", toBlock)
+      .select("id");
+
+    if (updateError) throw updateError;
 
     return new Response(
       JSON.stringify({ expired: data?.length ?? 0 }),

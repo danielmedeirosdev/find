@@ -22,6 +22,7 @@ import { BrandAccent } from '../../components/BrandAccent'
 import { CtaArrow, BackArrow, SearchMark } from '../../components/SegmentMark'
 import { RatingBadge } from '../../components/reviews/StarRating'
 import { PageLoader, ShopCardSkeleton } from '../../components/public/PageLoader'
+import { ReferralLandingSection } from '../../components/ReferralLandingSection'
 
 interface ShopWithServices extends Shop {
   services: Service[]
@@ -367,6 +368,10 @@ export function ShopList({ segment }: Props) {
           })}
         </div>
       )}
+
+      <div className="mt-16 rounded-2xl border border-ink/10 bg-white/80 px-5 py-8 sm:px-8">
+        <ReferralLandingSection variant={isPet ? 'pet' : 'barbershop'} />
+      </div>
     </div>
   )
 }

@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
 
     const { data: shop } = await supabase
       .from("shops")
-      .select("id")
+      .select("id, complimentary_until")
       .eq("asaas_customer_id", payment.customer)
       .maybeSingle();
 
@@ -46,11 +46,17 @@ Deno.serve(async (req) => {
         .from("shops")
         .update({ subscription_status: "active" })
         .eq("id", shop.id);
+
+      await supabase.rpc("convert_shop_referral", { p_shop_id: shop.id });
     } else if (event === "PAYMENT_OVERDUE") {
-      await supabase
-        .from("shops")
-        .update({ subscription_status: "blocked" })
-        .eq("id", shop.id);
+      const complimentaryActive =
+        shop.complimentary_until && new Date(shop.complimentary_until) > new Date();
+      if (!complimentaryActive) {
+        await supabase
+          .from("shops")
+          .update({ subscription_status: "blocked" })
+          .eq("id", shop.id);
+      }
     }
 
     return new Response(JSON.stringify({ received: true }), {
