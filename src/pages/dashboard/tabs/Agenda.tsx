@@ -273,7 +273,7 @@ export function AgendaTab({ shopId, barberId }: Props) {
                 ? 'Nenhum atendimento para amanhã.'
                 : 'Nenhum agendamento pendente.'
           }
-          description="Quando houver reservas confirmadas, elas aparecem aqui com horário, cliente e serviço."
+          description="Quando houver reservas, elas aparecem aqui com horário, cliente e serviço."
         />
       ) : (
         <div className="space-y-4">

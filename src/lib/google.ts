@@ -43,7 +43,7 @@ export function loadGoogleIdentityServices(): Promise<void> {
     const existing = document.querySelector<HTMLScriptElement>(`script[src="${GSI_SRC}"]`)
     if (existing) {
       existing.addEventListener('load', () => resolve(), { once: true })
-      existing.addEventListener('error', () => reject(new Error('Falha ao carregar Google.')), {
+      existing.addEventListener('error', () => reject(new Error('Não foi possível carregar o Google.')), {
         once: true,
       })
       return
@@ -53,7 +53,7 @@ export function loadGoogleIdentityServices(): Promise<void> {
     script.src = GSI_SRC
     script.async = true
     script.onload = () => resolve()
-    script.onerror = () => reject(new Error('Falha ao carregar Google.'))
+    script.onerror = () => reject(new Error('Não foi possível carregar o Google.'))
     document.head.appendChild(script)
   })
 

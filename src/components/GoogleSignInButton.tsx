@@ -5,6 +5,7 @@ import {
   loadGoogleIdentityServices,
   type GoogleCredentialResponse,
 } from '../lib/google'
+import { userFacingError } from '../lib/userFacingError'
 
 type Tone = 'light' | 'dark'
 
@@ -37,7 +38,7 @@ export function GoogleSignInButton({
       try {
         await loadGoogleIdentityServices()
         if (cancelled || !hostRef.current || !window.google?.accounts?.id) {
-          throw new Error('Google não carregou. Atualize a página.')
+          throw new Error('Não foi possível carregar o Google. Atualize a página e tente novamente.')
         }
 
         const [rawNonce, hashedNonce] = await generateGoogleNonce()
@@ -49,8 +50,7 @@ export function GoogleSignInButton({
             try {
               await callbackRef.current(response, rawNonce)
             } catch (err) {
-              const message =
-                err instanceof Error ? err.message : 'Falha no login com Google.'
+              const message = userFacingError(err, 'Não foi possível entrar com Google.')
               errorRef.current?.(message)
             }
           },
@@ -81,9 +81,7 @@ export function GoogleSignInButton({
         if (!cancelled) {
           setLoading(false)
           errorRef.current?.(
-            err instanceof Error
-              ? err.message
-              : 'Não foi possível carregar o botão do Google.'
+            userFacingError(err, 'Não foi possível carregar o botão do Google. Atualize a página.')
           )
         }
       }
@@ -106,7 +104,7 @@ export function GoogleSignInButton({
               : 'text-center text-xs text-ink-muted mb-2'
           }
         >
-          Carregando Google...
+          Conectando ao Google...
         </p>
       )}
       <div

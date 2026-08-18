@@ -116,7 +116,7 @@ describe('dashboard roles', () => {
 describe('userFacingError', () => {
   it('hides technical postgres / network codes', () => {
     expect(userFacingError('PGRST116', 'Falha ao salvar')).toBe(
-      'Você não tem permissão para esta ação.'
+      'Você não tem permissão para realizar esta ação.'
     )
     expect(userFacingError(new Error('Failed to fetch'), 'Falha')).toMatch(/conectar/i)
     expect(userFacingError(new Error('500 Internal Server Error'), 'Não foi possível salvar')).toBe(
@@ -131,6 +131,15 @@ describe('userFacingError', () => {
         'Falha'
       )
     ).toMatch(/permissão/i)
+  })
+
+  it('hides English auth and deploy jargon', () => {
+    expect(userFacingError(new Error('Invalid login credentials'), 'Falha')).toBe(
+      'E-mail ou senha incorretos.'
+    )
+    expect(
+      userFacingError(new Error('Could not find the function public.foo'), 'Falha ao salvar')
+    ).toBe('Falha ao salvar')
   })
 })
 

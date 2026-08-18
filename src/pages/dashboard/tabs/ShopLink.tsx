@@ -13,6 +13,7 @@ import { FieldHint } from '../../../components/FormHints'
 import { CtaArrow } from '../../../components/SegmentMark'
 import { getSegment } from '../../../lib/segments'
 import type { Barber, Shop, ShopPhoto } from '../../../lib/types'
+import { userFacingError } from '../../../lib/userFacingError'
 
 interface Props {
   shop: Shop
@@ -77,9 +78,9 @@ export function ShopLinkTab({ shop, onUpdate }: Props) {
 
     if (updateError) {
       if (/unique|duplicate/i.test(updateError.message)) {
-        setError('Esse endereço já está em uso.')
+        setError('Este endereço já está em uso. Escolha outro.')
       } else {
-        setError(updateError.message)
+        setError(userFacingError(updateError, 'Não foi possível atualizar o endereço. Tente novamente.'))
       }
       setSaving(false)
       return
@@ -87,7 +88,7 @@ export function ShopLinkTab({ shop, onUpdate }: Props) {
 
     setSlug(cleaned)
     setEditing(false)
-    setToast('Endereço atualizado.')
+      setToast('Endereço atualizado com sucesso.')
     setSaving(false)
     onUpdate()
   }
@@ -95,9 +96,9 @@ export function ShopLinkTab({ shop, onUpdate }: Props) {
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(fullUrl)
-      setToast('Link copiado com sucesso.')
+      setToast('Link copiado.')
     } catch {
-      setToast('Não foi possível copiar.')
+      setToast('Não foi possível copiar o link. Selecione e copie manualmente.')
     }
   }
 

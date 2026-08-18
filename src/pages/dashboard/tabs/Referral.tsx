@@ -12,6 +12,7 @@ import {
   type ReferralRewardRow,
 } from '../../../lib/referral'
 import type { Shop, ShopSegment } from '../../../lib/types'
+import { userFacingError } from '../../../lib/userFacingError'
 
 interface Props {
   shop: Shop
@@ -59,7 +60,7 @@ export function ReferralTab({ shop, onUpdate }: Props) {
       const overview = await fetchReferralOverview()
       setData(overview)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível carregar as indicações.')
+      setError(userFacingError(err, 'Não foi possível carregar as indicações. Tente novamente.'))
     }
     setLoading(false)
   }, [])
@@ -127,7 +128,7 @@ export function ReferralTab({ shop, onUpdate }: Props) {
       await load()
       onUpdate?.()
     } catch {
-      setApplyError('Não foi possível aplicar seu benefício. Tente novamente.')
+      setApplyError('Não foi possível aplicar o benefício. Tente novamente em instantes.')
     }
     setApplyingId(null)
   }
@@ -326,7 +327,7 @@ export function ReferralTab({ shop, onUpdate }: Props) {
           <div className="rounded-xl border border-dashed border-charcoal-light px-5 py-10 text-center">
             <p className="text-white">Ainda não há indicações</p>
             <p className="mt-1 text-sm text-charcoal-muted">
-              Compartilhe seu link exclusivo e comece a ganhar benefícios.
+              Compartilhe seu link exclusivo para começar a acumular benefícios.
             </p>
             <button
               type="button"

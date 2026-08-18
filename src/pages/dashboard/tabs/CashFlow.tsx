@@ -174,7 +174,7 @@ export function CashFlowTab({ shopId }: Props) {
         <div className="rounded-xl border border-dashed border-charcoal-light px-5 py-10 text-center">
           <p className="text-white font-medium">Nenhum lançamento neste período.</p>
           <p className="mt-2 text-sm text-charcoal-muted">
-            Atendimentos finalizados e despesas manuais aparecem aqui.
+            Atendimentos finalizados e despesas manuais aparecem nesta lista.
           </p>
           <button
             type="button"

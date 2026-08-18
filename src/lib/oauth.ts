@@ -93,7 +93,7 @@ export async function finalizeOAuthLogin(roleHint?: string | null) {
 
   if (sessionError) throw sessionError
   if (!session?.user) {
-    throw new Error('Não foi possível concluir o login com Google. Tente novamente.')
+    throw new Error('Não foi possível concluir o acesso com Google. Tente novamente.')
   }
 
   const hintRole: OAuthRole =
@@ -147,10 +147,10 @@ export async function completeGoogleCredentialLogin(
   segment?: ShopSegment
 ) {
   if (!isSupabaseConfigured) {
-    throw new Error('Configure o Supabase no arquivo .env antes de entrar com Google.')
+    throw new Error('O login com Google está temporariamente indisponível. Tente novamente em instantes.')
   }
   if (!response?.credential) {
-    throw new Error('Google não retornou credencial. Tente novamente.')
+    throw new Error('O Google não concluiu a verificação. Tente novamente.')
   }
 
   rememberOAuthIntent(role, shopName, segment)

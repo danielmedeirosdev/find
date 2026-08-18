@@ -12,6 +12,7 @@ import {
   loadOccupiedSlots,
 } from '../../lib/booking'
 import { formatPrice, formatDuration, formatPhone } from '../../lib/format'
+import { userFacingError } from '../../lib/userFacingError'
 import {
   createPublicBooking,
   finalizePublicBooking,
@@ -122,7 +123,7 @@ export function ShopBooking() {
       try {
         slots = await loadOccupiedSlots(shopId!)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Não foi possível carregar a agenda.')
+        setError(userFacingError(err, 'Não foi possível carregar a agenda. Atualize a página e tente novamente.'))
       }
 
       setShop(shopData)
@@ -174,7 +175,7 @@ export function ShopBooking() {
   const handleSubmit = async () => {
     if (!shop || !selectedBarberId || !selectedDate || !selectedTime) return
     if (!clientName.trim() || !clientPhone.trim()) {
-      setError('Informe nome e WhatsApp.')
+      setError('Informe seu nome e um WhatsApp válido para continuar.')
       return
     }
 
@@ -195,7 +196,7 @@ export function ShopBooking() {
           phone: clientPhone.replace(/\D/g, '') || null,
         })
         if (clientError) {
-          setError(clientError.message)
+          setError(userFacingError(clientError, 'Não foi possível salvar seus dados. Tente novamente.'))
           setSubmitting(false)
           return
         }

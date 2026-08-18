@@ -38,7 +38,7 @@ export function ReviewsSection({
     return (
       <section className={className}>
         <h2 className={`font-display text-2xl ${titleCls} mb-3`}>{title}</h2>
-        <p className={`text-sm ${muted}`}>Ainda não há avaliações. Seja o primeiro após um atendimento.</p>
+        <p className={`text-sm ${muted}`}>Ainda não há avaliações. Seja o primeiro após concluir um atendimento.</p>
       </section>
     )
   }

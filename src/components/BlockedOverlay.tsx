@@ -33,12 +33,12 @@ export function BlockedOverlay({
     <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
       <BrandAccent className="mb-6 max-w-md" height="h-2" segment={seg.id} />
       <h2 className="font-display text-4xl text-brass mb-2">
-        {isTrialExpired ? 'Seu teste grátis terminou' : 'Assinatura em atraso'}
+        {isTrialExpired ? 'Período de teste encerrado' : 'Assinatura pendente'}
       </h2>
       <p className="max-w-md text-charcoal-muted mb-2">
         {isTrialExpired ? (
           <>
-            O período de teste de <strong className="text-white">{shopName}</strong> acabou.
+            O período de teste de <strong className="text-white">{shopName}</strong> chegou ao fim.
             Assine o FIND para continuar recebendo agendamentos online.
           </>
         ) : (
@@ -52,7 +52,7 @@ export function BlockedOverlay({
         Status: <span className="text-red-400">{subscriptionLabel('blocked')}</span>.
         {isTrialExpired
           ? ` Escolha um plano para reativar ${seg.deleteArticle === 'a' ? 'sua' : 'seu'} ${seg.deleteConfirmVerb}.`
-          : ' Regularize para voltar a receber agendamentos online.'}
+          : ' Regularize o pagamento para voltar a receber agendamentos online.'}
       </p>
       <p className="font-mono text-brass text-lg mb-6">
         {formatPrice(SUBSCRIPTION_PRICE)}/mês

@@ -7,6 +7,7 @@ import { BlockedOverlay } from '../../components/BlockedOverlay'
 import { SegmentProvider } from '../../contexts/SegmentContext'
 import { normalizeSegment, parseSegmentParam } from '../../lib/segments'
 import { pickDashboardMembership, type DashboardRole } from '../../lib/dashboardRole'
+import { userFacingError } from '../../lib/userFacingError'
 import { LoadingBlock } from '../../components/EmptyState'
 import { ProfessionalBarbearia } from './professional/ProfessionalBarbearia'
 import { ProfessionalPet } from './professional/ProfessionalPet'
@@ -86,7 +87,7 @@ export function Dashboard() {
         setBarber(null)
         setRole(null)
         setLoadError(
-          'Não foi possível abrir a área do profissional. Atualize a página e tente novamente.'
+          'Não foi possível abrir a área do profissional. Atualize a página ou solicite um novo acesso ao responsável.'
         )
         return
       }
@@ -97,7 +98,7 @@ export function Dashboard() {
           setBarber(null)
           setRole(null)
           setLoadError(
-            'Não foi possível abrir a área do profissional. Atualize a página e tente novamente.'
+            'Não foi possível abrir a área do profissional. Atualize a página ou solicite um novo acesso ao responsável.'
           )
           return
         }
@@ -193,7 +194,7 @@ export function Dashboard() {
       }
       if (!result.paymentLink) {
         setSubscribeError(
-          'Pagamento criado, mas o Asaas não retornou link. Tente novamente em alguns segundos.'
+          'O pagamento foi registrado, mas o link não ficou disponível. Tente novamente em instantes.'
         )
         return
       }
@@ -202,7 +203,7 @@ export function Dashboard() {
         paymentUrl.protocol !== 'https:' ||
         (paymentUrl.hostname !== 'asaas.com' && !paymentUrl.hostname.endsWith('.asaas.com'))
       ) {
-        throw new Error('O provedor retornou um endereço de pagamento inválido.')
+        throw new Error('O endereço de pagamento é inválido. Tente novamente em instantes.')
       }
       const opened = window.open(paymentUrl.href, '_blank', 'noopener,noreferrer')
       if (!opened) {
@@ -210,13 +211,13 @@ export function Dashboard() {
       }
       await loadMembership({ silent: true })
     } catch (err) {
-      setSubscribeError(err instanceof Error ? err.message : 'Erro ao criar assinatura.')
+      setSubscribeError(userFacingError(err, 'Não foi possível iniciar a assinatura. Tente novamente.'))
     }
     setSubscribing(false)
   }
 
   if (authLoading || loading) {
-    return <LoadingBlock label="Carregando painel..." />
+    return <LoadingBlock label="Carregando o painel..." />
   }
 
   if (!user) return <Navigate to="/painel" replace />
@@ -251,8 +252,8 @@ export function Dashboard() {
           <div className="mx-auto max-w-lg rounded-xl border border-charcoal-light p-6 text-center">
             <h1 className="font-display text-2xl text-brass">Estabelecimento indisponível</h1>
             <p className="mt-3 text-sm text-charcoal-muted">
-              O acesso do {shop.name} está temporariamente bloqueado. Peça ao dono para regularizar a
-              assinatura.
+              O acesso a {shop.name} está temporariamente bloqueado. Solicite ao responsável que
+              regularize a assinatura.
             </p>
           </div>
         </SegmentProvider>
@@ -279,7 +280,7 @@ export function Dashboard() {
         <div className="mx-auto max-w-lg rounded-xl border border-charcoal-light p-6 text-center">
           <p className="text-white font-medium">Não foi possível abrir a área do profissional</p>
           <p className="mt-2 text-sm text-charcoal-muted">
-            Seu acesso de equipe está incompleto. Peça ao dono para reenviar o convite.
+            Seu acesso de equipe está incompleto. Solicite ao responsável que recrie o login.
           </p>
         </div>
       )

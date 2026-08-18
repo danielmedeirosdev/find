@@ -41,7 +41,7 @@ export function TimeSlotGrid({
   slots,
   selected,
   onSelect,
-  emptyMessage = 'Nenhum horário disponível nesta data.',
+  emptyMessage = 'Não há horários disponíveis nesta data.',
 }: Props) {
   if (slots.length === 0) {
     return <p className="text-sm text-ink-muted">{emptyMessage}</p>

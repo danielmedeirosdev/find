@@ -11,6 +11,7 @@ import type {
   Pet,
   ShopCustomer,
 } from '../../../lib/types'
+import { userFacingError } from '../../../lib/userFacingError'
 
 interface Props {
   shopId: string
@@ -87,7 +88,7 @@ export function CustomersTab({ shopId }: Props) {
   const addCustomer = async () => {
     const digits = phone.replace(/\D/g, '')
     if (!name.trim() || digits.length < 10) {
-      setToast('Informe nome e WhatsApp válidos.')
+      setToast('Informe o nome e um WhatsApp válido.')
       return
     }
     const { error } = await supabase.from('shop_customers').insert({
@@ -97,13 +98,20 @@ export function CustomersTab({ shopId }: Props) {
       notes: notes.trim() || null,
     })
     if (error) {
-      setToast(/unique|duplicate/i.test(error.message) ? 'Já existe cliente com este telefone.' : error.message)
+      setToast(
+        userFacingError(
+          error,
+          /unique|duplicate/i.test(error.message)
+            ? 'Já existe um cliente com este telefone.'
+            : 'Não foi possível cadastrar o cliente. Tente novamente.'
+        )
+      )
       return
     }
     setName('')
     setPhone('')
     setNotes('')
-    setToast('Cliente cadastrado.')
+    setToast('Cliente cadastrado com sucesso.')
     load()
   }
 
@@ -114,7 +122,7 @@ export function CustomersTab({ shopId }: Props) {
       .update({ notes: editNotes.trim() || null })
       .eq('id', selectedId)
     if (error) {
-      setToast(error.message)
+      setToast(userFacingError(error, 'Não foi possível salvar as observações. Tente novamente.'))
       return
     }
     setToast('Observações salvas.')
@@ -122,7 +130,7 @@ export function CustomersTab({ shopId }: Props) {
   }
 
   const removeCustomer = async (id: string) => {
-    if (!confirm('Remover cliente e todos os pets vinculados?')) return
+    if (!confirm('Isso remove o cliente e os pets vinculados. Esta ação não pode ser desfeita. Deseja continuar?')) return
     await supabase.from('shop_customers').delete().eq('id', id)
     if (selectedId === id) setSelectedId(null)
     load()
@@ -173,7 +181,7 @@ export function CustomersTab({ shopId }: Props) {
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="space-y-2">
           {customers.length === 0 ? (
-            <p className="text-charcoal-muted">Nenhum cliente ainda.</p>
+            <p className="text-charcoal-muted">Nenhum cliente cadastrado.</p>
           ) : (
             customers.map((c) => (
               <button

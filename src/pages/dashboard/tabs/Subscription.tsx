@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { formatPrice, subscriptionLabel, getTrialDaysRemaining } from '../../../lib/format'
 import { SUBSCRIPTION_PRICE, type Shop, type BillingType, type SubscribeHandler } from '../../../lib/types'
+import { userFacingError } from '../../../lib/userFacingError'
 import { BrandAccent } from '../../../components/BrandAccent'
 
 interface Props {
@@ -30,9 +31,9 @@ export function SubscriptionTab({ shop, onUpdate, onSubscribe, subscribing, subs
       .from('shops')
       .update({ cpf_cnpj: cleaned })
       .eq('id', shop.id)
-    if (error) setMessage(error.message)
+    if (error) setMessage(userFacingError(error, 'Não foi possível salvar o CPF/CNPJ. Tente novamente.'))
     else {
-      setMessage('CPF/CNPJ salvo!')
+      setMessage('CPF/CNPJ salvo com sucesso.')
       onUpdate()
     }
     setSaving(false)
@@ -77,7 +78,7 @@ export function SubscriptionTab({ shop, onUpdate, onSubscribe, subscribing, subs
         >
           <p className={`text-sm font-medium ${trialUrgent ? 'text-yellow-300' : 'text-white'}`}>
             {trialDays === 0
-              ? 'Seu teste grátis termina hoje!'
+              ? 'Seu período de teste termina hoje.'
               : trialDays === 1
                 ? 'Seu teste grátis termina amanhã!'
                 : `Seu teste grátis termina em ${trialDays} dias`}

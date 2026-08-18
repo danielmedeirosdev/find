@@ -6,6 +6,7 @@ import { RATING_LABELS, submitGuestReview } from '../../lib/reviews'
 import { StarPicker } from '../../components/reviews/StarRating'
 import { FieldLabel } from '../../components/FormHints'
 import { BrandAccent } from '../../components/BrandAccent'
+import { userFacingError } from '../../lib/userFacingError'
 
 export function GuestReview() {
   const { bookingId } = useParams<{ bookingId: string }>()
@@ -51,7 +52,7 @@ export function GuestReview() {
       await submitGuestReview(bookingId, phone, rating, comment)
       setDone(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível enviar.')
+      setError(userFacingError(err, 'Não foi possível enviar a avaliação. Tente novamente.'))
       setSubmitting(false)
     }
   }

@@ -6,6 +6,7 @@ import { ProfessionalWeekSchedule } from '../../../components/ProfessionalWeekSc
 import { StaffAccessPanel } from '../../../components/StaffAccessPanel'
 import { EmptyState, LoadingBlock } from '../../../components/EmptyState'
 import type { Barber, BarberSchedule } from '../../../lib/types'
+import { userFacingError } from '../../../lib/userFacingError'
 
 interface Props {
   shopId: string
@@ -60,7 +61,7 @@ export function TeamScheduleTab({ shopId }: Props) {
   }
 
   const removeBarber = async (barber: Barber) => {
-    if (!confirm('Remover este funcionário?')) return
+    if (!confirm('O profissional será removido da equipe e da agenda. Deseja continuar?')) return
     if (barber.photo_url) await deleteShopMedia(barber.photo_url)
     await supabase.from('barbers').delete().eq('id', barber.id)
     load()
@@ -85,14 +86,14 @@ export function TeamScheduleTab({ shopId }: Props) {
       setToast('Foto atualizada.')
       load()
     } catch (err) {
-      setToast(err instanceof Error ? err.message : 'Erro no upload')
+      setToast(userFacingError(err, 'Não foi possível enviar a foto. Tente novamente.'))
     }
     setUploadingId(null)
     setProgress(0)
   }
 
   const removePhoto = async (barber: Barber) => {
-    if (!barber.photo_url || !confirm('Remover foto?')) return
+    if (!barber.photo_url || !confirm('Remover a foto deste profissional?')) return
     await deleteShopMedia(barber.photo_url)
     await supabase.from('barbers').update({ photo_url: null }).eq('id', barber.id)
     load()
@@ -165,8 +166,8 @@ export function TeamScheduleTab({ shopId }: Props) {
       <Toast message={toast} onClose={() => setToast(null)} />
       <h2 className="font-display text-2xl text-white mb-2">Equipe e horários</h2>
       <p className="text-sm text-charcoal-muted mb-6">
-        Cadastre a equipe, horários e, se quiser, um acesso individual ao painel (só a própria
-        agenda — sem financeiro ou assinatura).
+        Cadastre a equipe, os horários e, se quiser, um acesso individual ao painel. Cada profissional
+        vê apenas a própria agenda, sem financeiro ou assinatura.
       </p>
 
       <div className="mb-8 flex flex-wrap gap-2">
@@ -192,8 +193,8 @@ export function TeamScheduleTab({ shopId }: Props) {
 
       {barbers.length === 0 ? (
         <EmptyState
-          title="Ainda não há profissionais cadastrados."
-          description="Adicione o primeiro membro da equipe para organizar horários e agenda."
+          title="Ainda não há profissionais na equipe."
+          description="Adicione o primeiro membro para organizar horários e a agenda."
         />
       ) : (
         <div className="space-y-8">

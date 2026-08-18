@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase, authErrorMessage, isSupabaseConfigured } from '../../lib/supabase'
+import { userFacingError } from '../../lib/userFacingError'
 import { ensureAuthSession, ensureBarberShop } from '../../lib/auth'
 import { completeGoogleCredentialLogin } from '../../lib/oauth'
 import { getSegment, parseSegmentParam, ACTIVE_SEGMENTS, SEGMENTS } from '../../lib/segments'
@@ -64,7 +65,7 @@ export function BarberAuth() {
   ) => {
     setError('')
     if (mode === 'signup' && !shopName.trim()) {
-      setError('Informe o nome do estabelecimento antes de continuar com Google.')
+      setError('Informe o nome do estabelecimento para continuar com o Google.')
       return
     }
     setGoogleLoading(true)
@@ -90,7 +91,7 @@ export function BarberAuth() {
     setLoading(true)
 
     if (!isSupabaseConfigured) {
-      setError('Configure o Supabase no arquivo .env antes de criar conta.')
+      setError('O sistema está temporariamente indisponível. Tente novamente em instantes.')
       setLoading(false)
       return
     }
@@ -98,7 +99,7 @@ export function BarberAuth() {
     try {
       if (mode === 'signup') {
         if (!isPasswordStrong(password)) {
-          setError('A senha ainda não atende a todos os requisitos.')
+          setError('A senha ainda não atende a todos os requisitos de segurança.')
           setLoading(false)
           return
         }
@@ -119,12 +120,12 @@ export function BarberAuth() {
           },
         })
         if (signUpError) {
-          setError(signUpError.message)
+          setError(authErrorMessage(signUpError))
           setLoading(false)
           return
         }
         if (!data.user) {
-          setError('Não foi possível criar a conta.')
+          setError('Não foi possível criar a conta. Tente novamente em instantes.')
           setLoading(false)
           return
         }
@@ -133,7 +134,7 @@ export function BarberAuth() {
           await ensureAuthSession(email, password)
         } catch {
           setError(
-            'Conta criada! Confirme seu e-mail e faça login. (Ou desative "Confirm email" no Supabase → Authentication → Email)'
+            'Conta criada. Confirme o e-mail enviado para entrar. Verifique também a caixa de spam.'
           )
           setLoading(false)
           return
@@ -143,9 +144,10 @@ export function BarberAuth() {
           await ensureBarberShop(data.user.id, shopNameValue, segment)
         } catch (shopError) {
           setError(
-            shopError instanceof Error
-              ? shopError.message
-              : 'Erro ao criar estabelecimento. Rode o SQL 002_signup_trigger.sql no Supabase.'
+            userFacingError(
+              shopError,
+              'Não foi possível concluir o cadastro do estabelecimento. Tente novamente em instantes.'
+            )
           )
           setLoading(false)
           return
@@ -155,7 +157,7 @@ export function BarberAuth() {
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
         if (signInError) {
-          setError(signInError.message)
+          setError(authErrorMessage(signInError))
           setLoading(false)
           return
         }
@@ -169,7 +171,7 @@ export function BarberAuth() {
           ])
           if (!shop && !staffLink) {
             setError(
-              'Esta conta não tem acesso ao painel. Cadastre seu negócio ou peça ao dono para criar seu acesso de profissional.'
+              'Esta conta não tem acesso ao painel. Cadastre o estabelecimento ou solicite o acesso ao responsável.'
             )
             await supabase.auth.signOut()
             setLoading(false)
@@ -227,7 +229,7 @@ export function BarberAuth() {
                 })}
               </div>
               <FieldHint>
-                O FIND configura o painel do seu segmento. Serviços, equipe e clientes você cadastra depois.
+                O painel é configurado para o seu tipo de negócio. Serviços, equipe e clientes você cadastra depois.
               </FieldHint>
             </div>
 
@@ -241,7 +243,7 @@ export function BarberAuth() {
                 placeholder={meta.namePlaceholder}
                 className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
               />
-              <FieldHint>Aparece no painel e na página pública dos clientes.</FieldHint>
+              <FieldHint>Este nome aparece no painel e na página pública do estabelecimento.</FieldHint>
             </div>
           </>
         )}
@@ -256,7 +258,7 @@ export function BarberAuth() {
             placeholder="Ex: contato@negocio.com"
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
-          <FieldHint>Usado para entrar no painel e receber avisos da assinatura.</FieldHint>
+          <FieldHint>Usado para entrar no painel e receber comunicações da conta.</FieldHint>
         </div>
 
         <div>
