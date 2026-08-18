@@ -18,6 +18,7 @@ import { Faq } from './pages/public/Faq'
 import { AuthCallback } from './pages/AuthCallback'
 import { BarberAuth } from './pages/dashboard/BarberAuth'
 import { Dashboard } from './pages/dashboard/Dashboard'
+import { ResetPassword } from './pages/public/ResetPassword'
 
 export default function App() {
   return (
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="avaliar/:bookingId" element={<GuestReview />} />
             <Route path="entrar" element={<ClientAuth />} />
             <Route path="cadastro" element={<ClientAuth />} />
+            <Route path="redefinir-senha" element={<ResetPassword />} />
             <Route path="auth/callback" element={<AuthCallback />} />
             <Route path="minhas-reservas" element={<MyBookings />} />
             <Route path="privacidade" element={<PrivacyPolicy />} />

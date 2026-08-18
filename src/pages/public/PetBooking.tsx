@@ -129,7 +129,12 @@ export function PetBooking() {
         sched = data || []
       }
 
-      const slots = await loadOccupiedSlots(shopId!)
+      let slots: PublicBookingSlot[] = []
+      try {
+        slots = await loadOccupiedSlots(shopId!)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Não foi possível carregar a agenda.')
+      }
 
       setShop(shopData)
       setServices(serviceList)
@@ -146,7 +151,11 @@ export function PetBooking() {
   // Atualiza horários ocupados ao chegar na etapa de agenda
   useEffect(() => {
     if (!shopId || step !== 4) return
-    loadOccupiedSlots(shopId).then(setOccupiedSlots)
+    loadOccupiedSlots(shopId)
+      .then(setOccupiedSlots)
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : 'Não foi possível carregar a agenda.')
+      })
   }, [shopId, step])
 
   const selectedPets = useMemo(
@@ -355,8 +364,12 @@ export function PetBooking() {
       if (/horário|reservado/i.test(msg) && shopId) {
         setSelectedTime(null)
         setStep(4)
-        const slots = await loadOccupiedSlots(shopId)
-        setOccupiedSlots(slots)
+        try {
+          const slots = await loadOccupiedSlots(shopId)
+          setOccupiedSlots(slots)
+        } catch {
+          /* already showing booking conflict */
+        }
       }
       return
     }

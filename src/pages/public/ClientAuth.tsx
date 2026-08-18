@@ -14,6 +14,7 @@ import {
   isPasswordStrong,
 } from '../../components/FormHints'
 import { useAuth } from '../../contexts/AuthContext'
+import { requestPasswordReset } from '../../lib/passwordReset'
 
 export function ClientAuth() {
   const location = useLocation()
@@ -21,12 +22,13 @@ export function ClientAuth() {
   const navigate = useNavigate()
   const { refreshProfile } = useAuth()
 
-  const [mode, setMode] = useState<'login' | 'signup'>(isSignup ? 'signup' : 'login')
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>(isSignup ? 'signup' : 'login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [error, setError] = useState('')
+  const [info, setInfo] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
 
@@ -49,6 +51,7 @@ export function ClientAuth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setInfo('')
     setLoading(true)
 
     if (!isSupabaseConfigured) {
@@ -58,6 +61,13 @@ export function ClientAuth() {
     }
 
     try {
+      if (mode === 'forgot') {
+        await requestPasswordReset(email)
+        setInfo('Se este e-mail existir, enviamos um link para redefinir a senha.')
+        setLoading(false)
+        return
+      }
+
       if (mode === 'signup') {
         if (!isPasswordStrong(password)) {
           setError('A senha ainda não atende a todos os requisitos.')
@@ -189,41 +199,73 @@ export function ClientAuth() {
           />
         </div>
 
-        <div>
-          <FieldLabel tone="light">Senha</FieldLabel>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={mode === 'signup' ? 8 : 6}
-            placeholder={mode === 'signup' ? 'Crie uma senha forte' : 'Sua senha'}
-            className="w-full rounded-lg border border-paper-dark px-4 py-2 placeholder:text-ink-muted/50 focus:border-brass focus:outline-none"
-          />
-          {mode === 'signup' && <PasswordRequirements password={password} tone="light" />}
-        </div>
+        {mode !== 'forgot' && (
+          <div>
+            <FieldLabel tone="light">Senha</FieldLabel>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={mode === 'signup' ? 8 : 6}
+              placeholder={mode === 'signup' ? 'Crie uma senha forte' : 'Sua senha'}
+              className="w-full rounded-lg border border-paper-dark px-4 py-2 placeholder:text-ink-muted/50 focus:border-brass focus:outline-none"
+            />
+            {mode === 'signup' && <PasswordRequirements password={password} tone="light" />}
+            {mode === 'login' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('forgot')
+                  setError('')
+                  setInfo('')
+                }}
+                className="mt-2 text-xs text-brass hover:underline"
+              >
+                Esqueci minha senha
+              </button>
+            )}
+          </div>
+        )}
+
+        {mode === 'forgot' && (
+          <p className="text-sm text-ink-muted">
+            Enviaremos um link para o e-mail da conta. Depois você cria uma senha nova.
+          </p>
+        )}
 
         {error && <p className="text-sm text-red-600">{error}</p>}
+        {info && <p className="text-sm text-brass">{info}</p>}
 
         <button
           type="submit"
           disabled={loading || googleLoading || (mode === 'signup' && !isPasswordStrong(password))}
           className="btn-primary w-full disabled:opacity-50"
         >
-          {loading ? 'Aguarde...' : mode === 'login' ? 'Entrar' : 'Criar conta'}
+          {loading
+            ? 'Aguarde...'
+            : mode === 'login'
+              ? 'Entrar'
+              : mode === 'forgot'
+                ? 'Enviar link de recuperação'
+                : 'Criar conta'}
         </button>
 
-        <AuthDivider tone="light" />
+        {mode !== 'forgot' && (
+          <>
+            <AuthDivider tone="light" />
 
-        <GoogleSignInButton
-          tone="light"
-          disabled={loading || googleLoading}
-          onCredential={handleGoogleCredential}
-          onError={(message) => {
-            setError(message)
-            setGoogleLoading(false)
-          }}
-        />
+            <GoogleSignInButton
+              tone="light"
+              disabled={loading || googleLoading}
+              onCredential={handleGoogleCredential}
+              onError={(message) => {
+                setError(message)
+                setGoogleLoading(false)
+              }}
+            />
+          </>
+        )}
       </form>
 
       <p className="mt-4 text-center text-sm text-ink-muted">
@@ -235,10 +277,26 @@ export function ClientAuth() {
               onClick={() => {
                 setMode('signup')
                 setError('')
+                setInfo('')
               }}
               className="text-brass hover:underline"
             >
               Cadastre-se
+            </button>
+          </>
+        ) : mode === 'forgot' ? (
+          <>
+            Lembrou a senha?{' '}
+            <button
+              type="button"
+              onClick={() => {
+                setMode('login')
+                setError('')
+                setInfo('')
+              }}
+              className="text-brass hover:underline"
+            >
+              Entrar
             </button>
           </>
         ) : (
@@ -249,6 +307,7 @@ export function ClientAuth() {
               onClick={() => {
                 setMode('login')
                 setError('')
+                setInfo('')
               }}
               className="text-brass hover:underline"
             >

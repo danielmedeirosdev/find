@@ -69,7 +69,7 @@ export function MarketingLanding() {
             </a>
           </div>
           <p className="mt-4 font-mono text-[10px] uppercase tracking-wide text-ink-muted">
-            30 dias grátis · sem cartão de crédito
+            30 dias grátis · depois R$ 60/mês · sem cartão no início
           </p>
         </div>
       </section>
@@ -302,7 +302,7 @@ export function MarketingLanding() {
           </h2>
           <p className="mx-auto mt-5 max-w-md text-sm leading-6 text-paper/65">
             Organize seu negócio no ONEFIND, barbearia ou pet shop, e ofereça uma experiência
-            melhor para cada cliente.
+            melhor para cada cliente. Depois do teste: R$ 60/mês.
           </p>
           <Link
             to="/painel?modo=cadastro"

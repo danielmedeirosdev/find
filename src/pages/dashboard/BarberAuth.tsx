@@ -16,17 +16,19 @@ import {
 import { useAuth } from '../../contexts/AuthContext'
 import type { ShopSegment } from '../../lib/types'
 import { readStoredReferralCode } from '../../lib/referral'
+import { requestPasswordReset } from '../../lib/passwordReset'
 
 export function BarberAuth() {
   const navigate = useNavigate()
   const { user, loading: authLoading } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [shopName, setShopName] = useState('')
   const [segment, setSegment] = useState<ShopSegment>('barbershop')
   const [error, setError] = useState('')
+  const [info, setInfo] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
 
@@ -85,6 +87,7 @@ export function BarberAuth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setInfo('')
     setLoading(true)
 
     if (!isSupabaseConfigured) {
@@ -94,6 +97,13 @@ export function BarberAuth() {
     }
 
     try {
+      if (mode === 'forgot') {
+        await requestPasswordReset(email)
+        setInfo('Se este e-mail existir, enviamos um link para redefinir a senha.')
+        setLoading(false)
+        return
+      }
+
       if (mode === 'signup') {
         if (!isPasswordStrong(password)) {
           setError('A senha ainda não atende a todos os requisitos.')
@@ -259,21 +269,43 @@ export function BarberAuth() {
           <FieldHint>Usado para entrar no painel e receber avisos da assinatura.</FieldHint>
         </div>
 
-        <div>
-          <FieldLabel>Senha</FieldLabel>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={mode === 'signup' ? 8 : 6}
-            placeholder={mode === 'signup' ? 'Crie uma senha forte' : 'Sua senha'}
-            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
-          />
-          {mode === 'signup' && <PasswordRequirements password={password} />}
-        </div>
+        {mode !== 'forgot' && (
+          <div>
+            <FieldLabel>Senha</FieldLabel>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={mode === 'signup' ? 8 : 6}
+              placeholder={mode === 'signup' ? 'Crie uma senha forte' : 'Sua senha'}
+              className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
+            />
+            {mode === 'signup' && <PasswordRequirements password={password} />}
+            {mode === 'login' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('forgot')
+                  setError('')
+                  setInfo('')
+                }}
+                className="mt-2 text-xs text-brass hover:underline"
+              >
+                Esqueci minha senha
+              </button>
+            )}
+          </div>
+        )}
+
+        {mode === 'forgot' && (
+          <p className="text-sm text-charcoal-muted">
+            Enviaremos um link para o e-mail da conta. Depois você cria uma senha nova.
+          </p>
+        )}
 
         {error && <p className="text-sm text-red-400">{error}</p>}
+        {info && <p className="text-sm text-brass">{info}</p>}
 
         <button
           type="submit"
@@ -284,20 +316,26 @@ export function BarberAuth() {
             ? 'Aguarde...'
             : mode === 'login'
               ? 'Entrar'
-              : 'Criar conta'}
+              : mode === 'forgot'
+                ? 'Enviar link de recuperação'
+                : 'Criar conta'}
         </button>
 
-        <AuthDivider tone="dark" />
+        {mode !== 'forgot' && (
+          <>
+            <AuthDivider tone="dark" />
 
-        <GoogleSignInButton
-          tone="dark"
-          disabled={loading || googleLoading}
-          onCredential={handleGoogleCredential}
-          onError={(message) => {
-            setError(message)
-            setGoogleLoading(false)
-          }}
-        />
+            <GoogleSignInButton
+              tone="dark"
+              disabled={loading || googleLoading}
+              onCredential={handleGoogleCredential}
+              onError={(message) => {
+                setError(message)
+                setGoogleLoading(false)
+              }}
+            />
+          </>
+        )}
       </form>
 
       <p className="mt-4 text-center text-sm text-charcoal-muted">
@@ -309,10 +347,26 @@ export function BarberAuth() {
               onClick={() => {
                 setMode('signup')
                 setError('')
+                setInfo('')
               }}
               className="text-brass hover:underline"
             >
               Cadastre seu negócio
+            </button>
+          </>
+        ) : mode === 'forgot' ? (
+          <>
+            Lembrou a senha?{' '}
+            <button
+              type="button"
+              onClick={() => {
+                setMode('login')
+                setError('')
+                setInfo('')
+              }}
+              className="text-brass hover:underline"
+            >
+              Entrar
             </button>
           </>
         ) : (
@@ -323,6 +377,7 @@ export function BarberAuth() {
               onClick={() => {
                 setMode('login')
                 setError('')
+                setInfo('')
               }}
               className="text-brass hover:underline"
             >

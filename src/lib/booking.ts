@@ -30,8 +30,7 @@ export async function loadOccupiedSlots(shopId: string): Promise<PublicBookingSl
     .gte('date', today)
 
   if (error) {
-    console.warn('[public_booking_slots]', error.message)
-    return []
+    throw new Error('Não foi possível carregar a agenda. Atualize a página e tente novamente.')
   }
   return (data as PublicBookingSlot[]) || []
 }

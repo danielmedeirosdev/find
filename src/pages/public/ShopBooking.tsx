@@ -118,7 +118,12 @@ export function ShopBooking() {
         sched = data || []
       }
 
-      const slots = await loadOccupiedSlots(shopId!)
+      let slots: PublicBookingSlot[] = []
+      try {
+        slots = await loadOccupiedSlots(shopId!)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Não foi possível carregar a agenda.')
+      }
 
       setShop(shopData)
       setServices(svc || [])
@@ -220,8 +225,12 @@ export function ShopBooking() {
       if (/horário|reservado/i.test(msg) && shopId) {
         setSelectedTime(null)
         setStep(3)
-        const slots = await loadOccupiedSlots(shopId)
-        setOccupiedSlots(slots)
+        try {
+          const slots = await loadOccupiedSlots(shopId)
+          setOccupiedSlots(slots)
+        } catch {
+          /* already showing booking conflict */
+        }
       }
       return
     }

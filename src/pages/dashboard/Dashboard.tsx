@@ -74,13 +74,19 @@ export function Dashboard() {
       new Date(resolved.trial_ends_at) <= new Date() &&
       !(resolved.complimentary_until && new Date(resolved.complimentary_until) > new Date())
     ) {
-      const { data: updated } = await supabase
-        .from('shops')
-        .update({ subscription_status: 'blocked' })
-        .eq('id', resolved.id)
-        .select('*')
-        .single()
-      setShop((updated as Shop) || { ...resolved, subscription_status: 'blocked' })
+      const { data: expired } = await supabase.rpc('expire_my_expired_trial')
+      const status =
+        (expired as { subscription_status?: string } | null)?.subscription_status || 'blocked'
+      if (status === 'blocked') {
+        const { data: refreshed } = await supabase
+          .from('shops')
+          .select('*')
+          .eq('id', resolved.id)
+          .maybeSingle()
+        setShop((refreshed as Shop) || { ...resolved, subscription_status: 'blocked' })
+      } else {
+        setShop(resolved)
+      }
     } else {
       setShop(resolved)
     }

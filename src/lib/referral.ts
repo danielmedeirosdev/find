@@ -3,7 +3,9 @@ import { PUBLIC_SITE_ORIGIN } from './site'
 import { invokeFunction, supabase } from './supabase'
 import type { ShopSegment } from './types'
 
-assertAsaasBillingHelpers()
+if (import.meta.env.DEV) {
+  assertAsaasBillingHelpers()
+}
 
 const REF_KEY = 'onefind_referral_code'
 const REF_AT_KEY = 'onefind_referral_at'

@@ -16,12 +16,8 @@ export function readBookingPhone(bookingId: string): string {
   return sessionStorage.getItem(`${RECEIPT_PHONE_PREFIX}${bookingId}`) || ''
 }
 
-export function isMissingSecurityRpc(error: { code?: string; message?: string } | null): boolean {
-  return Boolean(
-    error &&
-      (error.code === 'PGRST202' ||
-        /could not find the function|schema cache/i.test(error.message || ''))
-  )
+function rpcMissingMessage(action: string) {
+  return `Não foi possível ${action}. Atualize a página. Se o problema continuar, fale com o suporte.`
 }
 
 export async function lookupPetCustomer(
@@ -32,24 +28,7 @@ export async function lookupPetCustomer(
     p_shop_id: shopId,
     p_phone: phone,
   })
-  if (error && isMissingSecurityRpc(error)) {
-    const digits = phone.replace(/\D/g, '')
-    const { data: customer } = await supabase
-      .from('shop_customers')
-      .select('*')
-      .eq('shop_id', shopId)
-      .eq('phone', digits)
-      .maybeSingle()
-    if (!customer) return { customer: null, pets: [] }
-    const { data: pets } = await supabase
-      .from('pets')
-      .select('*')
-      .eq('shop_id', shopId)
-      .eq('customer_id', customer.id)
-      .order('name')
-    return { customer: customer as ShopCustomer, pets: (pets as Pet[]) || [] }
-  }
-  if (error) throw error
+  if (error) throw new Error(error.message || rpcMissingMessage('localizar o cliente'))
   const result = data as { customer?: ShopCustomer | null; pets?: Pet[] } | null
   return {
     customer: result?.customer || null,
@@ -67,24 +46,7 @@ export async function upsertPetCustomer(
     p_phone: phone,
     p_name: name,
   })
-  if (error && isMissingSecurityRpc(error)) {
-    const digits = phone.replace(/\D/g, '')
-    const { data: existing } = await supabase
-      .from('shop_customers')
-      .select('*')
-      .eq('shop_id', shopId)
-      .eq('phone', digits)
-      .maybeSingle()
-    if (existing) return existing as ShopCustomer
-    const { data: inserted, error: insertError } = await supabase
-      .from('shop_customers')
-      .insert({ shop_id: shopId, phone: digits, name: name.trim() })
-      .select('*')
-      .single()
-    if (insertError) throw insertError
-    return inserted as ShopCustomer
-  }
-  if (error) throw error
+  if (error) throw new Error(error.message || rpcMissingMessage('salvar o cliente'))
   return data as ShopCustomer
 }
 
@@ -102,24 +64,7 @@ export async function createPetForCustomer(input: {
     p_size: input.size,
     p_breed: input.breed?.trim() || null,
   })
-  if (error && isMissingSecurityRpc(error)) {
-    const customer = await upsertPetCustomer(input.shopId, input.phone, 'Cliente')
-    const { data: inserted, error: insertError } = await supabase
-      .from('pets')
-      .insert({
-        shop_id: input.shopId,
-        customer_id: customer.id,
-        name: input.name.trim(),
-        size: input.size,
-        breed: input.breed?.trim() || null,
-        species: 'cao',
-      })
-      .select('*')
-      .single()
-    if (insertError) throw insertError
-    return inserted as Pet
-  }
-  if (error) throw error
+  if (error) throw new Error(error.message || rpcMissingMessage('cadastrar o pet'))
   return data as Pet
 }
 
@@ -147,27 +92,6 @@ export async function createPublicBooking(input: {
     p_duration_minutes: input.durationMinutes || null,
     p_notes: input.notes?.trim() || null,
   })
-  if (error && isMissingSecurityRpc(error)) {
-    const { data: inserted, error: insertError } = await supabase
-      .from('bookings')
-      .insert({
-        shop_id: input.shopId,
-        barber_id: input.barberId,
-        client_name: input.clientName.trim(),
-        client_phone: input.clientPhone.replace(/\D/g, ''),
-        date: input.date,
-        time: input.time,
-        pet_id: input.petId || null,
-        shop_customer_id: input.shopCustomerId || null,
-        duration_minutes: input.durationMinutes || null,
-        notes: input.notes?.trim() || null,
-        status: 'scheduled',
-      })
-      .select('id')
-      .single()
-    if (insertError) throw insertError
-    return inserted.id as string
-  }
   if (error) throw error
   return data as string
 }
@@ -184,27 +108,6 @@ export async function finalizePublicBooking(input: {
     p_service_ids: input.serviceIds,
     p_pet_ids: input.petIds || [],
   })
-  if (error && isMissingSecurityRpc(error)) {
-    if (input.serviceIds.length) {
-      const { error: serviceError } = await supabase.from('booking_services').insert(
-        input.serviceIds.map((serviceId) => ({
-          booking_id: input.bookingId,
-          service_id: serviceId,
-        }))
-      )
-      if (serviceError) throw serviceError
-    }
-    if (input.petIds?.length) {
-      const { error: petError } = await supabase.from('booking_pets').insert(
-        input.petIds.map((petId) => ({
-          booking_id: input.bookingId,
-          pet_id: petId,
-        }))
-      )
-      if (petError) throw petError
-    }
-    return
-  }
   if (error) throw error
 }
 
@@ -216,23 +119,7 @@ export async function getBookingReceipt(
     p_booking_id: bookingId,
     p_phone: phone,
   })
-  if (error && isMissingSecurityRpc(error)) {
-    const { data: booking, error: selectError } = await supabase
-      .from('bookings')
-      .select(`
-        *,
-        shops(name, address, phone, segment),
-        barbers(name),
-        pets!bookings_pet_id_fkey(name, size),
-        booking_services(service_id, services(*))
-      `)
-      .eq('id', bookingId)
-      .eq('client_phone', phone.replace(/\D/g, ''))
-      .maybeSingle()
-    if (selectError) throw selectError
-    return booking as BookingWithDetails | null
-  }
-  if (error) throw error
+  if (error) throw new Error(error.message || rpcMissingMessage('carregar a confirmação'))
   return (data as BookingWithDetails | null) || null
 }
 
@@ -244,21 +131,7 @@ export async function getGuestReviewEligibility(bookingId: string): Promise<{
   const { data, error } = await supabase.rpc('get_guest_review_eligibility', {
     p_booking_id: bookingId,
   })
-  if (error && isMissingSecurityRpc(error)) {
-    const { data: booking, error: selectError } = await supabase
-      .from('bookings')
-      .select('status, review_status, shops(name), pets!bookings_pet_id_fkey(name)')
-      .eq('id', bookingId)
-      .maybeSingle()
-    if (selectError) throw selectError
-    if (!booking) return null
-    return {
-      eligible: booking.status === 'completed' && booking.review_status === 'awaiting',
-      shop_name: (booking.shops as { name?: string } | null)?.name || 'FIND',
-      pet_name: (booking.pets as { name?: string } | null)?.name || null,
-    }
-  }
-  if (error) throw error
+  if (error) throw new Error(error.message || rpcMissingMessage('verificar a avaliação'))
   return (data as {
     eligible: boolean
     shop_name: string
