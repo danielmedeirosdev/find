@@ -23,92 +23,111 @@ export function Dashboard() {
   const [barber, setBarber] = useState<Barber | null>(null)
   const [role, setRole] = useState<DashboardRole | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [subscribing, setSubscribing] = useState(false)
   const [subscribeError, setSubscribeError] = useState('')
 
   const loadMembership = async () => {
     if (!user) return
 
-    const { data: owned } = await supabase
-      .from('shops')
-      .select('*')
-      .eq('owner_user_id', user.id)
-      .maybeSingle()
-
-    let staffRow: (Barber & { shops?: Shop | null }) | null = null
-    if (!owned) {
-      const { data } = await supabase
-        .from('barbers')
-        .select('*, shops(*)')
-        .eq('user_id', user.id)
+    try {
+      setLoadError('')
+      const { data: owned, error: ownedError } = await supabase
+        .from('shops')
+        .select('*')
+        .eq('owner_user_id', user.id)
         .maybeSingle()
-      staffRow = data as (Barber & { shops?: Shop | null }) | null
-    }
 
-    const membership = pickDashboardMembership({
-      ownedShop: (owned as Shop) || null,
-      staffBarber: staffRow,
-    })
-
-    if (!membership) {
-      setShop(null)
-      setBarber(null)
-      setRole(null)
-      setLoading(false)
-      return
-    }
-
-    let resolved = membership.shop
-    setRole(membership.role)
-    setBarber(membership.barber)
-
-    if (membership.role === 'owner') {
-      const dbSegment = normalizeSegment(resolved.segment)
-      const metaSegment = normalizeSegment(
-        (user.user_metadata as { segment?: string } | undefined)?.segment
-      )
-      const urlSegment = parseSegmentParam(searchParams.get('segment'))
-
-      if (dbSegment !== 'pet' && (metaSegment === 'pet' || urlSegment === 'pet')) {
-        await ensureBarberShop(user.id, resolved.name, 'pet')
-        const { data: fixed } = await supabase
-          .from('shops')
-          .select('*')
-          .eq('id', resolved.id)
-          .single()
-        if (fixed) resolved = fixed as Shop
-        else resolved = { ...resolved, segment: 'pet' }
-      } else if (dbSegment === 'pet') {
-        await ensureBarberShop(user.id, resolved.name, 'pet')
-        if (resolved.segment !== dbSegment) {
-          resolved = { ...resolved, segment: dbSegment }
-        }
-      } else if (resolved.segment !== dbSegment) {
-        resolved = { ...resolved, segment: dbSegment }
+      if (ownedError) {
+        console.error('Dashboard shop lookup failed', ownedError)
+        throw ownedError
       }
 
-      if (
-        resolved.subscription_status === 'trial' &&
-        resolved.trial_ends_at &&
-        new Date(resolved.trial_ends_at) <= new Date() &&
-        !(resolved.complimentary_until && new Date(resolved.complimentary_until) > new Date())
-      ) {
-        const { data: expired } = await supabase.rpc('expire_my_expired_trial')
-        const status =
-          (expired as { subscription_status?: string } | null)?.subscription_status || 'blocked'
-        if (status === 'blocked') {
-          const { data: refreshed } = await supabase
+      let staffRow: (Barber & { shops?: Shop | null }) | null = null
+      if (!owned) {
+        const { data, error: staffError } = await supabase
+          .from('barbers')
+          .select('*, shops(*)')
+          .eq('user_id', user.id)
+          .maybeSingle()
+        if (staffError) {
+          console.error('Dashboard staff lookup failed', staffError)
+          throw staffError
+        }
+        staffRow = data as (Barber & { shops?: Shop | null }) | null
+      }
+
+      const membership = pickDashboardMembership({
+        ownedShop: (owned as Shop) || null,
+        staffBarber: staffRow,
+      })
+
+      if (!membership) {
+        setShop(null)
+        setBarber(null)
+        setRole(null)
+        return
+      }
+
+      let resolved = membership.shop
+      setRole(membership.role)
+      setBarber(membership.barber)
+
+      if (membership.role === 'owner') {
+        const dbSegment = normalizeSegment(resolved.segment)
+        const metaSegment = normalizeSegment(
+          (user.user_metadata as { segment?: string } | undefined)?.segment
+        )
+        const urlSegment = parseSegmentParam(searchParams.get('segment'))
+
+        if (dbSegment !== 'pet' && (metaSegment === 'pet' || urlSegment === 'pet')) {
+          await ensureBarberShop(user.id, resolved.name, 'pet')
+          const { data: fixed } = await supabase
             .from('shops')
             .select('*')
             .eq('id', resolved.id)
-            .maybeSingle()
-          resolved = (refreshed as Shop) || { ...resolved, subscription_status: 'blocked' }
+            .single()
+          if (fixed) resolved = fixed as Shop
+          else resolved = { ...resolved, segment: 'pet' }
+        } else if (dbSegment === 'pet') {
+          await ensureBarberShop(user.id, resolved.name, 'pet')
+          if (resolved.segment !== dbSegment) {
+            resolved = { ...resolved, segment: dbSegment }
+          }
+        } else if (resolved.segment !== dbSegment) {
+          resolved = { ...resolved, segment: dbSegment }
+        }
+
+        if (
+          resolved.subscription_status === 'trial' &&
+          resolved.trial_ends_at &&
+          new Date(resolved.trial_ends_at) <= new Date() &&
+          !(resolved.complimentary_until && new Date(resolved.complimentary_until) > new Date())
+        ) {
+          const { data: expired } = await supabase.rpc('expire_my_expired_trial')
+          const status =
+            (expired as { subscription_status?: string } | null)?.subscription_status || 'blocked'
+          if (status === 'blocked') {
+            const { data: refreshed } = await supabase
+              .from('shops')
+              .select('*')
+              .eq('id', resolved.id)
+              .maybeSingle()
+            resolved = (refreshed as Shop) || { ...resolved, subscription_status: 'blocked' }
+          }
         }
       }
-    }
 
-    setShop(resolved)
-    setLoading(false)
+      setShop(resolved)
+    } catch (err) {
+      console.error('Dashboard membership failed', err)
+      setShop(null)
+      setBarber(null)
+      setRole(null)
+      setLoadError('Não foi possível carregar o painel. Atualize a página e tente novamente.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -165,6 +184,24 @@ export function Dashboard() {
   }
 
   if (!user) return <Navigate to="/painel" replace />
+  if (loadError) {
+    return (
+      <div className="mx-auto max-w-lg rounded-xl border border-charcoal-light p-6 text-center">
+        <p className="text-white font-medium">Não foi possível abrir o painel</p>
+        <p className="mt-2 text-sm text-charcoal-muted">{loadError}</p>
+        <button
+          type="button"
+          onClick={() => {
+            setLoading(true)
+            loadMembership()
+          }}
+          className="mt-5 rounded-lg bg-brass px-4 py-2.5 text-sm font-semibold text-charcoal"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    )
+  }
   if (!shop || !role) return <Navigate to="/painel" replace />
 
   const isPet = normalizeSegment(shop.segment) === 'pet'
