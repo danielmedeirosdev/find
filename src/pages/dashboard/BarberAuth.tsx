@@ -163,29 +163,17 @@ export function BarberAuth() {
           data: { user },
         } = await supabase.auth.getUser()
         if (user) {
-          const { data: shop } = await supabase
-            .from('shops')
-            .select('id, segment, name')
-            .eq('owner_user_id', user.id)
-            .maybeSingle()
-          if (shop) {
-            const intended: ShopSegment =
-              segment === 'pet' || shop.segment === 'pet' ? 'pet' : 'barbershop'
-            await ensureBarberShop(user.id, shop.name || defaultShopName, intended)
-          } else {
-            const { data: staffLink } = await supabase
-              .from('barbers')
-              .select('id')
-              .eq('user_id', user.id)
-              .maybeSingle()
-            if (!staffLink) {
-              setError(
-                'Esta conta não tem acesso ao painel. Cadastre seu negócio ou peça ao dono para criar seu acesso de profissional.'
-              )
-              await supabase.auth.signOut()
-              setLoading(false)
-              return
-            }
+          const [{ data: shop }, { data: staffLink }] = await Promise.all([
+            supabase.from('shops').select('id').eq('owner_user_id', user.id).maybeSingle(),
+            supabase.from('barbers').select('id').eq('user_id', user.id).maybeSingle(),
+          ])
+          if (!shop && !staffLink) {
+            setError(
+              'Esta conta não tem acesso ao painel. Cadastre seu negócio ou peça ao dono para criar seu acesso de profissional.'
+            )
+            await supabase.auth.signOut()
+            setLoading(false)
+            return
           }
         }
         navigate('/painel/dashboard')
@@ -239,7 +227,7 @@ export function BarberAuth() {
                 })}
               </div>
               <FieldHint>
-                O FIND configura automaticamente dashboard, serviços iniciais e regras do segmento.
+                O FIND configura o painel do seu segmento. Serviços, equipe e clientes você cadastra depois.
               </FieldHint>
             </div>
 

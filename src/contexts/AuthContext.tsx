@@ -59,8 +59,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    if (user) refreshProfile()
-    else setClientProfile(null)
+    if (!user) {
+      setClientProfile(null)
+      return
+    }
+    const role = String(
+      (user.user_metadata as { role?: string } | undefined)?.role || ''
+    ).toLowerCase()
+    if (role === 'barber' || role === 'staff') {
+      setClientProfile(null)
+      return
+    }
+    void refreshProfile()
   }, [user])
 
   const signOut = async () => {

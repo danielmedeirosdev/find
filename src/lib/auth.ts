@@ -21,8 +21,9 @@ export async function ensureAuthSession(email: string, password: string) {
 }
 
 /**
- * Insere serviços padrão da vertical. Se a loja PET só tiver o seed de barbearia
- * (bug antigo do trigger/ensure), substitui pelos serviços PET.
+ * Seed legado — NÃO chamar no cadastro, login ou dashboard.
+ * Lojas novas devem nascer vazias (0 serviços / profissionais / clientes).
+ * Mantido apenas para ferramentas de heal pontuais; não altera lojas existentes sozinho.
  */
 export async function seedDefaultServices(shopId: string, segment: ShopSegment) {
   const { data: existingServices } = await supabase
@@ -88,7 +89,6 @@ export async function ensureBarberShop(
         .eq('id', existing.id)
       if (error) throw error
     }
-    await seedDefaultServices(existing.id, segment)
     await attachStoredReferral()
     return { id: existing.id }
   }
@@ -112,7 +112,6 @@ export async function ensureBarberShop(
     .single()
 
   if (error) throw error
-  if (created) await seedDefaultServices(created.id, segment)
   await attachStoredReferral()
   return created
 }

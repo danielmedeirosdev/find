@@ -6,7 +6,7 @@ export type DefaultServiceSeed = {
   duration_minutes: number
 }
 
-/** Serviços padrão por vertical — nunca reutilizar de outra. */
+/** Serviços de referência por vertical — NÃO inserir automaticamente em loja nova. */
 export const DEFAULT_SERVICES_BY_SEGMENT: Record<ShopSegment, DefaultServiceSeed[]> = {
   barbershop: [
     { name: 'Corte', price: 45, duration_minutes: 40 },

@@ -102,6 +102,20 @@ export async function finalizeOAuthLogin(roleHint?: string | null) {
   const user = session.user
   const displayName = googleDisplayName(user)
 
+  const { data: staffLink } = await supabase
+    .from('barbers')
+    .select('id')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (staffLink) {
+    await supabase.auth.updateUser({
+      data: { role: 'staff', name: displayName },
+    })
+    clearOAuthIntent()
+    return { role: 'staff' as const, redirectTo: '/painel/dashboard' as const }
+  }
+
   const referralCode = readStoredReferralCode()
   await supabase.auth.updateUser({
     data: {
