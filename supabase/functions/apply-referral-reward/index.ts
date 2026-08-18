@@ -8,7 +8,7 @@ import {
   lockReasonMessage,
   pickActiveSubscription,
   utcTodayIso,
-} from "../_shared/asaas-billing.ts";
+} from "./_shared/asaas-billing.ts";
 import {
   AsaasRequestError,
   deletePayment,
@@ -17,8 +17,8 @@ import {
   listPendingPayments,
   updateSubscriptionNextDueDate,
   type AsaasSubscription,
-} from "../_shared/asaas-client.ts";
-import { corsFor } from "../_shared/cors.ts";
+} from "./_shared/asaas-client.ts";
+import { corsFor } from "./_shared/cors.ts";
 
 type LockResult = {
   ok: boolean;

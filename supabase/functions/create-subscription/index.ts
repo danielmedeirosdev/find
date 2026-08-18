@@ -5,7 +5,7 @@ import {
   nextDueFromComplimentary,
   pickActiveSubscription,
   utcTodayIso,
-} from "../_shared/asaas-billing.ts";
+} from "./_shared/asaas-billing.ts";
 import {
   asaasFetch,
   getSubscription,
@@ -13,8 +13,8 @@ import {
   updateSubscriptionNextDueDate,
   type AsaasPayment,
   type AsaasSubscription,
-} from "../_shared/asaas-client.ts";
-import { corsFor } from "../_shared/cors.ts";
+} from "./_shared/asaas-client.ts";
+import { corsFor } from "./_shared/cors.ts";
 
 const SUBSCRIPTION_VALUE = 60;
 
