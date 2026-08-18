@@ -26,12 +26,12 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
     const { data: shop } = await supabase
       .from("shops")
-      .select("id, complimentary_until")
+      .select("id, complimentary_until, asaas_subscription_id")
       .eq("asaas_customer_id", payment.customer)
       .maybeSingle();
 
@@ -41,6 +41,34 @@ Deno.serve(async (req) => {
       });
     }
 
+    const paymentSubscriptionId =
+      typeof payment.subscription === "string" && payment.subscription.length > 0
+        ? payment.subscription
+        : null;
+
+    if (paymentSubscriptionId && paymentSubscriptionId !== shop.asaas_subscription_id) {
+      await supabase
+        .from("shops")
+        .update({ asaas_subscription_id: paymentSubscriptionId })
+        .eq("id", shop.id);
+
+      if (!shop.asaas_subscription_id) {
+        await supabase.from("referral_events").insert({
+          kind: "subscription_linked",
+          shop_id: shop.id,
+          payload: {
+            asaas_subscription_id: paymentSubscriptionId,
+            source: "asaas-webhook",
+            event,
+          },
+        });
+      }
+    }
+
+    const hasAsaasSubscription = Boolean(
+      shop.asaas_subscription_id || paymentSubscriptionId,
+    );
+
     if (event === "PAYMENT_CONFIRMED" || event === "PAYMENT_RECEIVED") {
       await supabase
         .from("shops")
@@ -49,13 +77,22 @@ Deno.serve(async (req) => {
 
       await supabase.rpc("convert_shop_referral", { p_shop_id: shop.id });
     } else if (event === "PAYMENT_OVERDUE") {
-      const complimentaryActive =
-        shop.complimentary_until && new Date(shop.complimentary_until) > new Date();
-      if (!complimentaryActive) {
+      // Asaas é a fonte de verdade quando há assinatura real.
+      // complimentary_until não pode esconder inadimplência do Asaas.
+      if (hasAsaasSubscription) {
         await supabase
           .from("shops")
           .update({ subscription_status: "blocked" })
           .eq("id", shop.id);
+      } else {
+        const complimentaryActive =
+          shop.complimentary_until && new Date(shop.complimentary_until) > new Date();
+        if (!complimentaryActive) {
+          await supabase
+            .from("shops")
+            .update({ subscription_status: "blocked" })
+            .eq("id", shop.id);
+        }
       }
     }
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
+  applyReferralReward,
   fetchReferralOverview,
-  redeemReferralReward,
   referralPublicUrl,
   referralRewardLabel,
   referralStatusLabel,
@@ -9,6 +9,7 @@ import {
   shareMessage,
   whatsappShareUrl,
   type ReferralOverview,
+  type ReferralRewardRow,
 } from '../../../lib/referral'
 import type { Shop, ShopSegment } from '../../../lib/types'
 
@@ -18,11 +19,26 @@ interface Props {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('pt-BR', {
+  const [year, month, day] = iso.slice(0, 10).split('-').map(Number)
+  return new Date(year, month - 1, day).toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
   })
+}
+
+function monthsLabel(months: number) {
+  return months === 1 ? '1 mês grátis' : `${months} meses grátis`
+}
+
+function appliedCopy(reward: ReferralRewardRow) {
+  if (reward.applied_via === 'trial_extension') {
+    return `${monthsLabel(reward.months)} aplicado ao seu período de testes. Quando você assinar, a primeira cobrança já considera este benefício.`
+  }
+  if (reward.next_charge_on) {
+    return `${monthsLabel(reward.months)} aplicado à sua assinatura. Próxima cobrança em ${formatDate(reward.next_charge_on)}.`
+  }
+  return `${monthsLabel(reward.months)} aplicado à sua assinatura.`
 }
 
 export function ReferralTab({ shop, onUpdate }: Props) {
@@ -32,8 +48,10 @@ export function ReferralTab({ shop, onUpdate }: Props) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
   const [applyingId, setApplyingId] = useState<string | null>(null)
-  const [applyMessage, setApplyMessage] = useState('')
+  const [applyError, setApplyError] = useState('')
+  const [applySuccess, setApplySuccess] = useState('')
 
   const load = useCallback(async () => {
     setError('')
@@ -61,6 +79,10 @@ export function ReferralTab({ shop, onUpdate }: Props) {
     () => (data?.rewards || []).filter((r) => r.status === 'available'),
     [data]
   )
+  const appliedRewards = useMemo(
+    () => (data?.rewards || []).filter((r) => r.status === 'redeemed'),
+    [data]
+  )
 
   const copyLink = async () => {
     if (!link) return
@@ -86,16 +108,26 @@ export function ReferralTab({ shop, onUpdate }: Props) {
     await copyLink()
   }
 
-  const applyReward = async (id: string) => {
-    setApplyingId(id)
-    setApplyMessage('')
+  const applyReward = async (reward: ReferralRewardRow) => {
+    setApplyingId(reward.id)
+    setConfirmingId(null)
+    setApplyError('')
+    setApplySuccess('')
     try {
-      await redeemReferralReward(id)
-      setApplyMessage('Recompensa aplicada à sua assinatura.')
+      const result = await applyReferralReward(reward.id)
+      const via = result.applied_via === 'trial_extension' ? 'trial_extension' : 'asaas_postpone'
+      setApplySuccess(
+        appliedCopy({
+          ...reward,
+          status: 'redeemed',
+          applied_via: result.applied_via ?? via,
+          next_charge_on: result.next_charge_on ?? null,
+        })
+      )
       await load()
       onUpdate?.()
-    } catch (err) {
-      setApplyMessage(err instanceof Error ? err.message : 'Não foi possível aplicar a recompensa.')
+    } catch {
+      setApplyError('Não foi possível aplicar seu benefício. Tente novamente.')
     }
     setApplyingId(null)
   }
@@ -200,27 +232,92 @@ export function ReferralTab({ shop, onUpdate }: Props) {
         <section className="rounded-xl border border-brass/40 bg-brass/5 p-5">
           <h3 className="font-medium text-white">Recompensas disponíveis</h3>
           <ul className="mt-3 space-y-3">
-            {availableRewards.map((reward) => (
-              <li
-                key={reward.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-charcoal-light px-4 py-3"
-              >
-                <p className="text-sm text-white">
-                  {reward.months} {reward.months === 1 ? 'mês grátis' : 'meses grátis'}
-                </p>
-                <button
-                  type="button"
-                  disabled={applyingId === reward.id}
-                  onClick={() => applyReward(reward.id)}
-                  className="rounded-lg bg-brass px-4 py-2 text-sm font-semibold text-charcoal disabled:opacity-50"
+            {availableRewards.map((reward) => {
+              const applying = applyingId === reward.id
+              const confirming = confirmingId === reward.id
+              return (
+                <li
+                  key={reward.id}
+                  className="rounded-lg border border-charcoal-light px-4 py-3"
                 >
-                  {applyingId === reward.id ? 'Aplicando...' : 'Aplicar à minha assinatura'}
-                </button>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm text-white">Você ganhou {monthsLabel(reward.months)}</p>
+                      <p className="mt-1 text-xs text-charcoal-muted">
+                        {applying
+                          ? 'Aplicando benefício...'
+                          : `${monthsLabel(reward.months)} disponível para aplicação na sua assinatura.`}
+                      </p>
+                    </div>
+                    {!confirming && (
+                      <button
+                        type="button"
+                        disabled={applying}
+                        onClick={() => {
+                          setApplyError('')
+                          setConfirmingId(reward.id)
+                        }}
+                        className="rounded-lg bg-brass px-4 py-2 text-sm font-semibold text-charcoal disabled:opacity-50"
+                      >
+                        {applying ? 'Aplicando benefício...' : 'Aplicar agora'}
+                      </button>
+                    )}
+                  </div>
+                  {confirming && !applying && (
+                    <div className="mt-3 rounded-lg border border-brass/30 bg-charcoal px-3 py-3">
+                      <p className="text-sm text-charcoal-muted">
+                        Ao aplicar esta recompensa, ela será vinculada à sua assinatura atual e não
+                        poderá ser utilizada novamente.
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => applyReward(reward)}
+                          className="rounded-lg bg-brass px-4 py-2 text-sm font-semibold text-charcoal"
+                        >
+                          Confirmar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmingId(null)}
+                          className="rounded-lg border border-charcoal-light px-4 py-2 text-sm text-charcoal-muted hover:text-white"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+          {applyError && <p className="mt-3 text-sm text-red-400">{applyError}</p>}
+          {applySuccess && <p className="mt-3 text-sm text-brass">{applySuccess}</p>}
+        </section>
+      )}
+
+      {appliedRewards.length > 0 && (
+        <section className="rounded-xl border border-charcoal-light p-5">
+          <h3 className="font-medium text-white">Benefício aplicado</h3>
+          <ul className="mt-3 space-y-2">
+            {appliedRewards.map((reward) => (
+              <li key={reward.id} className="text-sm text-charcoal-muted">
+                {appliedCopy(reward)}
               </li>
             ))}
           </ul>
-          {applyMessage && <p className="mt-3 text-sm text-brass">{applyMessage}</p>}
+          {data.progress.remaining > 0 && (
+            <p className="mt-3 text-sm text-charcoal-muted">
+              Próximo benefício: {data.progress.remaining === 1
+                ? '1 indicação restante para desbloquear outra recompensa.'
+                : `${data.progress.remaining} indicações restantes para desbloquear outra recompensa.`}
+            </p>
+          )}
         </section>
+      )}
+
+      {!availableRewards.length && applyError && (
+        <p className="text-sm text-red-400">{applyError}</p>
       )}
 
       <section>

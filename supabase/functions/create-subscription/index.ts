@@ -1,30 +1,22 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import {
+  addDaysIso,
+  nextDueFromComplimentary,
+  pickActiveSubscription,
+  utcTodayIso,
+} from "../_shared/asaas-billing.ts";
+import {
+  asaasFetch,
+  getSubscription,
+  listCustomerSubscriptions,
+  updateSubscriptionNextDueDate,
+  type AsaasPayment,
+  type AsaasSubscription,
+} from "../_shared/asaas-client.ts";
+import { corsFor } from "../_shared/cors.ts";
 
-const ASAAS_API_URL = Deno.env.get("ASAAS_API_URL") ?? "https://api.asaas.com/v3";
 const SUBSCRIPTION_VALUE = 60;
-
-const ALLOWED_ORIGINS = new Set([
-  "https://www.onefind.com.br",
-  "https://onefind.com.br",
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-]);
-
-function corsFor(req: Request) {
-  const origin = req.headers.get("Origin") ?? "";
-  return {
-    allowed: !origin || ALLOWED_ORIGINS.has(origin),
-    headers: {
-      "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin)
-        ? origin
-        : "https://www.onefind.com.br",
-      "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Vary": "Origin",
-    },
-  };
-}
 
 function isAllowedPaymentUrl(value: string): boolean {
   try {
@@ -34,6 +26,36 @@ function isAllowedPaymentUrl(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+async function persistSubscriptionLink(
+  admin: SupabaseClient,
+  shopId: string,
+  subscriptionId: string,
+  source: string,
+) {
+  const { data: shop } = await admin
+    .from("shops")
+    .select("asaas_subscription_id")
+    .eq("id", shopId)
+    .maybeSingle();
+
+  if (shop?.asaas_subscription_id === subscriptionId) return;
+
+  await admin
+    .from("shops")
+    .update({ asaas_subscription_id: subscriptionId })
+    .eq("id", shopId);
+
+  await admin.from("referral_events").insert({
+    kind: "subscription_linked",
+    shop_id: shopId,
+    payload: {
+      asaas_subscription_id: subscriptionId,
+      previous_asaas_subscription_id: shop?.asaas_subscription_id ?? null,
+      source,
+    },
+  });
 }
 
 Deno.serve(async (req) => {
@@ -64,7 +86,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
+      { global: { headers: { Authorization: authHeader } } },
     );
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -83,12 +105,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    const billingType =
-      billing_type === "CREDIT_CARD" ? "CREDIT_CARD" : "PIX";
+    const billingType = billing_type === "CREDIT_CARD" ? "CREDIT_CARD" : "PIX";
 
     const { data: shop, error: shopError } = await supabase
       .from("shops")
-      .select("*")
+      .select("id, name, cpf_cnpj, asaas_customer_id, complimentary_until")
       .eq("id", shop_id)
       .eq("owner_user_id", user.id)
       .single();
@@ -115,86 +136,95 @@ Deno.serve(async (req) => {
       });
     }
 
-    const asaasHeaders = {
-      "Content-Type": "application/json",
-      access_token: asaasApiKey,
-    };
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
 
-    let customerId = shop.asaas_customer_id;
+    const { data: billing } = await admin
+      .from("shops")
+      .select("asaas_customer_id, asaas_subscription_id, complimentary_until")
+      .eq("id", shop_id)
+      .single();
+
+    let customerId = billing?.asaas_customer_id ?? shop.asaas_customer_id;
 
     if (!customerId) {
-      const customerRes = await fetch(`${ASAAS_API_URL}/customers`, {
+      const customer = await asaasFetch<{ id: string }>({
+        path: "/customers",
+        apiKey: asaasApiKey,
         method: "POST",
-        headers: asaasHeaders,
-        body: JSON.stringify({
+        body: {
           name: shop.name,
           cpfCnpj: shop.cpf_cnpj,
           email: user.email,
-        }),
+        },
       });
-
-      if (!customerRes.ok) {
-        console.error("Asaas customer creation failed", customerRes.status);
-        return new Response(JSON.stringify({ error: "Failed to create Asaas customer" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      const customer = await customerRes.json();
       customerId = customer.id;
-
-      const adminClient = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-      );
-
-      await adminClient
+      await admin
         .from("shops")
         .update({ asaas_customer_id: customerId })
         .eq("id", shop_id);
     }
 
-    const nextDueDate = new Date();
-    nextDueDate.setDate(nextDueDate.getDate() + 1);
-    const dueDateStr = nextDueDate.toISOString().slice(0, 10);
+    const tomorrow = addDaysIso(utcTodayIso(), 1);
+    const dueDateStr = nextDueFromComplimentary(
+      billing?.complimentary_until ?? shop.complimentary_until,
+      tomorrow,
+    );
 
-    const subscriptionRes = await fetch(`${ASAAS_API_URL}/subscriptions`, {
-      method: "POST",
-      headers: asaasHeaders,
-      body: JSON.stringify({
-        customer: customerId,
-        billingType,
-        value: SUBSCRIPTION_VALUE,
-        nextDueDate: dueDateStr,
-        cycle: "MONTHLY",
-        description: "FIND - Assinatura mensal da plataforma",
-      }),
-    });
-
-    if (!subscriptionRes.ok) {
-      console.error("Asaas subscription creation failed", subscriptionRes.status);
-      return new Response(JSON.stringify({ error: "Failed to create subscription" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    let subscription: AsaasSubscription | null = null;
+    if (billing?.asaas_subscription_id) {
+      const stored = await getSubscription(asaasApiKey, billing.asaas_subscription_id);
+      if (stored?.status === "ACTIVE") subscription = stored;
+    }
+    if (!subscription && customerId) {
+      const listed = await listCustomerSubscriptions(asaasApiKey, customerId);
+      subscription = pickActiveSubscription(billing?.asaas_subscription_id ?? null, listed);
     }
 
-    const subscription = await subscriptionRes.json();
-
-    // A cobrança pode demorar alguns segundos para aparecer
-    let payment: Record<string, string> | null = null;
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const paymentsRes = await fetch(
-        `${ASAAS_API_URL}/payments?subscription=${subscription.id}&status=PENDING&limit=1`,
-        { headers: asaasHeaders }
-      );
-      if (paymentsRes.ok) {
-        const payments = await paymentsRes.json();
-        payment = payments.data?.[0] ?? null;
-        if (payment) break;
+    if (subscription) {
+      await persistSubscriptionLink(admin, shop_id, subscription.id, "create-subscription-reuse");
+      if (dueDateStr > (subscription.nextDueDate ?? "")) {
+        subscription = await updateSubscriptionNextDueDate(
+          asaasApiKey,
+          subscription.id,
+          dueDateStr,
+        );
       }
+    } else {
+      subscription = await asaasFetch<AsaasSubscription>({
+        path: "/subscriptions",
+        apiKey: asaasApiKey,
+        method: "POST",
+        body: {
+          customer: customerId,
+          billingType,
+          value: SUBSCRIPTION_VALUE,
+          nextDueDate: dueDateStr,
+          cycle: "MONTHLY",
+          description: "FIND - Assinatura mensal da plataforma",
+        },
+      });
+      await persistSubscriptionLink(admin, shop_id, subscription.id, "create-subscription");
+    }
+
+    let payment: AsaasPayment | null = null;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const payments = await asaasFetch<{ data?: AsaasPayment[] }>({
+        path: `/payments?subscription=${subscription.id}&status=PENDING&limit=1`,
+        apiKey: asaasApiKey,
+      });
+      payment = payments.data?.[0] ?? null;
+      if (payment) break;
       await new Promise((r) => setTimeout(r, 1000));
+    }
+
+    if (!payment) {
+      return new Response(
+        JSON.stringify({ alreadyActive: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     let paymentLink =
@@ -202,44 +232,37 @@ Deno.serve(async (req) => {
       subscription.paymentLink ||
       "";
 
-    if (payment) {
-      paymentLink =
-        payment.invoiceUrl ||
-        payment.bankSlipUrl ||
-        payment.transactionReceiptUrl ||
-        paymentLink;
+    paymentLink =
+      payment.invoiceUrl ||
+      payment.bankSlipUrl ||
+      payment.transactionReceiptUrl ||
+      paymentLink;
 
-      if (billingType === "PIX" && payment.id) {
-        const pixRes = await fetch(
-          `${ASAAS_API_URL}/payments/${payment.id}/pixQrCode`,
-          { headers: asaasHeaders }
-        );
-        if (pixRes.ok) {
-          const pix = await pixRes.json();
-          // invoiceUrl abre a fatura com QR Pix; se não houver, usa link direto
-          paymentLink = payment.invoiceUrl || pix.invoiceUrl || paymentLink;
-        }
+    if (billingType === "PIX" && payment.id) {
+      try {
+        const pix = await asaasFetch<{ invoiceUrl?: string }>({
+          path: `/payments/${payment.id}/pixQrCode`,
+          apiKey: asaasApiKey,
+        });
+        paymentLink = payment.invoiceUrl || pix.invoiceUrl || paymentLink;
+      } catch {
+        paymentLink = payment.invoiceUrl || paymentLink;
       }
     }
 
     if (!paymentLink || !isAllowedPaymentUrl(paymentLink)) {
       return new Response(
-        JSON.stringify({
-          error: "Valid payment link not found",
-          subscriptionId: subscription.id,
-        }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Valid payment link not found" }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     return new Response(
-      JSON.stringify({
-        subscriptionId: subscription.id,
-        paymentLink,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ paymentLink }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
+    console.error("create-subscription error", err);
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

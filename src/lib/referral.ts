@@ -1,6 +1,9 @@
+import { assertAsaasBillingHelpers } from './asaas-billing'
 import { PUBLIC_SITE_ORIGIN } from './site'
-import { supabase } from './supabase'
+import { invokeFunction, supabase } from './supabase'
 import type { ShopSegment } from './types'
+
+assertAsaasBillingHelpers()
 
 const REF_KEY = 'onefind_referral_code'
 const REF_AT_KEY = 'onefind_referral_at'
@@ -44,6 +47,8 @@ export interface ReferralRewardRow {
   status: 'available' | 'redeemed'
   granted_at: string
   redeemed_at: string | null
+  applied_via?: 'trial_extension' | 'asaas_postpone' | string | null
+  next_charge_on?: string | null
 }
 
 export interface ReferralOverview {
@@ -109,9 +114,12 @@ export async function fetchReferralOverview(): Promise<ReferralOverview> {
   return data as ReferralOverview
 }
 
-export async function redeemReferralReward(rewardId: string): Promise<void> {
-  const { error } = await supabase.rpc('redeem_referral_reward', { p_reward_id: rewardId })
-  if (error) throw error
+export async function applyReferralReward(rewardId: string): Promise<{
+  applied_via?: string
+  next_charge_on?: string | null
+  months?: number
+}> {
+  return await invokeFunction('apply-referral-reward', { reward_id: rewardId })
 }
 
 export function shareMessage(segment: ShopSegment | string | undefined, link: string): string {

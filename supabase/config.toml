@@ -12,3 +12,9 @@ verify_jwt = false
 
 [functions.heal-pet-services]
 verify_jwt = false
+
+[functions.apply-referral-reward]
+verify_jwt = true
+
+[functions.create-subscription]
+verify_jwt = true

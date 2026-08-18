@@ -101,10 +101,17 @@ export function Dashboard() {
     setSubscribing(true)
     setSubscribeError('')
     try {
-      const result = await invokeFunction<{ paymentLink?: string }>('create-subscription', {
-        shop_id: shop.id,
-        billing_type: billingType,
-      })
+      const result = await invokeFunction<{ paymentLink?: string; alreadyActive?: boolean }>(
+        'create-subscription',
+        {
+          shop_id: shop.id,
+          billing_type: billingType,
+        }
+      )
+      if (result.alreadyActive) {
+        await loadShop()
+        return
+      }
       if (!result.paymentLink) {
         setSubscribeError(
           'Pagamento criado, mas o Asaas não retornou link. Tente novamente em alguns segundos.'
