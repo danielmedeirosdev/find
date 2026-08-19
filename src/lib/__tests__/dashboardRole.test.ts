@@ -3,6 +3,7 @@ import {
   isOwnerOnlyTab,
   pickDashboardMembership,
   resolveStaffTab,
+  STAFF_TABS,
 } from '../dashboardRole'
 import { userFacingError } from '../userFacingError'
 import type { Barber, Shop } from '../types'
@@ -31,32 +32,72 @@ const shopB: Shop = {
   segment: 'pet',
 }
 
+const staffBarber = (shop: Shop, userId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'): Barber => ({
+  id: '33333333-3333-4333-8333-333333333333',
+  shop_id: shop.id,
+  name: 'Lucas',
+  user_id: userId,
+})
+
 describe('dashboard roles', () => {
-  it('prefers owner membership over staff', () => {
-    const barber: Barber & { shops: Shop } = {
-      id: '33333333-3333-4333-8333-333333333333',
-      shop_id: shopA.id,
-      name: 'Lucas',
-      user_id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
-      shops: shopA,
-    }
-    const m = pickDashboardMembership({ ownedShop: shopA, staffBarber: barber })
+  it('keeps owner when they are also listed as a barber on their own shop', () => {
+    const barber = staffBarber(shopA)
+    const m = pickDashboardMembership({
+      ownedShop: shopA,
+      staffBarber: barber,
+      staffShop: shopA,
+      metaRole: 'barber',
+    })
     expect(m?.role).toBe('owner')
     expect(m?.shop.id).toBe(shopA.id)
+    expect(m?.barber).toBeNull()
+  })
+
+  it('prefers staff when metadata is staff even if an owned shop exists', () => {
+    const barber = staffBarber(shopB)
+    const m = pickDashboardMembership({
+      ownedShop: shopA,
+      staffBarber: barber,
+      staffShop: shopB,
+      metaRole: 'staff',
+    })
+    expect(m?.role).toBe('staff')
+    expect(m?.shop.id).toBe(shopB.id)
+    expect(m?.barber?.id).toBe(barber.id)
+  })
+
+  it('prefers staff when the staff shop is not the owned shop', () => {
+    const barber = staffBarber(shopB)
+    const m = pickDashboardMembership({
+      ownedShop: shopA,
+      staffBarber: barber,
+      staffShop: shopB,
+      metaRole: 'barber',
+    })
+    expect(m?.role).toBe('staff')
+    expect(m?.shop.id).toBe(shopB.id)
   })
 
   it('resolves staff membership with linked shop', () => {
-    const barber: Barber & { shops: Shop } = {
-      id: '33333333-3333-4333-8333-333333333333',
-      shop_id: shopB.id,
-      name: 'Ana',
-      user_id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
-      shops: shopB,
-    }
-    const m = pickDashboardMembership({ ownedShop: null, staffBarber: barber })
+    const barber = staffBarber(shopB)
+    const m = pickDashboardMembership({
+      ownedShop: null,
+      staffBarber: barber,
+      staffShop: shopB,
+    })
     expect(m?.role).toBe('staff')
     expect(m?.barber?.id).toBe(barber.id)
     expect(m?.shop.id).toBe(shopB.id)
+  })
+
+  it('does not fall through to owner when staff metadata has no shop yet', () => {
+    const m = pickDashboardMembership({
+      ownedShop: shopA,
+      staffBarber: null,
+      staffShop: null,
+      metaRole: 'staff',
+    })
+    expect(m).toBeNull()
   })
 
   it('blocks owner-only tabs for staff navigation allowlist', () => {
@@ -67,13 +108,15 @@ describe('dashboard roles', () => {
     expect(isOwnerOnlyTab('agenda')).toBe(false)
     expect(resolveStaffTab('cashflow')).toBe('agenda')
     expect(resolveStaffTab('profile')).toBe('profile')
+    expect(STAFF_TABS.map((t) => t.id)).toEqual(['agenda', 'clients', 'services', 'profile'])
+    expect(STAFF_TABS.some((t) => isOwnerOnlyTab(t.id))).toBe(false)
   })
 })
 
 describe('userFacingError', () => {
   it('hides technical postgres / network codes', () => {
     expect(userFacingError('PGRST116', 'Falha ao salvar')).toBe(
-      'Você não tem permissão para esta ação.'
+      'Você não tem permissão para realizar esta ação.'
     )
     expect(userFacingError(new Error('Failed to fetch'), 'Falha')).toMatch(/conectar/i)
     expect(userFacingError(new Error('500 Internal Server Error'), 'Não foi possível salvar')).toBe(
@@ -89,11 +132,28 @@ describe('userFacingError', () => {
       )
     ).toMatch(/permissão/i)
   })
+
+  it('hides English auth and deploy jargon', () => {
+    expect(userFacingError(new Error('Invalid login credentials'), 'Falha')).toBe(
+      'E-mail ou senha incorretos.'
+    )
+    expect(
+      userFacingError(new Error('Could not find the function public.foo'), 'Falha ao salvar')
+    ).toBe('Falha ao salvar')
+  })
 })
 
 describe('multi-tenant shop identity', () => {
   it('keeps shop A and B ids distinct for isolation assertions', () => {
     expect(shopA.id).not.toBe(shopB.id)
     expect(shopA.owner_user_id).not.toBe(shopB.owner_user_id)
+  })
+})
+
+describe('new shops start with an empty catalog', () => {
+  it('does not auto-seed barbershop or pet services', async () => {
+    const { defaultServicesForSegment } = await import('../defaultServices')
+    expect(defaultServicesForSegment('barbershop')).toEqual([])
+    expect(defaultServicesForSegment('pet')).toEqual([])
   })
 })

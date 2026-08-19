@@ -7,6 +7,7 @@ import { formatPhone } from '../../../lib/format'
 import { DefaultAvatar, ImageDropzone, ProgressBar, Toast } from '../../../components/MediaUI'
 import { FieldLabel } from '../../../components/FormHints'
 import { PET_SIZES, type BookingWithDetails, type Pet, type PetSize, type ShopCustomer } from '../../../lib/types'
+import { userFacingError } from '../../../lib/userFacingError'
 import { formatDate, formatTime } from '../../../lib/format'
 
 interface Props {
@@ -102,7 +103,7 @@ export function PetsTab({ shopId }: Props) {
     if (!custId) {
       const phone = newCustomerPhone.replace(/\D/g, '')
       if (!newCustomerName.trim() || phone.length < 10) {
-        setToast('Informe o responsável (nome e WhatsApp) ou escolha um existente.')
+        setToast('Informe o responsável (nome e WhatsApp) ou escolha um já cadastrado.')
         return
       }
       const { data: existing } = await supabase
@@ -124,7 +125,7 @@ export function PetsTab({ shopId }: Props) {
           .select('id')
           .single()
         if (error || !created) {
-          setToast(error?.message || 'Erro ao criar cliente.')
+          setToast(userFacingError(error, 'Não foi possível cadastrar o cliente. Tente novamente.'))
           return
         }
         custId = created.id
@@ -148,10 +149,10 @@ export function PetsTab({ shopId }: Props) {
       special_needs: specialNeeds.trim() || null,
     })
     if (error) {
-      setToast(error.message)
+      setToast(userFacingError(error, 'Não foi possível cadastrar o pet. Tente novamente.'))
       return
     }
-    setToast('Pet cadastrado.')
+    setToast('Pet cadastrado com sucesso.')
     resetForm()
     load()
   }
@@ -168,13 +169,13 @@ export function PetsTab({ shopId }: Props) {
       load()
       if (selected?.id === pet.id) setSelected({ ...pet, photo_url: url })
     } catch (err) {
-      setToast(err instanceof Error ? err.message : 'Erro no upload')
+      setToast(userFacingError(err, 'Não foi possível enviar a foto. Tente novamente.'))
     }
     setUploading(false)
   }
 
   const removePet = async (pet: Pet) => {
-    if (!confirm(`Remover ${pet.name}?`)) return
+    if (!confirm(`Remover ${pet.name} do cadastro? Esta ação não pode ser desfeita.`)) return
     if (pet.photo_url) await deleteShopMedia(pet.photo_url)
     await supabase.from('pets').delete().eq('id', pet.id)
     if (selected?.id === pet.id) setSelected(null)

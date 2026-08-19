@@ -1,5 +1,5 @@
 /**
- * Testa criação de loja PET e Barber do zero + cura Bark & Mia (se logável).
+ * Confirma que loja PET e barbearia novas nascem sem serviços.
  * Uso: node --env-file=.env scripts/test-segment-default-services.mjs
  */
 import { createClient } from '@supabase/supabase-js'
@@ -38,74 +38,6 @@ if (
   process.exit(1)
 }
 
-const BARBER_DEFAULTS = new Set(['Corte', 'Barba', 'Corte + Barba'])
-const PET_DEFAULTS = ['Banho', 'Tosa', 'Banho + Tosa', 'Hidratação']
-
-async function seedDefaultServices(supabase, shopId, segment) {
-  const { data: existingServices } = await supabase
-    .from('services')
-    .select('id, name')
-    .eq('shop_id', shopId)
-  const existing = existingServices ?? []
-
-  if (existing.length > 0) {
-    const onlyBarber = existing.every((s) => BARBER_DEFAULTS.has(s.name))
-    if (!(segment === 'pet' && onlyBarber)) return { skipped: true, existing }
-    const ids = existing.map((s) => s.id)
-    await supabase.from('service_size_rules').delete().in('service_id', ids)
-    await supabase.from('services').delete().eq('shop_id', shopId)
-  }
-
-  const defaults =
-    segment === 'pet'
-      ? [
-          { name: 'Banho', price: 50, duration_minutes: 60 },
-          { name: 'Tosa', price: 60, duration_minutes: 90 },
-          { name: 'Banho + Tosa', price: 100, duration_minutes: 120 },
-          { name: 'Hidratação', price: 40, duration_minutes: 40 },
-        ]
-      : [
-          { name: 'Corte', price: 45, duration_minutes: 40 },
-          { name: 'Barba', price: 30, duration_minutes: 25 },
-          { name: 'Corte + Barba', price: 65, duration_minutes: 55 },
-        ]
-
-  if (segment === 'pet') {
-    for (const svc of defaults) {
-      const { data } = await supabase
-        .from('services')
-        .insert({ shop_id: shopId, ...svc })
-        .select('id')
-        .single()
-      if (data) {
-        await supabase.from('service_size_rules').insert([
-          {
-            service_id: data.id,
-            size: 'pequeno',
-            duration_minutes: Math.max(30, Math.round(svc.duration_minutes * 0.75)),
-            price: svc.price,
-          },
-          {
-            service_id: data.id,
-            size: 'medio',
-            duration_minutes: svc.duration_minutes,
-            price: svc.price,
-          },
-          {
-            service_id: data.id,
-            size: 'grande',
-            duration_minutes: Math.round(svc.duration_minutes * 1.5),
-            price: Math.round(svc.price * 1.25 * 100) / 100,
-          },
-        ])
-      }
-    }
-  } else {
-    await supabase.from('services').insert(defaults.map((svc) => ({ shop_id: shopId, ...svc })))
-  }
-  return { seeded: true }
-}
-
 async function ensureShop(supabase, userId, shopName, segment) {
   const { data: existing } = await supabase
     .from('shops')
@@ -118,7 +50,6 @@ async function ensureShop(supabase, userId, shopName, segment) {
       const { error } = await supabase.from('shops').update({ segment }).eq('id', existing.id)
       if (error) throw error
     }
-    await seedDefaultServices(supabase, existing.id, segment)
     return existing.id
   }
 
@@ -138,7 +69,6 @@ async function ensureShop(supabase, userId, shopName, segment) {
     .select('id')
     .single()
   if (error) throw error
-  await seedDefaultServices(supabase, created.id, segment)
   return created.id
 }
 
@@ -164,11 +94,7 @@ async function createAndCheck(segment, shopName) {
     .order('name')
 
   const names = (services ?? []).map((s) => s.name)
-  const expected = segment === 'pet' ? PET_DEFAULTS : [...BARBER_DEFAULTS]
-  const ok =
-    shop.segment === segment &&
-    expected.every((n) => names.includes(n)) &&
-    (segment !== 'pet' || !names.some((n) => BARBER_DEFAULTS.has(n)))
+  const ok = shop.segment === segment && names.length === 0
 
   console.log(
     JSON.stringify(
@@ -187,44 +113,14 @@ async function createAndCheck(segment, shopName) {
   return { ok, email, shopId }
 }
 
-async function healBarkMia() {
-  const supabase = createClient(url, anon)
-  const { data: shop } = await supabase
-    .from('shops')
-    .select('id, segment, name, owner_user_id')
-    .eq('slug', 'bark-mia')
-    .maybeSingle()
-  if (!shop) {
-    console.log('bark-mia not found')
-    return false
-  }
-  console.log('bark-mia before', shop)
-  const { data: before } = await supabase.from('services').select('name,price').eq('shop_id', shop.id)
-  console.log('services before', before)
-
-  // Sem service role não dá pra curar como outro usuário; reporta SQL necessário.
-  const needsHeal =
-    shop.segment !== 'pet' ||
-    (before ?? []).some((s) => BARBER_DEFAULTS.has(s.name))
-
-  if (needsHeal) {
-    console.log(
-      'BARK_MIA_NEEDS_SQL_MIGRATION: rode supabase/migrations/023_fix_pet_default_services.sql no SQL Editor'
-    )
-  }
-  return needsHeal
-}
-
-const pet = await createAndCheck('pet', 'Pet Shop Seed Test')
-const barber = await createAndCheck('barbershop', 'Barbearia Seed Test')
-const barkNeedsSql = await healBarkMia()
+const pet = await createAndCheck('pet', 'Pet Shop Empty Catalog Test')
+const barber = await createAndCheck('barbershop', 'Barbearia Empty Catalog Test')
 
 console.log(
   JSON.stringify(
     {
       petOk: pet.ok,
       barberOk: barber.ok,
-      barkNeedsSql,
     },
     null,
     2

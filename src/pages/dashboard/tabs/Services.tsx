@@ -49,7 +49,7 @@ export function ServicesTab({ shopId }: Props) {
   }
 
   const removeService = async (id: string) => {
-    if (!confirm('Remover este serviço?')) return
+    if (!confirm('Os clientes deixarão de ver este serviço no agendamento. Deseja remover?')) return
     await supabase.from('services').delete().eq('id', id)
     load()
   }
@@ -60,7 +60,7 @@ export function ServicesTab({ shopId }: Props) {
     <div>
       <h2 className="font-display text-2xl text-white mb-2">Serviços e preços</h2>
       <p className="text-sm text-charcoal-muted mb-6">
-        Cadastre todos os serviços que podem ser agendados pelos clientes.
+        Cadastre os serviços que os clientes poderão agendar.
       </p>
 
       <div className="mb-8 grid gap-3 sm:grid-cols-4">
@@ -108,7 +108,7 @@ export function ServicesTab({ shopId }: Props) {
       </div>
 
       {services.length === 0 ? (
-        <p className="text-charcoal-muted">Nenhum serviço cadastrado ainda.</p>
+        <p className="text-charcoal-muted">Nenhum serviço cadastrado. Adicione o primeiro acima.</p>
       ) : (
         <div className="space-y-4">
           {services.map((s) => (

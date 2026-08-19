@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase, authErrorMessage, isSupabaseConfigured } from '../../lib/supabase'
+import { userFacingError } from '../../lib/userFacingError'
 import { ensureAuthSession } from '../../lib/auth'
 import { completeGoogleCredentialLogin } from '../../lib/oauth'
 import { formatPhone } from '../../lib/format'
@@ -54,7 +55,7 @@ export function ClientAuth() {
     setLoading(true)
 
     if (!isSupabaseConfigured) {
-      setError('Configure o Supabase no arquivo .env antes de criar conta.')
+      setError('O sistema está temporariamente indisponível. Tente novamente em instantes.')
       setLoading(false)
       return
     }
@@ -62,7 +63,7 @@ export function ClientAuth() {
     try {
       if (mode === 'signup') {
         if (!isPasswordStrong(password)) {
-          setError('A senha ainda não atende a todos os requisitos.')
+          setError('A senha ainda não atende a todos os requisitos de segurança.')
           setLoading(false)
           return
         }
@@ -79,12 +80,12 @@ export function ClientAuth() {
           },
         })
         if (signUpError) {
-          setError(signUpError.message)
+          setError(authErrorMessage(signUpError))
           setLoading(false)
           return
         }
         if (!data.user) {
-          setError('Não foi possível criar a conta.')
+          setError('Não foi possível criar a conta. Tente novamente em instantes.')
           setLoading(false)
           return
         }
@@ -93,7 +94,7 @@ export function ClientAuth() {
           await ensureAuthSession(email, password)
         } catch {
           setError(
-            'Conta criada! Confirme seu e-mail e faça login. (Ou desative "Confirm email" no Supabase → Authentication → Email)'
+            'Conta criada. Confirme o e-mail enviado para entrar. Verifique também a caixa de spam.'
           )
           setLoading(false)
           return
@@ -112,7 +113,7 @@ export function ClientAuth() {
             phone: phone.replace(/\D/g, ''),
           })
           if (clientError) {
-            setError(clientError.message)
+            setError(userFacingError(clientError, 'Não foi possível concluir o cadastro. Tente novamente.'))
             setLoading(false)
             return
           }
@@ -123,7 +124,7 @@ export function ClientAuth() {
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
         if (signInError) {
-          setError(signInError.message)
+          setError(authErrorMessage(signInError))
           setLoading(false)
           return
         }
@@ -173,7 +174,7 @@ export function ClientAuth() {
                 className="w-full rounded-lg border border-paper-dark px-4 py-2 placeholder:text-ink-muted/50 focus:border-brass focus:outline-none"
               />
               <FieldHint tone="light">
-                Usado pelo estabelecimento para confirmar ou lembrar do horário.
+                Usado pelo estabelecimento para confirmar o horário e enviar lembretes.
               </FieldHint>
             </div>
           </>

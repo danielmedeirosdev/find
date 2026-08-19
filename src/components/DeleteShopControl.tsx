@@ -5,6 +5,7 @@ import { deleteOwnShop } from '../lib/shop'
 import { getSegment } from '../lib/segments'
 import type { ShopSegment } from '../lib/types'
 import { FieldLabel } from './FormHints'
+import { userFacingError } from '../lib/userFacingError'
 
 interface Props {
   shopName: string
@@ -46,7 +47,7 @@ export function DeleteShopControl({ shopName, segment, variant = 'section' }: Pr
       await signOut()
       navigate('/painel', { replace: true })
     } catch (err) {
-      setError(err instanceof Error ? err.message : `Erro ao excluir o ${seg.deleteConfirmVerb}.`)
+      setError(userFacingError(err, `Não foi possível excluir ${seg.deleteArticle} ${seg.deleteConfirmVerb}. Tente novamente.`))
       setDeleting(false)
     }
   }
@@ -60,12 +61,12 @@ export function DeleteShopControl({ shopName, segment, variant = 'section' }: Pr
     >
       <div className="w-full max-w-md rounded-xl border border-red-500/40 bg-charcoal p-6 shadow-2xl space-y-4">
         <h2 id="delete-shop-title" className="font-display text-2xl text-red-300">
-          Tem certeza absoluta?
+          Tem certeza?
         </h2>
         <p className="text-sm text-charcoal-muted leading-relaxed">
-          Você vai <span className="text-red-300 font-medium">perder tudo</span>: agendamentos,
-          clientes, serviços, equipe, horários, fotos, fluxo de caixa, relatórios, link público e a
-          conta profissional. Não há como recuperar depois.
+          Você vai <span className="text-red-300 font-medium">apagar permanentemente</span> agendamentos,
+          clientes, serviços, equipe, horários, fotos, financeiro, o link público e o acesso ao painel.
+          Não é possível recuperar esses dados depois.
         </p>
         <div>
           <FieldLabel>
@@ -96,7 +97,7 @@ export function DeleteShopControl({ shopName, segment, variant = 'section' }: Pr
             disabled={!canConfirm || deleting}
             className="rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-40 hover:bg-red-500"
           >
-            {deleting ? 'Excluindo...' : 'Sim, excluir tudo'}
+            {deleting ? 'Excluindo...' : 'Excluir definitivamente'}
           </button>
         </div>
       </div>
@@ -111,7 +112,7 @@ export function DeleteShopControl({ shopName, segment, variant = 'section' }: Pr
           onClick={openConfirm}
           className="mt-6 text-sm text-red-400/80 underline-offset-2 hover:text-red-300 hover:underline"
         >
-          Excluir {seg.deleteConfirmVerb} e apagar todos os dados
+          Excluir {seg.deleteConfirmVerb} e todos os dados
         </button>
         {dialog}
       </>

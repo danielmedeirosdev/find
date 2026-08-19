@@ -1,4 +1,5 @@
 import { createClient, FunctionsHttpError } from '@supabase/supabase-js'
+import { userFacingError } from './userFacingError'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -31,26 +32,10 @@ export const supabase = createClient(
 )
 
 export function authErrorMessage(err: unknown): string {
-  if (err instanceof TypeError && /fetch|load failed|network/i.test(err.message)) {
-    return 'Não foi possível conectar ao servidor. Verifique sua conexão com a internet e tente novamente.'
-  }
-  if (err instanceof Error) {
-    const msg = err.message || ''
-    if (/PGRST|42501|permission denied|row-level security/i.test(msg)) {
-      return 'Você não tem permissão para esta ação.'
-    }
-    if (/Invalid login credentials/i.test(msg)) {
-      return 'E-mail ou senha incorretos.'
-    }
-    if (/Email not confirmed/i.test(msg)) {
-      return 'Confirme seu e-mail antes de entrar, ou desative a confirmação no Supabase Auth.'
-    }
-    if (/User already registered/i.test(msg)) {
-      return 'Este e-mail já está cadastrado. Tente entrar.'
-    }
-    return msg
-  }
-  return 'Erro inesperado. Tente novamente.'
+  return userFacingError(
+    err,
+    'Não foi possível concluir. Verifique os dados e tente novamente.'
+  )
 }
 
 export async function invokeFunction<T>(
@@ -64,23 +49,30 @@ export async function invokeFunction<T>(
       try {
         const details = await error.context.json()
         const msg = details?.error || details?.message || error.message
-        if (details?.details) throw new Error(`${msg}: ${details.details}`)
-        throw new Error(msg)
+        const combined = details?.details ? `${msg}: ${details.details}` : String(msg)
+        throw new Error(
+          userFacingError(combined, 'Não foi possível concluir esta operação. Tente novamente.')
+        )
       } catch (parseErr) {
         if (parseErr instanceof Error && parseErr.message !== error.message) throw parseErr
       }
     }
     if (/not found|404/i.test(error.message)) {
-      throw new Error(
-        `A função "${name}" não está no Supabase. Faça deploy: npx supabase functions deploy ${name}`
-      )
+      throw new Error('Este serviço está temporariamente indisponível. Tente novamente em instantes.')
     }
-    throw error
+    throw new Error(
+      userFacingError(error, 'Não foi possível concluir esta operação. Tente novamente.')
+    )
   }
 
   if (data && typeof data === 'object' && 'error' in data && (data as { error: string }).error) {
     const errData = data as { error: string; details?: string }
-    throw new Error(errData.details ? `${errData.error}: ${errData.details}` : errData.error)
+    throw new Error(
+      userFacingError(
+        errData.details ? `${errData.error}: ${errData.details}` : errData.error,
+        'Não foi possível concluir esta operação. Tente novamente.'
+      )
+    )
   }
 
   return data as T

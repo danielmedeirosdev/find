@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { RATING_LABELS, submitReview } from '../../lib/reviews'
 import { StarPicker } from './StarRating'
 import { FieldLabel } from '../FormHints'
+import { userFacingError } from '../../lib/userFacingError'
 
 interface Props {
   bookingId: string
@@ -34,7 +35,7 @@ export function ReviewModal({
       setDone(true)
       onSubmitted()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível enviar a avaliação.')
+      setError(userFacingError(err, 'Não foi possível enviar a avaliação. Tente novamente.'))
       setSubmitting(false)
     }
   }

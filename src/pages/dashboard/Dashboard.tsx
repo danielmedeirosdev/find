@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { supabase, invokeFunction } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
@@ -6,8 +6,8 @@ import type { Barber, Shop } from '../../lib/types'
 import { BlockedOverlay } from '../../components/BlockedOverlay'
 import { SegmentProvider } from '../../contexts/SegmentContext'
 import { normalizeSegment, parseSegmentParam } from '../../lib/segments'
-import { ensureBarberShop } from '../../lib/auth'
 import { pickDashboardMembership, type DashboardRole } from '../../lib/dashboardRole'
+import { userFacingError } from '../../lib/userFacingError'
 import { LoadingBlock } from '../../components/EmptyState'
 import { ProfessionalBarbearia } from './professional/ProfessionalBarbearia'
 import { ProfessionalPet } from './professional/ProfessionalPet'
@@ -19,6 +19,10 @@ import { StaffProfessional } from './professional/StaffProfessional'
 export function Dashboard() {
   const { user, loading: authLoading } = useAuth()
   const [searchParams] = useSearchParams()
+  const searchParamsRef = useRef(searchParams)
+  searchParamsRef.current = searchParams
+  const userRef = useRef(user)
+  userRef.current = user
   const [shop, setShop] = useState<Shop | null>(null)
   const [barber, setBarber] = useState<Barber | null>(null)
   const [role, setRole] = useState<DashboardRole | null>(null)
@@ -27,42 +31,77 @@ export function Dashboard() {
   const [subscribing, setSubscribing] = useState(false)
   const [subscribeError, setSubscribeError] = useState('')
 
-  const loadMembership = async () => {
-    if (!user) return
+  const loadMembership = useCallback(async (opts?: { silent?: boolean }) => {
+    const currentUser = userRef.current
+    if (!currentUser) return
 
     try {
-      setLoadError('')
-      const { data: owned, error: ownedError } = await supabase
-        .from('shops')
-        .select('*')
-        .eq('owner_user_id', user.id)
-        .maybeSingle()
+      if (!opts?.silent) setLoadError('')
+
+      const [{ data: owned, error: ownedError }, { data: staffRow, error: staffError }] =
+        await Promise.all([
+          supabase.from('shops').select('*').eq('owner_user_id', currentUser.id).maybeSingle(),
+          supabase.from('barbers').select('*').eq('user_id', currentUser.id).maybeSingle(),
+        ])
 
       if (ownedError) {
         console.error('Dashboard shop lookup failed', ownedError)
         throw ownedError
       }
-
-      let staffRow: (Barber & { shops?: Shop | null }) | null = null
-      if (!owned) {
-        const { data, error: staffError } = await supabase
-          .from('barbers')
-          .select('*, shops(*)')
-          .eq('user_id', user.id)
-          .maybeSingle()
-        if (staffError) {
-          console.error('Dashboard staff lookup failed', staffError)
-          throw staffError
-        }
-        staffRow = data as (Barber & { shops?: Shop | null }) | null
+      if (staffError) {
+        console.error('Dashboard staff lookup failed', staffError)
+        throw staffError
       }
+
+      const staffBarber = (staffRow as Barber | null) || null
+      let staffShop: Shop | null = null
+      if (staffBarber?.shop_id) {
+        const { data: linkedShop, error: linkedShopError } = await supabase
+          .from('shops')
+          .select('*')
+          .eq('id', staffBarber.shop_id)
+          .maybeSingle()
+        if (linkedShopError) {
+          console.error('Dashboard staff shop lookup failed', linkedShopError)
+          throw linkedShopError
+        }
+        staffShop = (linkedShop as Shop) || null
+      }
+
+      const metaRole =
+        (currentUser.user_metadata as { role?: string } | undefined)?.role || null
 
       const membership = pickDashboardMembership({
         ownedShop: (owned as Shop) || null,
-        staffBarber: staffRow,
+        staffBarber,
+        staffShop,
+        metaRole,
       })
 
+      if (
+        staffBarber &&
+        (!membership ||
+          (membership.role === 'owner' && staffBarber.shop_id !== membership.shop.id))
+      ) {
+        setShop(null)
+        setBarber(null)
+        setRole(null)
+        setLoadError(
+          'Não foi possível abrir a área do profissional. Atualize a página ou solicite um novo acesso ao responsável.'
+        )
+        return
+      }
+
       if (!membership) {
+        if ((metaRole || '').toLowerCase() === 'staff') {
+          setShop(null)
+          setBarber(null)
+          setRole(null)
+          setLoadError(
+            'Não foi possível abrir a área do profissional. Atualize a página ou solicite um novo acesso ao responsável.'
+          )
+          return
+        }
         setShop(null)
         setBarber(null)
         setRole(null)
@@ -76,23 +115,17 @@ export function Dashboard() {
       if (membership.role === 'owner') {
         const dbSegment = normalizeSegment(resolved.segment)
         const metaSegment = normalizeSegment(
-          (user.user_metadata as { segment?: string } | undefined)?.segment
+          (currentUser.user_metadata as { segment?: string } | undefined)?.segment
         )
-        const urlSegment = parseSegmentParam(searchParams.get('segment'))
+        const urlSegment = parseSegmentParam(searchParamsRef.current.get('segment'))
 
         if (dbSegment !== 'pet' && (metaSegment === 'pet' || urlSegment === 'pet')) {
-          await ensureBarberShop(user.id, resolved.name, 'pet')
-          const { data: fixed } = await supabase
+          const { error: segmentError } = await supabase
             .from('shops')
-            .select('*')
+            .update({ segment: 'pet' })
             .eq('id', resolved.id)
-            .single()
-          if (fixed) resolved = fixed as Shop
-          else resolved = { ...resolved, segment: 'pet' }
-        } else if (dbSegment === 'pet') {
-          await ensureBarberShop(user.id, resolved.name, 'pet')
-          if (resolved.segment !== dbSegment) {
-            resolved = { ...resolved, segment: dbSegment }
+          if (!segmentError) {
+            resolved = { ...resolved, segment: 'pet' }
           }
         } else if (resolved.segment !== dbSegment) {
           resolved = { ...resolved, segment: dbSegment }
@@ -128,16 +161,20 @@ export function Dashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     if (authLoading) return
     if (!user) {
+      setShop(null)
+      setBarber(null)
+      setRole(null)
       setLoading(false)
       return
     }
-    loadMembership()
-  }, [user, authLoading, searchParams])
+    setLoading(true)
+    void loadMembership()
+  }, [user?.id, authLoading, loadMembership])
 
   const handleSubscribe = async (billingType: 'PIX' | 'CREDIT_CARD' = 'PIX') => {
     if (!shop || role !== 'owner') return
@@ -152,12 +189,12 @@ export function Dashboard() {
         }
       )
       if (result.alreadyActive) {
-        await loadMembership()
+        await loadMembership({ silent: true })
         return
       }
       if (!result.paymentLink) {
         setSubscribeError(
-          'Pagamento criado, mas o Asaas não retornou link. Tente novamente em alguns segundos.'
+          'O pagamento foi registrado, mas o link não ficou disponível. Tente novamente em instantes.'
         )
         return
       }
@@ -166,21 +203,21 @@ export function Dashboard() {
         paymentUrl.protocol !== 'https:' ||
         (paymentUrl.hostname !== 'asaas.com' && !paymentUrl.hostname.endsWith('.asaas.com'))
       ) {
-        throw new Error('O provedor retornou um endereço de pagamento inválido.')
+        throw new Error('O endereço de pagamento é inválido. Tente novamente em instantes.')
       }
       const opened = window.open(paymentUrl.href, '_blank', 'noopener,noreferrer')
       if (!opened) {
         window.location.assign(paymentUrl.href)
       }
-      await loadMembership()
+      await loadMembership({ silent: true })
     } catch (err) {
-      setSubscribeError(err instanceof Error ? err.message : 'Erro ao criar assinatura.')
+      setSubscribeError(userFacingError(err, 'Não foi possível iniciar a assinatura. Tente novamente.'))
     }
     setSubscribing(false)
   }
 
   if (authLoading || loading) {
-    return <LoadingBlock label="Carregando painel..." />
+    return <LoadingBlock label="Carregando o painel..." />
   }
 
   if (!user) return <Navigate to="/painel" replace />
@@ -193,7 +230,7 @@ export function Dashboard() {
           type="button"
           onClick={() => {
             setLoading(true)
-            loadMembership()
+            void loadMembership()
           }}
           className="mt-5 rounded-lg bg-brass px-4 py-2.5 text-sm font-semibold text-charcoal"
         >
@@ -215,8 +252,8 @@ export function Dashboard() {
           <div className="mx-auto max-w-lg rounded-xl border border-charcoal-light p-6 text-center">
             <h1 className="font-display text-2xl text-brass">Estabelecimento indisponível</h1>
             <p className="mt-3 text-sm text-charcoal-muted">
-              O acesso do {shop.name} está temporariamente bloqueado. Peça ao dono para regularizar a
-              assinatura.
+              O acesso a {shop.name} está temporariamente bloqueado. Solicite ao responsável que
+              regularize a assinatura.
             </p>
           </div>
         </SegmentProvider>
@@ -237,15 +274,35 @@ export function Dashboard() {
     )
   }
 
-  if (role === 'staff' && barber) {
-    return <StaffProfessional shop={shop} barber={barber} onUpdate={loadMembership} />
+  if (role === 'staff') {
+    if (!barber) {
+      return (
+        <div className="mx-auto max-w-lg rounded-xl border border-charcoal-light p-6 text-center">
+          <p className="text-white font-medium">Não foi possível abrir a área do profissional</p>
+          <p className="mt-2 text-sm text-charcoal-muted">
+            Seu acesso de equipe está incompleto. Solicite ao responsável que recrie o login.
+          </p>
+        </div>
+      )
+    }
+    return (
+      <StaffProfessional
+        shop={shop}
+        barber={barber}
+        onUpdate={() => {
+          void loadMembership({ silent: true })
+        }}
+      />
+    )
   }
 
   if (isPet) {
     return (
       <ProfessionalPet
         shop={{ ...shop, segment: 'pet' }}
-        onUpdate={loadMembership}
+        onUpdate={() => {
+          void loadMembership({ silent: true })
+        }}
         onSubscribe={handleSubscribe}
         subscribing={subscribing}
         subscribeError={subscribeError}
@@ -256,7 +313,9 @@ export function Dashboard() {
   return (
     <ProfessionalBarbearia
       shop={{ ...shop, segment: 'barbershop' }}
-      onUpdate={loadMembership}
+      onUpdate={() => {
+        void loadMembership({ silent: true })
+      }}
       onSubscribe={handleSubscribe}
       subscribing={subscribing}
       subscribeError={subscribeError}

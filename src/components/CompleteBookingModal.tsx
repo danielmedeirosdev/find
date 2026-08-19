@@ -4,6 +4,7 @@ import { formatPrice } from '../lib/format'
 import { getTotalPrice } from '../lib/booking'
 import { packageRemaining } from '../lib/notifications'
 import type { BookingWithDetails, CustomerPackage, PaymentMethod, Service } from '../lib/types'
+import { userFacingError } from '../lib/userFacingError'
 
 interface Props {
   booking: BookingWithDetails
@@ -53,7 +54,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
 
   const handleConfirm = async () => {
     if (selectedServices.length === 0) {
-      setError('Selecione ao menos um serviço.')
+      setError('Selecione pelo menos um serviço para finalizar o atendimento.')
       return
     }
 
@@ -69,7 +70,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
     })
 
     if (rpcError) {
-      setError(rpcError.message)
+      setError(userFacingError(rpcError, 'Não foi possível finalizar o atendimento. Tente novamente.'))
       setSubmitting(false)
       return
     }

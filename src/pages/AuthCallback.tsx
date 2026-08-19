@@ -12,7 +12,7 @@ async function waitForSession(timeoutMs = 8000): Promise<Session> {
   return await new Promise<Session>((resolve, reject) => {
     const timer = window.setTimeout(() => {
       subscription.unsubscribe()
-      reject(new Error('Não foi possível concluir o login com Google. Tente novamente.'))
+      reject(new Error('Não foi possível concluir o acesso com Google. Tente novamente.'))
     }, timeoutMs)
 
     const {
@@ -60,7 +60,7 @@ export function AuthCallback() {
   if (error) {
     return (
       <div className="mx-auto max-w-md text-center py-16 px-4">
-        <h1 className="font-display text-3xl text-ink mb-3">Falha no login</h1>
+        <h1 className="font-display text-3xl text-ink mb-3">Não foi possível entrar</h1>
         <p className="text-sm text-red-600 mb-6">{error}</p>
         <div className="flex flex-col gap-3 items-center">
           <Link to="/entrar" className="text-brass hover:underline text-sm">
@@ -77,7 +77,7 @@ export function AuthCallback() {
   return (
     <div className="mx-auto max-w-md text-center py-16 px-4">
       <h1 className="font-display text-3xl text-ink mb-3">Entrando com Google</h1>
-      <p className="text-sm text-ink-muted">Aguarde enquanto finalizamos seu acesso...</p>
+      <p className="text-sm text-ink-muted">Estamos concluindo seu acesso. Isso leva só alguns segundos.</p>
     </div>
   )
 }

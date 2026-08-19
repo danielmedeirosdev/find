@@ -57,7 +57,7 @@ function loadImage(file: File): Promise<HTMLImageElement> {
     }
     img.onerror = () => {
       URL.revokeObjectURL(url)
-      reject(new Error('Não foi possível ler a imagem.'))
+    reject(new Error('Não foi possível ler a imagem. Tente outro arquivo.'))
     }
     img.src = url
   })
@@ -73,7 +73,7 @@ async function canvasToJpeg(canvas: HTMLCanvasElement, quality: number): Promise
   const blob = await new Promise<Blob | null>((resolve) =>
     canvas.toBlob(resolve, 'image/jpeg', quality)
   )
-  if (!blob) throw new Error('Falha ao comprimir imagem.')
+  if (!blob) throw new Error('Não foi possível preparar a imagem. Tente outro arquivo.')
   return blob
 }
 
@@ -86,10 +86,10 @@ export async function prepareImage(
   folder: MediaFolder
 ): Promise<{ blob: Blob; contentType: string; ext: string }> {
   if (!ACCEPTED.includes(file.type)) {
-    throw new Error('Use PNG, JPG ou WEBP.')
+    throw new Error('Envie uma imagem em PNG, JPG ou WEBP.')
   }
   if (file.size > MAX_BYTES * 3) {
-    throw new Error('Arquivo muito grande. Use uma imagem de até ~10 MB.')
+    throw new Error('Arquivo muito grande. Use uma imagem de até 10 MB.')
   }
 
   const preset = PRESETS[folder]
@@ -117,7 +117,7 @@ export async function prepareImage(
   canvas.width = width
   canvas.height = height
   const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('Falha ao processar imagem.')
+  if (!ctx) throw new Error('Não foi possível processar a imagem. Tente outro arquivo.')
 
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
@@ -131,7 +131,7 @@ export async function prepareImage(
   }
 
   if (out.size > MAX_BYTES) {
-    throw new Error('Imagem ainda grande demais. Tente outra com resolução um pouco menor.')
+    throw new Error('A imagem ainda está grande demais. Tente outra com resolução menor.')
   }
 
   return { blob: out, contentType: 'image/jpeg', ext: 'jpg' }

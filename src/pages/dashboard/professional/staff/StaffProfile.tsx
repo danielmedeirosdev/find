@@ -54,7 +54,7 @@ export function StaffProfileTab({ shop, barber, onUpdate }: Props) {
     if (updateError) {
       setError(userFacingError(updateError, 'Não foi possível salvar seu perfil.'))
     } else {
-      setToast('Perfil atualizado.')
+      setToast('Perfil atualizado com sucesso.')
       onUpdate()
     }
     setSaving(false)
@@ -74,7 +74,7 @@ export function StaffProfileTab({ shop, barber, onUpdate }: Props) {
         .update({ photo_url: url })
         .eq('id', barber.id)
       if (updateError) throw updateError
-      setToast('Foto atualizada.')
+      setToast('Foto atualizada com sucesso.')
       onUpdate()
     } catch (err) {
       setError(userFacingError(err, 'Não foi possível enviar a foto.'))
@@ -162,7 +162,7 @@ export function StaffProfileTab({ shop, barber, onUpdate }: Props) {
         <h3 className="font-medium text-white mb-3">Meus horários</h3>
         {schedules.filter((s) => s.is_active).length === 0 ? (
           <p className="text-sm text-charcoal-muted">
-            Nenhum horário ativo. Peça ao dono para configurar sua agenda semanal.
+            Nenhum horário ativo. Solicite ao responsável que configure sua agenda semanal.
           </p>
         ) : (
           <ul className="space-y-2">

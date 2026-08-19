@@ -72,7 +72,7 @@ export function PetServices({ shopId }: Props) {
   }
 
   const removeService = async (id: string) => {
-    if (!confirm('Remover este serviço?')) return
+    if (!confirm('Os clientes deixarão de ver este serviço no agendamento. Deseja remover?')) return
     await supabase.from('services').delete().eq('id', id)
     load()
   }
@@ -108,7 +108,7 @@ export function PetServices({ shopId }: Props) {
     <div>
       <h2 className="font-display text-2xl text-white mb-2">Serviços de banho e tosa</h2>
       <p className="text-sm text-charcoal-muted mb-6">
-        Cadastre banho, tosa e outros serviços. Defina duração e preço por porte do pet.
+        Cadastre banho, tosa e outros serviços. Duração e preço podem variar por porte.
       </p>
 
       <div className="mb-8 grid gap-3 sm:grid-cols-4">
@@ -156,7 +156,7 @@ export function PetServices({ shopId }: Props) {
       </div>
 
       {services.length === 0 ? (
-        <p className="text-charcoal-muted">Nenhum serviço cadastrado ainda.</p>
+        <p className="text-charcoal-muted">Nenhum serviço cadastrado. Adicione o primeiro acima.</p>
       ) : (
         <div className="space-y-4">
           {services.map((s) => (

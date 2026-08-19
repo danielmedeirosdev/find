@@ -10,6 +10,7 @@ import {
   loadOccupiedSlots,
 } from '../../lib/booking'
 import { getPetServicesDuration, getPetServicesPrice, petSizeLabel } from '../../lib/pet'
+import { userFacingError } from '../../lib/userFacingError'
 import {
   createPetForCustomer,
   createPublicBooking,
@@ -133,7 +134,7 @@ export function PetBooking() {
       try {
         slots = await loadOccupiedSlots(shopId!)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Não foi possível carregar a agenda.')
+        setError(userFacingError(err, 'Não foi possível carregar a agenda. Atualize a página e tente novamente.'))
       }
 
       setShop(shopData)
@@ -154,7 +155,7 @@ export function PetBooking() {
     loadOccupiedSlots(shopId)
       .then(setOccupiedSlots)
       .catch((err) => {
-        setError(err instanceof Error ? err.message : 'Não foi possível carregar a agenda.')
+        setError(userFacingError(err, 'Não foi possível carregar a agenda. Atualize a página e tente novamente.'))
       })
   }, [shopId, step])
 
@@ -185,7 +186,7 @@ export function PetBooking() {
         return next
       }
       if (next.size >= 2) {
-        setError('No máximo 2 pets no mesmo horário (mesma pessoa).')
+        setError('É possível agendar no máximo 2 pets no mesmo horário.')
         return prev
       }
       setError('')
@@ -217,7 +218,7 @@ export function PetBooking() {
     if (!shopId) return
     const digits = phone.replace(/\D/g, '')
     if (digits.length < 10) {
-      setError('Informe um WhatsApp válido.')
+      setError('Informe um número de WhatsApp válido.')
       return
     }
     setError('')
@@ -234,7 +235,7 @@ export function PetBooking() {
       setLookupDone(true)
       setStep(2)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível localizar o cadastro.')
+      setError(userFacingError(err, 'Não foi possível localizar o cadastro. Tente novamente.'))
     }
   }
 
@@ -243,7 +244,7 @@ export function PetBooking() {
     const digits = phone.replace(/\D/g, '')
     if (customer) return customer
     if (!customerName.trim()) {
-      setError('Informe seu nome.')
+      setError('Informe o nome do responsável.')
       return null
     }
     try {
@@ -251,7 +252,7 @@ export function PetBooking() {
       setCustomer(data)
       return data
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao salvar cliente.')
+      setError(userFacingError(err, 'Não foi possível salvar o cadastro. Tente novamente.'))
       return null
     }
   }
@@ -269,7 +270,7 @@ export function PetBooking() {
         breed: newPetBreed,
       })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao cadastrar pet.')
+      setError(userFacingError(err, 'Não foi possível cadastrar o pet. Tente novamente.'))
       return
     }
     setPets((prev) => [...prev, data])
@@ -298,7 +299,7 @@ export function PetBooking() {
       return
     }
     if (selectedPets.length > 2) {
-      setError('No máximo 2 pets no mesmo horário (mesma pessoa).')
+        setError('É possível agendar no máximo 2 pets no mesmo horário.')
       return
     }
     const cust = await ensureCustomer()
@@ -321,7 +322,7 @@ export function PetBooking() {
           phone: cust.phone || null,
         })
         if (clientError) {
-          setError(clientError.message)
+          setError(userFacingError(clientError, 'Não foi possível salvar seus dados. Tente novamente.'))
           setSubmitting(false)
           return
         }
@@ -462,7 +463,7 @@ export function PetBooking() {
           <div>
             <h2 className="font-display text-2xl mb-2">Qual pet?</h2>
             <p className="text-sm text-ink-muted mb-4">
-              Pode escolher até 2 pets no mesmo horário (só da mesma pessoa).
+              É possível incluir até 2 pets no mesmo horário, do mesmo responsável.
             </p>
             {!customer && (
               <div className="mb-4">
@@ -742,7 +743,7 @@ export function PetBooking() {
                       slots={availableSlots}
                       selected={selectedTime}
                       onSelect={setSelectedTime}
-                      emptyMessage="Nenhum horário com tempo suficiente nesta data."
+                      emptyMessage="Não há horários com tempo suficiente nesta data."
                     />
                   </div>
                 )}

@@ -11,6 +11,7 @@ import type {
   ServicePackage,
   ShopCustomer,
 } from '../../../lib/types'
+import { userFacingError } from '../../../lib/userFacingError'
 
 interface Props {
   shopId: string
@@ -80,7 +81,7 @@ export function PackagesTab({ shopId }: Props) {
     const sessions = Number(tplSessions)
     const price = Number(tplPrice)
     if (!tplName.trim() || !sessions || sessions < 1) {
-      setToast('Informe nome e quantidade de sessões.')
+      setToast('Informe o nome do pacote e a quantidade de sessões.')
       return
     }
     const { error } = await supabase.from('service_packages').insert({
@@ -92,17 +93,16 @@ export function PackagesTab({ shopId }: Props) {
       active: true,
     })
     if (error) {
-      setToast(error.message)
+      setToast(userFacingError(error, 'Não foi possível criar o modelo de pacote. Tente novamente.'))
       return
     }
-    setToast('Modelo de pacote criado.')
     load()
   }
 
   const assignPackage = async () => {
     const tpl = templates.find((t) => t.id === assignPackageId)
     if (!tpl || !assignCustomerId || !assignPetId) {
-      setToast('Selecione pacote, cliente e pet.')
+      setToast('Selecione o pacote, o cliente e o pet.')
       return
     }
     let expires: string | null = null
@@ -122,10 +122,10 @@ export function PackagesTab({ shopId }: Props) {
       status: 'active',
     })
     if (error) {
-      setToast(error.message)
+      setToast(userFacingError(error, 'Não foi possível associar o pacote. Tente novamente.'))
       return
     }
-    setToast('Pacote associado ao pet.')
+    setToast('Pacote associado ao pet com sucesso.')
     load()
   }
 
@@ -136,10 +136,10 @@ export function PackagesTab({ shopId }: Props) {
       p_note: 'Uso manual',
     })
     if (error) {
-      setToast(error.message)
+      setToast(userFacingError(error, 'Não foi possível debitar a sessão. Tente novamente.'))
       return
     }
-    setToast('Sessão debitada.')
+    setToast('Sessão debitada com sucesso.')
     setSelectedPkgId(pkg.id)
     load()
   }

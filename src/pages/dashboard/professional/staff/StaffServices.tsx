@@ -50,8 +50,8 @@ export function StaffServicesTab({ shopId }: Props) {
       )}
       {services.length === 0 ? (
         <EmptyState
-          title="Nenhum serviço cadastrado."
-          description="Peça ao dono do estabelecimento para cadastrar os serviços oferecidos."
+          title="Ainda não há serviços cadastrados."
+          description="O responsável pelo estabelecimento cadastra os serviços oferecidos."
         />
       ) : (
         <ul className="space-y-3">

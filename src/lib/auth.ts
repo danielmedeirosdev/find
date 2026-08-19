@@ -1,10 +1,5 @@
 import { ensureUniqueSlug } from './media'
 import { getSegment } from './segments'
-import {
-  defaultServicesForSegment,
-  isOnlyBarbershopDefaultServices,
-} from './defaultServices'
-import { defaultSizeRules } from './pet'
 import { attachStoredReferral } from './referral'
 import { supabase } from './supabase'
 import type { ShopSegment } from './types'
@@ -18,53 +13,6 @@ export async function ensureAuthSession(email: string, password: string) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) throw error
   return data.session
-}
-
-/**
- * Insere serviços padrão da vertical. Se a loja PET só tiver o seed de barbearia
- * (bug antigo do trigger/ensure), substitui pelos serviços PET.
- */
-export async function seedDefaultServices(shopId: string, segment: ShopSegment) {
-  const { data: existingServices } = await supabase
-    .from('services')
-    .select('id, name')
-    .eq('shop_id', shopId)
-
-  const existing = existingServices ?? []
-
-  if (existing.length > 0) {
-    const shouldReplaceMisSeededPet =
-      segment === 'pet' && isOnlyBarbershopDefaultServices(existing)
-
-    if (!shouldReplaceMisSeededPet) return
-
-    const ids = existing.map((s) => s.id)
-    await supabase.from('service_size_rules').delete().in('service_id', ids)
-    await supabase.from('services').delete().eq('shop_id', shopId)
-  }
-
-  const defaults = defaultServicesForSegment(segment)
-  if (defaults.length === 0) return
-
-  if (segment === 'pet') {
-    for (const svc of defaults) {
-      const { data } = await supabase
-        .from('services')
-        .insert({ shop_id: shopId, ...svc })
-        .select('id')
-        .single()
-      if (data) {
-        await supabase
-          .from('service_size_rules')
-          .insert(defaultSizeRules(data.id, svc.duration_minutes, svc.price))
-      }
-    }
-    return
-  }
-
-  await supabase.from('services').insert(
-    defaults.map((svc) => ({ shop_id: shopId, ...svc }))
-  )
 }
 
 export async function ensureBarberShop(
@@ -88,7 +36,6 @@ export async function ensureBarberShop(
         .eq('id', existing.id)
       if (error) throw error
     }
-    await seedDefaultServices(existing.id, segment)
     await attachStoredReferral()
     return { id: existing.id }
   }
@@ -112,7 +59,6 @@ export async function ensureBarberShop(
     .single()
 
   if (error) throw error
-  if (created) await seedDefaultServices(created.id, segment)
   await attachStoredReferral()
   return created
 }

@@ -5,6 +5,7 @@ import { ImageDropzone, ProgressBar, Toast } from '../../../../components/MediaU
 import { DeleteShopControl } from '../../../../components/DeleteShopControl'
 import { FieldHint, FieldLabel } from '../../../../components/FormHints'
 import type { Shop, ShopPhoto } from '../../../../lib/types'
+import { userFacingError } from '../../../../lib/userFacingError'
 
 interface Props {
   shop: Shop
@@ -72,9 +73,9 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
       ;({ error } = await supabase.from('shops').update(base).eq('id', shop.id))
     }
 
-    if (error) setMessage(error.message)
+    if (error) setMessage(userFacingError(error, 'Não foi possível salvar as informações. Tente novamente.'))
     else {
-      setMessage('Salvo com sucesso!')
+      setMessage('Informações salvas com sucesso.')
       onUpdate()
     }
     setSaving(false)
@@ -101,7 +102,7 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
   }
 
   const removeLogo = async () => {
-    if (!logoUrl || !confirm('Remover a logo?')) return
+    if (!logoUrl || !confirm('Remover a logo do estabelecimento?')) return
     await deleteShopMedia(logoUrl)
     await supabase.from('shops').update({ logo_url: null }).eq('id', shop.id)
     setLogoUrl('')
@@ -134,7 +135,7 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
   }
 
   const removePhoto = async (photo: ShopPhoto) => {
-    if (!confirm('Excluir esta foto?')) return
+    if (!confirm('Excluir esta foto da galeria?')) return
     await deleteShopMedia(photo.url)
     await supabase.from('shop_photos').delete().eq('id', photo.id)
     await loadPhotos()

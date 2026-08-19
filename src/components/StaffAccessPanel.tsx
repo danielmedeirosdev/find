@@ -28,7 +28,7 @@ export function StaffAccessPanel({ barber, onChanged }: Props) {
     setError('')
     setSuccess('')
     if (!isPasswordStrong(password)) {
-      setError('A senha precisa ter 8+ caracteres, maiúscula, minúscula e número.')
+      setError('A senha precisa ter no mínimo 8 caracteres, com letra maiúscula, número e caractere especial.')
       return
     }
     setLoading(true)
@@ -44,19 +44,19 @@ export function StaffAccessPanel({ barber, onChanged }: Props) {
       )
       setSuccess(
         result.message ||
-          'Acesso criado. Compartilhe e-mail e senha com o profissional (não enviamos e-mail).'
+          'Acesso criado. Envie o e-mail e a senha ao profissional. Não enviamos mensagem automática.'
       )
       setPassword('')
       setOpen(false)
       onChanged()
     } catch (err) {
-      setError(userFacingError(err, 'Não foi possível criar o acesso do profissional.'))
+      setError(userFacingError(err, 'Não foi possível criar o acesso do profissional. Tente novamente.'))
     }
     setLoading(false)
   }
 
   const revoke = async () => {
-    if (!confirm('Remover o acesso deste profissional ao painel?')) return
+    if (!confirm('O profissional perderá o acesso ao painel. Deseja continuar?')) return
     setRevoking(true)
     setError('')
     setSuccess('')
@@ -65,10 +65,10 @@ export function StaffAccessPanel({ barber, onChanged }: Props) {
         action: 'revoke',
         barber_id: barber.id,
       })
-      setSuccess('Acesso removido.')
+      setSuccess('Acesso removido com sucesso.')
       onChanged()
     } catch (err) {
-      setError(userFacingError(err, 'Não foi possível remover o acesso.'))
+      setError(userFacingError(err, 'Não foi possível remover o acesso. Tente novamente.'))
     }
     setRevoking(false)
   }
@@ -80,8 +80,8 @@ export function StaffAccessPanel({ barber, onChanged }: Props) {
           <p className="text-sm text-white">Acesso ao painel</p>
           <p className="text-xs text-charcoal-muted">
             {hasAccess
-              ? 'Este profissional já pode entrar em /painel com o e-mail cadastrado.'
-              : 'Crie login para o profissional ver só a própria agenda (sem financeiro/assinatura).'}
+              ? 'Este profissional já pode entrar no painel com o e-mail cadastrado.'
+              : 'Crie um login para o profissional acessar apenas a própria agenda, sem financeiro, assinatura ou equipe.'}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -112,7 +112,7 @@ export function StaffAccessPanel({ barber, onChanged }: Props) {
       {open && (
         <div className="mt-3 space-y-3 border-t border-charcoal-light pt-3">
           <p className="text-xs text-charcoal-muted">
-            Não enviamos e-mail. Anote a senha e envie pelo WhatsApp ao profissional.
+            Não enviamos e-mail automático. Anote a senha e envie ao profissional por um canal seguro.
           </p>
           <input
             type="email"
