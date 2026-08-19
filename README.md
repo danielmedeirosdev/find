@@ -1,95 +1,100 @@
-# FIND
+# ONEFIND
 
-Plataforma multi-tenant de agendamento online para barbearias.
+Plataforma SaaS multi-tenant para agendamento e gestão de negócios de serviços.
+
+O projeto nasceu como **FIND**, focado em barbearias, e evoluiu para o **ONEFIND**, uma base mais ampla para segmentos como barbearias e pet shops. O produto reúne a experiência pública de reserva e as ferramentas operacionais do estabelecimento.
+
+## Visão do produto
+
+- Página pública de cada estabelecimento
+- Agendamento online por serviço, profissional e horário
+- Painel de gestão para operação diária
+- Autenticação e login com Google
+- Isolamento de dados por tenant
+- Trial, assinatura e controle de acesso
+- Avaliações pós-serviço
+- Atualizações em tempo real
 
 ## Stack
 
-- **Frontend:** React + Vite + Tailwind CSS + React Router
-- **Backend:** Supabase (Postgres, Auth, RLS, Edge Functions)
-- **Pagamentos:** Asaas (sandbox)
+- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS e React Router
+- **Backend:** Supabase, PostgreSQL, Auth, Row Level Security e Edge Functions
+- **Pagamentos:** Asaas
+- **Testes:** Vitest
 - **Deploy:** Vercel
 
-## Setup
+## Arquitetura
 
-### 1. Supabase
+```text
+src/
+  pages/public/     # Experiência de clientes e reservas
+  pages/dashboard/  # Operação e gestão do estabelecimento
+  lib/              # Integrações, regras de negócio e utilitários
+supabase/
+  migrations/       # Schema, políticas RLS e evolução do banco
+  functions/        # Assinaturas, webhooks e rotinas de backend
+```
 
-1. Crie um projeto no [Supabase](https://supabase.com)
-2. Execute as migrations em `supabase/migrations/` (em ordem) no SQL Editor — para exclusão da barbearia rode `010`/`011`; para avaliações pós-serviço rode `012_reviews.sql`
-3. Copie a URL e a anon key para `.env`
+A aplicação separa a experiência pública do painel administrativo. No backend, autenticação e políticas RLS ajudam a garantir que cada estabelecimento acesse somente seus próprios dados.
 
-### 2. Variáveis de ambiente
+## Desenvolvimento local
+
+### Requisitos
+
+- Node.js
+- npm
+- Projeto Supabase configurado
+
+### Instalação
 
 ```bash
+npm install
 cp .env.example .env
+npm run dev
 ```
 
-Frontend (`.env`):
-```
+Variáveis do frontend:
+
+```env
 VITE_SUPABASE_URL=https://xxx.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJ...
 ```
 
-Edge Functions (secrets no Supabase Dashboard → Edge Functions):
-```
-ASAAS_API_KEY=sua_chave_sandbox
-ASAAS_WEBHOOK_TOKEN=token_secreto_webhook
-CRON_SECRET=token_aleatorio_para_rotinas_agendadas
-HEAL_PET_SERVICES_TOKEN=token_aleatorio_exclusivo_para_manutencao
+Secrets das Edge Functions:
+
+```env
+ASAAS_API_KEY=sua_chave
+ASAAS_WEBHOOK_TOKEN=seu_token
+CRON_SECRET=seu_token
+HEAL_PET_SERVICES_TOKEN=seu_token
 ```
 
-### 3. Edge Functions
+Execute as migrations de `supabase/migrations/` na ordem indicada pelo projeto. Para publicar as funções:
 
 ```bash
 ./scripts/deploy-functions.sh
 ```
 
-O script apenas publica as funções. Ele nunca cria nem sobrescreve secrets remotos.
+O script publica as funções, mas não cria nem sobrescreve secrets remotos.
 
-Configure o webhook na Asaas apontando para:
-```
-https://xxx.supabase.co/functions/v1/asaas-webhook
-```
-
-### 4. Login com Google
-
-O app usa Google Identity Services (popup) + `signInWithIdToken` do Supabase.  
-No Google Cloud você só precisa de **Authorized JavaScript origins** (sem caminho `/`):
-
-1. No [Google Cloud Console](https://console.cloud.google.com/auth/clients), abra o cliente Web
-2. Em **Authorized JavaScript origins**, adicione só o domínio:
-   - `https://www.onefind.com.br`
-   - `https://onefind.com.br`
-   - `http://localhost:5173` (dev)
-3. No Supabase → **Authentication → Providers → Google**, ative e cole Client ID + Client Secret
-4. (Opcional) `VITE_GOOGLE_CLIENT_ID` no `.env` / Vercel — já há fallback no código
-
-Não é necessário colar URL com `/auth/...` no Google para este fluxo.
-
-### 5. Desenvolvimento local
+## Comandos
 
 ```bash
-npm install
-npm run dev
+npm run dev        # ambiente de desenvolvimento
+npm run build      # build de produção
+npm run preview    # prévia do build
+npm test           # suíte de testes
+npm run test:watch # testes em modo contínuo
 ```
 
-### 6. Deploy na Vercel
+## Deploy
 
-1. Conecte o repositório
-2. Configure `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`
-3. Deploy automático
+O frontend é publicado na Vercel. As variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` devem ser configuradas no ambiente do projeto. Edge Functions e secrets são administrados separadamente no Supabase.
 
-## Estrutura
+## Status
 
-```
-src/
-  pages/public/     # Área do cliente (tom claro)
-  pages/dashboard/  # Painel do barbeiro (tom escuro)
-  lib/              # Supabase, booking logic, formatters
-supabase/
-  migrations/       # Schema SQL + RLS
-  functions/        # create-subscription, asaas-webhook
-```
+Produto em evolução contínua, com foco em confiabilidade operacional, segurança multi-tenant e expansão para novos segmentos de serviços.
 
-## Assinatura
+---
 
-R$ 60/mês por barbearia via Asaas (Pix ou cartão). Status: `trial` → `active` → `blocked`.
+Desenvolvido por [Daniel Medeiros](https://github.com/danielmedeirosdev).
