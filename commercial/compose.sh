@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# Mixagem final: vídeo + narração + trilha + SFX
+# Mixagem final: vídeo + trilha + SFX
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 ART="/opt/cursor/artifacts"
 mkdir -p "$ART" "$DIR/out"
 
 VISUAL="$DIR/video-visual.webm"
-NARR="$DIR/narration.mp3"
 OUT="$ART/onefind-commercial-v2.mp4"
 
 # Converter visual para mp4 30fps
@@ -49,14 +48,13 @@ ffmpeg -y \
     [a][b][c][d][e][f][g][h]amix=inputs=8:duration=longest:dropout_transition=0[sfx]
   " -map "[sfx]" "$DIR/out/sfx.wav" 2>/dev/null
 
-# Mix master audio: narração + música + sfx
+# Mix master audio: música + sfx
 ffmpeg -y \
-  -i "$NARR" -i "$DIR/out/music.mp3" -i "$DIR/out/sfx.wav" \
+  -i "$DIR/out/music.mp3" -i "$DIR/out/sfx.wav" \
   -filter_complex "
-    [0]volume=1.0,highpass=f=80[n];
-    [1]volume=0.55[m];
-    [2]volume=0.7[s];
-    [n][m][s]amix=inputs=3:duration=longest:dropout_transition=2,volume=1.15,apad=pad_dur=28,alimiter=limit=0.95[aout]
+    [0]volume=0.62[m];
+    [1]volume=0.8[s];
+    [m][s]amix=inputs=2:duration=longest:dropout_transition=2,volume=1.18,apad=pad_dur=28,alimiter=limit=0.95[aout]
   " -map "[aout]" -t 28 -q:a 3 "$DIR/out/master-audio.mp3"
 
 # Vídeo final

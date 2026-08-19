@@ -12,7 +12,7 @@
     "commercial:record": "node commercial/record.mjs",
     "commercial:narration": "node commercial/generate-narration.mjs",
     "commercial:compose": "bash commercial/compose.sh",
-    "commercial:build": "npm run commercial:record && npm run commercial:narration && npm run commercial:compose"
+    "commercial:build": "npm run commercial:record && npm run commercial:compose"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
