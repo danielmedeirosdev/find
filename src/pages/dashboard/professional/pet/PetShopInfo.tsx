@@ -17,7 +17,6 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
   const [description, setDescription] = useState(shop.description || '')
   const [address, setAddress] = useState(shop.address || '')
   const [phone, setPhone] = useState(shop.phone || '')
-  const [hoursText, setHoursText] = useState(shop.hours_text || '')
   const [logoUrl, setLogoUrl] = useState(shop.logo_url || '')
   const [photos, setPhotos] = useState<ShopPhoto[]>([])
   const [saving, setSaving] = useState(false)
@@ -46,7 +45,6 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
     setDescription(shop.description || '')
     setAddress(shop.address || '')
     setPhone(shop.phone || '')
-    setHoursText(shop.hours_text || '')
     setLogoUrl(shop.logo_url || '')
   }, [shop])
 
@@ -60,7 +58,6 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
       slogan: slogan.trim() || null,
       address: address.trim() || null,
       phone: phone.trim() || null,
-      hours_text: hoursText.trim() || null,
     }
 
     let { error } = await supabase
@@ -300,20 +297,6 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
           />
           <FieldHint>
             Utilizado para contato dos clientes.
-          </FieldHint>
-        </div>
-
-        <div>
-          <FieldLabel>Horário de funcionamento</FieldLabel>
-          <textarea
-            value={hoursText}
-            onChange={(e) => setHoursText(e.target.value)}
-            rows={3}
-            placeholder="Ex: Seg-Sex 9h-19h, Sáb 9h-14h"
-            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
-          />
-          <FieldHint>
-            Horário geral do pet shop. Disponibilidade de cada profissional fica em Equipe e horários.
           </FieldHint>
         </div>
 

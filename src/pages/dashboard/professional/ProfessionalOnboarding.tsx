@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { FieldHint, FieldLabel } from '../../../components/FormHints'
 import {
+  parseOnboardingProfile,
   parseOnboardingServices,
   parseOnboardingStaff,
   type OnboardingServiceInput,
@@ -21,6 +22,7 @@ const WEEK_DAYS = [
 
 const EMPTY_SERVICE: OnboardingServiceInput = { name: '', price: '', duration: '30' }
 const EMPTY_STAFF: OnboardingStaffInput = { name: '', role: '' }
+const ONBOARDING_STEPS = ['Informações', 'Serviços', 'Equipe', 'Horários']
 
 interface Props {
   shop: Shop
@@ -44,6 +46,9 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
   const [step, setStep] = useState(0)
+  const [slogan, setSlogan] = useState(shop.slogan || '')
+  const [address, setAddress] = useState(shop.address || '')
+  const [phone, setPhone] = useState(shop.phone || '')
   const [services, setServices] = useState<OnboardingServiceInput[]>([{ ...EMPTY_SERVICE }])
   const [staff, setStaff] = useState<OnboardingStaffInput[]>([{ ...EMPTY_STAFF }])
   const [existingServices, setExistingServices] = useState<string[]>([])
@@ -107,6 +112,17 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
     )
   }
 
+  const goToServices = (event: FormEvent) => {
+    event.preventDefault()
+    setError('')
+    try {
+      parseOnboardingProfile({ slogan, address, phone })
+      setStep(1)
+    } catch (err) {
+      setError(getErrorMessage(err, 'Revise as informações do estabelecimento.'))
+    }
+  }
+
   const goToTeam = (event: FormEvent) => {
     event.preventDefault()
     setError('')
@@ -115,7 +131,7 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
       if (existingServices.length + parsed.length === 0) {
         throw new Error('Cadastre pelo menos um serviço para continuar.')
       }
-      setStep(1)
+      setStep(2)
     } catch (err) {
       setError(getErrorMessage(err, 'Revise os serviços informados.'))
     }
@@ -129,7 +145,7 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
       if (existingStaff.length + parsed.length === 0) {
         throw new Error('Informe pelo menos uma pessoa que realiza atendimentos.')
       }
-      setStep(2)
+      setStep(3)
     } catch (err) {
       setError(getErrorMessage(err, 'Revise os dados da equipe.'))
     }
@@ -149,8 +165,20 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
 
     setSaving(true)
     try {
+      const parsedProfile = parseOnboardingProfile({ slogan, address, phone })
       const parsedServices = parseOnboardingServices(services)
       const parsedStaff = parseOnboardingStaff(staff)
+      const { data: updatedShop, error: profileError } = await supabase
+        .from('shops')
+        .update(parsedProfile)
+        .eq('id', shop.id)
+        .select('id')
+        .maybeSingle()
+      if (profileError) throw profileError
+      if (!updatedShop) {
+        throw new Error('Não foi possível salvar as informações do estabelecimento.')
+      }
+
       const { error: rpcError } = await supabase.rpc('complete_professional_onboarding', {
         p_shop_id: shop.id,
         p_services: parsedServices,
@@ -191,8 +219,8 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
           </p>
         </div>
 
-        <ol className="mb-6 grid grid-cols-3 gap-2" aria-label="Progresso da configuração">
-          {['Serviços', 'Equipe', 'Horários'].map((label, index) => (
+        <ol className="mb-6 grid grid-cols-4 gap-2" aria-label="Progresso da configuração">
+          {ONBOARDING_STEPS.map((label, index) => (
             <li
               key={label}
               className={`rounded-lg border px-2 py-3 text-center text-xs sm:text-sm ${
@@ -209,6 +237,65 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
 
         <section className="rounded-2xl border border-charcoal-light bg-charcoal-light/30 p-5 shadow-2xl sm:p-8">
           {step === 0 && (
+            <form onSubmit={goToServices}>
+              <h2 className="font-display text-2xl text-brass">Conte o básico sobre seu negócio</h2>
+              <p className="mt-2 text-sm text-charcoal-muted">
+                Estas informações deixam sua página pública pronta para os primeiros clientes.
+              </p>
+
+              <div className="mt-6 space-y-5">
+                <label className="block">
+                  <FieldLabel>Slogan</FieldLabel>
+                  <input
+                    value={slogan}
+                    onChange={(event) => setSlogan(event.target.value)}
+                    required
+                    maxLength={120}
+                    placeholder={
+                      isPet
+                        ? 'Ex: Cuidado profissional para quem você ama.'
+                        : 'Ex: Estilo, precisão e tradição.'
+                    }
+                    className="w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2.5 text-white focus:border-brass focus:outline-none"
+                  />
+                  <FieldHint>Frase curta que aparece sob o nome na página pública.</FieldHint>
+                </label>
+
+                <label className="block">
+                  <FieldLabel>Endereço</FieldLabel>
+                  <input
+                    value={address}
+                    onChange={(event) => setAddress(event.target.value)}
+                    required
+                    maxLength={200}
+                    autoComplete="street-address"
+                    placeholder="Ex: Rua das Palmeiras, 482 - Centro"
+                    className="w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2.5 text-white focus:border-brass focus:outline-none"
+                  />
+                </label>
+
+                <label className="block">
+                  <FieldLabel>{isPet ? 'Telefone / WhatsApp' : 'Telefone'}</FieldLabel>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(event) => setPhone(event.target.value)}
+                    required
+                    maxLength={20}
+                    autoComplete="tel"
+                    inputMode="tel"
+                    placeholder="Ex: (11) 99999-9999"
+                    className="w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2.5 text-white focus:border-brass focus:outline-none"
+                  />
+                  <FieldHint>Utilizado para contato dos clientes.</FieldHint>
+                </label>
+              </div>
+
+              <OnboardingActions error={error} nextLabel="Continuar para serviços" />
+            </form>
+          )}
+
+          {step === 1 && (
             <form onSubmit={goToTeam}>
               <h2 className="font-display text-2xl text-brass">Quais serviços você presta?</h2>
               <p className="mt-2 text-sm text-charcoal-muted">
@@ -288,11 +375,18 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
                 + Adicionar outro serviço
               </button>
 
-              <OnboardingActions error={error} nextLabel="Continuar para equipe" />
+              <OnboardingActions
+                error={error}
+                nextLabel="Continuar para equipe"
+                onBack={() => {
+                  setError('')
+                  setStep(0)
+                }}
+              />
             </form>
           )}
 
-          {step === 1 && (
+          {step === 2 && (
             <form onSubmit={goToSchedule}>
               <h2 className="font-display text-2xl text-brass">Quem realiza os atendimentos?</h2>
               <p className="mt-2 text-sm text-charcoal-muted">
@@ -351,13 +445,13 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
                 nextLabel="Continuar para horários"
                 onBack={() => {
                   setError('')
-                  setStep(0)
+                  setStep(1)
                 }}
               />
             </form>
           )}
 
-          {step === 2 && (
+          {step === 3 && (
             <form onSubmit={finish}>
               <h2 className="font-display text-2xl text-brass">Quando vocês atendem?</h2>
               <p className="mt-2 text-sm text-charcoal-muted">
@@ -426,7 +520,7 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
                 disabled={saving}
                 onBack={() => {
                   setError('')
-                  setStep(1)
+                  setStep(2)
                 }}
               />
             </form>

@@ -8,6 +8,7 @@ import { SegmentProvider } from '../../contexts/SegmentContext'
 import { normalizeSegment, parseSegmentParam } from '../../lib/segments'
 import { ensureBarberShop } from '../../lib/auth'
 import { pickDashboardMembership, type DashboardRole } from '../../lib/dashboardRole'
+import { shouldShowProfessionalOnboarding } from '../../lib/onboarding'
 import { LoadingBlock } from '../../components/EmptyState'
 import { ProfessionalBarbearia } from './professional/ProfessionalBarbearia'
 import { ProfessionalPet } from './professional/ProfessionalPet'
@@ -242,7 +243,7 @@ export function Dashboard() {
     return <StaffProfessional shop={shop} barber={barber} onUpdate={loadMembership} />
   }
 
-  if (role === 'owner' && shop.onboarding_completed === false) {
+  if (shouldShowProfessionalOnboarding(role, shop.onboarding_completed)) {
     return (
       <SegmentProvider segment={isPet ? 'pet' : 'barbershop'}>
         <ProfessionalOnboarding
