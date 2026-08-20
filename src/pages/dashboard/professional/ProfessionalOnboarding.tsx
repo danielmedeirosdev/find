@@ -28,6 +28,20 @@ interface Props {
   onComplete: () => Promise<void> | void
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof error.message === 'string' &&
+    error.message.trim()
+  ) {
+    return error.message
+  }
+
+  return fallback
+}
+
 export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
   const [step, setStep] = useState(0)
   const [services, setServices] = useState<OnboardingServiceInput[]>([{ ...EMPTY_SERVICE }])
@@ -103,7 +117,7 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
       }
       setStep(1)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Revise os serviços informados.')
+      setError(getErrorMessage(err, 'Revise os serviços informados.'))
     }
   }
 
@@ -117,7 +131,7 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
       }
       setStep(2)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Revise os dados da equipe.')
+      setError(getErrorMessage(err, 'Revise os dados da equipe.'))
     }
   }
 
@@ -149,9 +163,7 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
       await onComplete()
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : 'Não foi possível concluir a configuração. Tente novamente.'
+        getErrorMessage(err, 'Não foi possível concluir a configuração. Tente novamente.')
       )
     } finally {
       setSaving(false)
