@@ -19,9 +19,9 @@ import {
 } from '../../lib/secureBooking'
 import { DAY_NAMES } from '../../lib/types'
 import type {
-  Shop,
+  PublicShop,
   Service,
-  Barber,
+  PublicBarber,
   BarberSchedule,
   PublicBookingSlot,
   BookingConfirmationState,
@@ -47,9 +47,9 @@ export function ShopBooking() {
   const navigate = useNavigate()
   const { user, clientProfile } = useAuth()
 
-  const [shop, setShop] = useState<Shop | null>(null)
+  const [shop, setShop] = useState<PublicShop | null>(null)
   const [services, setServices] = useState<Service[]>([])
-  const [barbers, setBarbers] = useState<Barber[]>([])
+  const [barbers, setBarbers] = useState<PublicBarber[]>([])
   const [schedules, setSchedules] = useState<BarberSchedule[]>([])
   const [occupiedSlots, setOccupiedSlots] = useState<PublicBookingSlot[]>([])
   const [photos, setPhotos] = useState<ShopPhoto[]>([])
@@ -79,7 +79,7 @@ export function ShopBooking() {
     if (!shopId) return
     async function load() {
       const { data: shopData } = await supabase
-        .from('shops')
+        .from('public_shops')
         .select('*')
         .eq('id', shopId)
         .neq('subscription_status', 'blocked')
@@ -97,7 +97,7 @@ export function ShopBooking() {
 
       const [{ data: svc }, { data: barb }, { data: ph }, stats, bStats] = await Promise.all([
         supabase.from('services').select('*').eq('shop_id', shopId).order('name'),
-        supabase.from('barbers').select('*').eq('shop_id', shopId).order('name'),
+        supabase.from('public_barbers').select('*').eq('shop_id', shopId).order('name'),
         supabase
           .from('shop_photos')
           .select('*')

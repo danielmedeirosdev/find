@@ -1,28 +1,22 @@
 import { describe, expect, it } from 'vitest'
-
-/** Mirrors provision-staff-access duplicate-email detection (no listUsers). */
-function isDuplicateEmailError(message: string | undefined | null): boolean {
-  if (!message) return false
-  return /already\s+(been\s+)?registered|already\s+exists|email.?exists|duplicate|user_already_exists/i.test(
-    message
-  )
-}
-
-function canOwnerProvision(actorOwnerId: string, shopOwnerId: string): boolean {
-  return actorOwnerId === shopOwnerId
-}
+import {
+  buildManagedStaffMetadata,
+  isDuplicateEmailError,
+  isManagedStaffAccount,
+  isShopOwner,
+} from '../../../supabase/functions/provision-staff-access/staff-security.ts'
 
 describe('provision-staff-access authorization', () => {
   it('allows owner of shop A to provision barber of shop A', () => {
-    expect(canOwnerProvision('owner-a', 'owner-a')).toBe(true)
+    expect(isShopOwner('owner-a', 'owner-a')).toBe(true)
   })
 
   it('blocks owner of shop B from provisioning barber of shop A', () => {
-    expect(canOwnerProvision('owner-b', 'owner-a')).toBe(false)
+    expect(isShopOwner('owner-b', 'owner-a')).toBe(false)
   })
 
   it('blocks staff (non-owner) from provisioning', () => {
-    expect(canOwnerProvision('staff-user', 'owner-a')).toBe(false)
+    expect(isShopOwner('staff-user', 'owner-a')).toBe(false)
   })
 })
 
@@ -34,6 +28,15 @@ describe('provision-staff-access duplicate email handling', () => {
     )
     expect(isDuplicateEmailError('email_exists')).toBe(true)
     expect(isDuplicateEmailError('Network error')).toBe(false)
+  })
+
+  it('only accepts metadata created for the exact shop and professional', () => {
+    const metadata = buildManagedStaffMetadata('shop-a', 'barber-a', 'Daniel')
+
+    expect(isManagedStaffAccount(metadata, 'shop-a', 'barber-a')).toBe(true)
+    expect(isManagedStaffAccount(metadata, 'shop-b', 'barber-a')).toBe(false)
+    expect(isManagedStaffAccount(metadata, 'shop-a', 'barber-b')).toBe(false)
+    expect(isManagedStaffAccount({}, 'shop-a', 'barber-a')).toBe(false)
   })
 })
 

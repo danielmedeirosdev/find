@@ -1,6 +1,12 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 import { corsFor } from "./_shared/cors.ts";
+import {
+  buildManagedStaffMetadata,
+  isDuplicateEmailError,
+  isManagedStaffAccount,
+  isShopOwner,
+} from "./staff-security.ts";
 
 function json(corsHeaders: HeadersInit, body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -21,54 +27,6 @@ function isStrongPassword(password: string): boolean {
     /[a-z]/.test(password) &&
     /[0-9]/.test(password)
   );
-}
-
-function isDuplicateEmailError(message: string | undefined | null): boolean {
-  if (!message) return false;
-  return /already\s+(been\s+)?registered|already\s+exists|email.?exists|duplicate|user_already_exists/i
-    .test(message);
-}
-
-/** Exact email → auth.users.id via SECURITY DEFINER RPC (no listUsers pagination). */
-async function findAuthUserIdByEmail(
-  admin: SupabaseClient,
-  email: string,
-): Promise<string | null> {
-  const { data, error } = await admin.rpc("auth_user_id_by_email", {
-    p_email: email,
-  });
-  if (error) {
-    console.error("auth_user_id_by_email failed", error.message);
-    return null;
-  }
-  return typeof data === "string" && uuidLike(data) ? data : null;
-}
-
-async function assertLinkableStaffUser(
-  admin: SupabaseClient,
-  userId: string,
-  barberId: string,
-): Promise<string | null> {
-  const { data: ownedShop } = await admin
-    .from("shops")
-    .select("id")
-    .eq("owner_user_id", userId)
-    .maybeSingle();
-  if (ownedShop) {
-    return "Este e-mail já é dono de um estabelecimento e não pode ser usado como profissional.";
-  }
-
-  const { data: otherLink } = await admin
-    .from("barbers")
-    .select("id")
-    .eq("user_id", userId)
-    .neq("id", barberId)
-    .maybeSingle();
-  if (otherLink) {
-    return "Este e-mail já está vinculado a outro profissional.";
-  }
-
-  return null;
 }
 
 Deno.serve(async (req) => {
@@ -138,7 +96,7 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   // Owner of THIS shop only — blocks cross-tenant and staff self-provision.
-  if (!shop || shop.owner_user_id !== user.id) {
+  if (!shop || !isShopOwner(user.id, shop.owner_user_id)) {
     return json(corsHeaders, { error: "Sem permissão para gerenciar este profissional" }, 403);
   }
 
@@ -150,6 +108,9 @@ Deno.serve(async (req) => {
         message: "Este profissional já não tinha acesso.",
       });
     }
+    const linkedUserId = barber.user_id;
+    const { data: linkedAccount } = await admin.auth.admin.getUserById(linkedUserId);
+
     const { error: unlinkError } = await admin
       .from("barbers")
       .update({ user_id: null })
@@ -157,6 +118,18 @@ Deno.serve(async (req) => {
     if (unlinkError) {
       return json(corsHeaders, { error: "Não foi possível remover o acesso" }, 500);
     }
+    // Delete only an account created for this exact OneFind staff link.
+    // Personal and legacy accounts are unlinked but never modified.
+    if (
+      linkedAccount.user &&
+      isManagedStaffAccount(linkedAccount.user.app_metadata, shop.id, barber.id)
+    ) {
+      const { error: deleteError } = await admin.auth.admin.deleteUser(linkedUserId);
+      if (deleteError) {
+        console.error("Failed to delete revoked managed staff account", deleteError.message);
+      }
+    }
+
     return json(corsHeaders, { ok: true, revoked: true });
   }
 
@@ -185,87 +158,70 @@ Deno.serve(async (req) => {
     );
   }
 
-  const staffMeta = {
-    role: "staff",
-    barber_id: barber.id,
-    shop_id: shop.id,
-    staff_name: barber.name,
-  };
+  const staffMeta = buildManagedStaffMetadata(shop.id, barber.id, barber.name);
 
   let targetUserId: string | null = barber.user_id;
   let created = false;
 
   if (targetUserId) {
-    // Already linked: reset password / email on the linked account only.
+    const { data: linkedAccount, error: linkedAccountError } = await admin.auth.admin
+      .getUserById(targetUserId);
+    if (linkedAccountError || !linkedAccount.user) {
+      return json(corsHeaders, { error: "Não foi possível validar a conta vinculada." }, 500);
+    }
+
+    if (!isManagedStaffAccount(linkedAccount.user.app_metadata, shop.id, barber.id)) {
+      return json(
+        corsHeaders,
+        {
+          error:
+            "Esta conta não foi criada como acesso gerenciado do OneFind. Remova o acesso e cadastre um novo e-mail.",
+        },
+        409,
+      );
+    }
+
+    // Changes are restricted to the managed account created for this exact
+    // shop + professional pair.
     const { error: pwError } = await admin.auth.admin.updateUserById(targetUserId, {
       password,
       email,
       email_confirm: true,
       user_metadata: staffMeta,
+      app_metadata: staffMeta,
     });
     if (pwError) {
       return json(corsHeaders, { error: "Não foi possível atualizar o acesso." }, 500);
     }
   } else {
-    // Prefer create; on duplicate email resolve via exact RPC lookup (no listUsers).
+    // Never attach or reset a pre-existing account. Account recovery belongs
+    // exclusively to the account holder, not to the establishment.
     const { data: createdUser, error: createError } = await admin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
       user_metadata: staffMeta,
+      app_metadata: staffMeta,
     });
 
     if (!createError && createdUser.user) {
       targetUserId = createdUser.user.id;
       created = true;
     } else if (isDuplicateEmailError(createError?.message)) {
-      const existingId = await findAuthUserIdByEmail(admin, email);
-      if (!existingId) {
-        return json(
-          corsHeaders,
-          { error: "Este e-mail já está em uso, mas não foi possível localizar a conta." },
-          409,
-        );
-      }
-
-      const linkBlock = await assertLinkableStaffUser(admin, existingId, barber.id);
-      if (linkBlock) {
-        return json(corsHeaders, { error: linkBlock }, 409);
-      }
-
-      const { error: pwError } = await admin.auth.admin.updateUserById(existingId, {
-        password,
-        email_confirm: true,
-        user_metadata: staffMeta,
-      });
-      if (pwError) {
-        return json(corsHeaders, { error: "Não foi possível atualizar a senha deste acesso." }, 500);
-      }
-      targetUserId = existingId;
+      return json(
+        corsHeaders,
+        {
+          error:
+            "Este e-mail já pertence a uma conta. Use outro e-mail; contas existentes não podem ser vinculadas nem ter a senha redefinida pelo estabelecimento.",
+        },
+        409,
+      );
     } else {
-      // Ambiguous create failure: try exact lookup once more (race / alternate messages).
-      const existingId = await findAuthUserIdByEmail(admin, email);
-      if (existingId) {
-        const linkBlock = await assertLinkableStaffUser(admin, existingId, barber.id);
-        if (linkBlock) {
-          return json(corsHeaders, { error: linkBlock }, 409);
-        }
-        const { error: pwError } = await admin.auth.admin.updateUserById(existingId, {
-          password,
-          email_confirm: true,
-          user_metadata: staffMeta,
-        });
-        if (pwError) {
-          return json(corsHeaders, { error: "Não foi possível atualizar a senha deste acesso." }, 500);
-        }
-        targetUserId = existingId;
-      } else {
-        return json(
-          corsHeaders,
-          { error: createError?.message || "Não foi possível criar o acesso do profissional." },
-          500,
-        );
-      }
+      return json(
+        corsHeaders,
+        { error: createError?.message || "Não foi possível criar o acesso do profissional." },
+        500,
+      );
     }
   }
 
@@ -279,6 +235,12 @@ Deno.serve(async (req) => {
     .eq("id", barber.id);
 
   if (linkError) {
+    if (created) {
+      const { error: cleanupError } = await admin.auth.admin.deleteUser(targetUserId);
+      if (cleanupError) {
+        console.error("Failed to clean up unlinked managed staff account", cleanupError.message);
+      }
+    }
     return json(corsHeaders, { error: "Acesso criado, mas falhou o vínculo. Tente novamente." }, 500);
   }
 

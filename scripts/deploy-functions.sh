@@ -22,6 +22,9 @@ npx supabase functions deploy send-reminders --project-ref "$PROJECT_REF" --no-v
 echo "→ Deploy heal-pet-services..."
 npx supabase functions deploy heal-pet-services --project-ref "$PROJECT_REF" --no-verify-jwt
 
+echo "→ Deploy provision-staff-access..."
+npx supabase functions deploy provision-staff-access --project-ref "$PROJECT_REF"
+
 echo "✓ Pronto! Webhook URL:"
 echo "  https://${PROJECT_REF}.supabase.co/functions/v1/asaas-webhook"
 echo "✓ Secrets remotos não foram alterados."

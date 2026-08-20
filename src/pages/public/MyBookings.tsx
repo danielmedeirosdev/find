@@ -30,7 +30,6 @@ export function MyBookings() {
       .select(`
         *,
         shops(name, address, segment),
-        barbers(name),
         pets!bookings_pet_id_fkey(name, size),
         booking_pets(pet_id, pets(name, size)),
         booking_services(service_id, services(name, price))
@@ -62,9 +61,24 @@ export function MyBookings() {
       )
     })
 
+    const barberIds = [...new Set(rows.map((booking) => booking.barber_id))]
+    const { data: publicBarbers } = barberIds.length
+      ? await supabase.from('public_barbers').select('id, name').in('id', barberIds)
+      : { data: [] }
+    const barberNameById = new Map(
+      (publicBarbers || []).map((barber) => [barber.id, barber.name])
+    )
+
     // Dedup if or() + claim overlap
     const seen = new Set<string>()
-    setBookings(rows.filter((b) => (seen.has(b.id) ? false : (seen.add(b.id), true))))
+    setBookings(
+      rows
+        .map((booking) => {
+          const barberName = barberNameById.get(booking.barber_id)
+          return barberName ? { ...booking, barbers: { name: barberName } } : booking
+        })
+        .filter((b) => (seen.has(b.id) ? false : (seen.add(b.id), true)))
+    )
     setLoading(false)
   }
 

@@ -40,8 +40,12 @@ export async function ensureUniqueSlug(
   let candidate = root
   let n = 1
   for (;;) {
-    const { data } = await supabase.from('shops').select('id').eq('slug', candidate).maybeSingle()
-    if (!data || data.id === excludeShopId) return candidate
+    const { data: available, error } = await supabase.rpc('is_shop_slug_available', {
+      p_slug: candidate,
+      p_exclude_shop_id: excludeShopId || null,
+    })
+    if (error) throw error
+    if (available) return candidate
     n += 1
     candidate = `${root}-${n}`
   }

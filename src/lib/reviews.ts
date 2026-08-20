@@ -2,6 +2,7 @@ import { absolutePublicUrl } from './site'
 import { supabase } from './supabase'
 import type {
   BarberRatingStats,
+  PublicBarber,
   RatingStats,
   Review,
   ReviewPublic,
@@ -84,11 +85,30 @@ export async function fetchShopReviews(
 ): Promise<ReviewPublic[]> {
   const { data } = await supabase
     .from('reviews')
-    .select('*, barbers(id, name, photo_url)')
+    .select('*')
     .eq('shop_id', shopId)
     .order('created_at', { ascending: false })
     .limit(limit)
-  return (data as ReviewPublic[]) || []
+
+  const reviews = (data as Review[]) || []
+  const barberIds = [...new Set(reviews.map((review) => review.barber_id))]
+  if (barberIds.length === 0) return reviews
+
+  const { data: publicBarbers } = await supabase
+    .from('public_barbers')
+    .select('id, name, photo_url')
+    .in('id', barberIds)
+
+  const barberById = new Map(
+    ((publicBarbers as Array<Pick<PublicBarber, 'id' | 'name' | 'photo_url'>>) || []).map(
+      (barber) => [barber.id, barber]
+    )
+  )
+
+  return reviews.map((review) => ({
+    ...review,
+    barbers: barberById.get(review.barber_id) || null,
+  }))
 }
 
 export async function fetchBarberReviews(

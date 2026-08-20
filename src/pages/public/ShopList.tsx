@@ -17,14 +17,14 @@ import {
 } from '../../lib/geo'
 import { fetchShopRatingStatsMap } from '../../lib/reviews'
 import { getSegment, publicBookingPathForSegment } from '../../lib/segments'
-import type { Shop, Service, ShopSegment, ShopRatingStats } from '../../lib/types'
+import type { PublicShop, Service, ShopSegment, ShopRatingStats } from '../../lib/types'
 import { BrandAccent } from '../../components/BrandAccent'
 import { CtaArrow, BackArrow, SearchMark } from '../../components/SegmentMark'
 import { RatingBadge } from '../../components/reviews/StarRating'
 import { PageLoader, ShopCardSkeleton } from '../../components/public/PageLoader'
 import { ReferralLandingSection } from '../../components/ReferralLandingSection'
 
-interface ShopWithServices extends Shop {
+interface ShopWithServices extends PublicShop {
   services: Service[]
   rating?: ShopRatingStats | null
   fromPrice?: number | null
@@ -55,7 +55,7 @@ export function ShopList({ segment }: Props) {
     async function load() {
       setLoading(true)
       const { data: shopsData } = await supabase
-        .from('shops')
+        .from('public_shops')
         .select('*')
         .eq('segment', segment)
         .neq('subscription_status', 'blocked')

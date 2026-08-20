@@ -28,7 +28,7 @@ import { SegmentProvider } from '../../contexts/SegmentContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { DAY_NAMES, PET_SIZES } from '../../lib/types'
 import type {
-  Barber,
+  PublicBarber,
   BarberSchedule,
   BookingConfirmationState,
   Pet,
@@ -36,7 +36,7 @@ import type {
   PublicBookingSlot,
   Service,
   ServiceSizeRule,
-  Shop,
+  PublicShop,
   ShopCustomer,
 } from '../../lib/types'
 
@@ -47,10 +47,10 @@ export function PetBooking() {
   const navigate = useNavigate()
   const { user, clientProfile } = useAuth()
 
-  const [shop, setShop] = useState<Shop | null>(null)
+  const [shop, setShop] = useState<PublicShop | null>(null)
   const [services, setServices] = useState<Service[]>([])
   const [rules, setRules] = useState<ServiceSizeRule[]>([])
-  const [barbers, setBarbers] = useState<Barber[]>([])
+  const [barbers, setBarbers] = useState<PublicBarber[]>([])
   const [schedules, setSchedules] = useState<BarberSchedule[]>([])
   const [occupiedSlots, setOccupiedSlots] = useState<PublicBookingSlot[]>([])
   const [loading, setLoading] = useState(true)
@@ -89,7 +89,7 @@ export function PetBooking() {
     if (!shopId) return
     async function load() {
       const { data: shopData } = await supabase
-        .from('shops')
+        .from('public_shops')
         .select('*')
         .eq('id', shopId)
         .eq('segment', 'pet')
@@ -103,7 +103,7 @@ export function PetBooking() {
 
       const [{ data: svc }, { data: barb }] = await Promise.all([
         supabase.from('services').select('*').eq('shop_id', shopId).order('name'),
-        supabase.from('barbers').select('*').eq('shop_id', shopId).order('name'),
+        supabase.from('public_barbers').select('*').eq('shop_id', shopId).order('name'),
       ])
 
       const serviceList = svc || []

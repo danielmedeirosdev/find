@@ -16,20 +16,20 @@ import { BackArrow } from '../../components/SegmentMark'
 import { RatingBadge } from '../../components/reviews/StarRating'
 import { ReviewsSection } from '../../components/reviews/ReviewsSection'
 import type {
-  Barber,
+  PublicBarber,
   BarberRatingStats,
   RatingStats,
   ReviewPublic,
   Service,
-  Shop,
+  PublicShop,
   ShopPhoto,
 } from '../../lib/types'
 
 export function ShopPublic() {
   const { slug } = useParams<{ slug: string }>()
-  const [shop, setShop] = useState<Shop | null>(null)
+  const [shop, setShop] = useState<PublicShop | null>(null)
   const [photos, setPhotos] = useState<ShopPhoto[]>([])
-  const [barbers, setBarbers] = useState<Barber[]>([])
+  const [barbers, setBarbers] = useState<PublicBarber[]>([])
   const [services, setServices] = useState<Service[]>([])
   const [shopStats, setShopStats] = useState<RatingStats | null>(null)
   const [barberStats, setBarberStats] = useState<Record<string, BarberRatingStats>>({})
@@ -40,7 +40,7 @@ export function ShopPublic() {
     if (!slug) return
     async function load() {
       const { data: shopData } = await supabase
-        .from('shops')
+        .from('public_shops')
         .select('*')
         .eq('slug', slug)
         .neq('subscription_status', 'blocked')
@@ -57,7 +57,7 @@ export function ShopPublic() {
           .select('*')
           .eq('shop_id', shopData.id)
           .order('sort_order'),
-        supabase.from('barbers').select('*').eq('shop_id', shopData.id).order('name'),
+        supabase.from('public_barbers').select('*').eq('shop_id', shopData.id).order('name'),
         supabase.from('services').select('*').eq('shop_id', shopData.id).order('name'),
         fetchShopRatingStats(shopData.id),
         fetchBarberRatingStatsMap(shopData.id),

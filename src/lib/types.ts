@@ -22,6 +22,23 @@ export interface Shop {
   created_at: string
 }
 
+/** Fields intentionally exposed by the public_shops projection. */
+export type PublicShop = Pick<
+  Shop,
+  | 'id'
+  | 'name'
+  | 'slogan'
+  | 'address'
+  | 'phone'
+  | 'hours_text'
+  | 'description'
+  | 'subscription_status'
+  | 'logo_url'
+  | 'slug'
+  | 'segment'
+  | 'created_at'
+>
+
 export interface ShopPhoto {
   id: string
   shop_id: string
@@ -48,6 +65,9 @@ export interface Barber {
   /** Linked auth user for staff panel login (set only via edge function). */
   user_id?: string | null
 }
+
+/** Public professional profile without commission or linked auth user id. */
+export type PublicBarber = Pick<Barber, 'id' | 'shop_id' | 'name' | 'photo_url' | 'role'>
 
 export type BookingStatus =
   | 'scheduled'
@@ -212,7 +232,7 @@ export interface BookingService {
 }
 
 export interface BookingWithDetails extends Booking {
-  barbers?: Barber
+  barbers?: Pick<Barber, 'name'> & Partial<Omit<PublicBarber, 'name'>>
   shops?: Shop
   pets?: Pet
   booking_pets?: Array<{ pet_id: string; pets: Pet }>

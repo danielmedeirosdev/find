@@ -6,7 +6,7 @@ SELECT
   to_regprocedure('public.is_shop_staff(uuid)') IS NOT NULL AS has_is_shop_staff,
   to_regprocedure('public.is_booking_assignee(uuid)') IS NOT NULL AS has_is_booking_assignee,
   to_regprocedure('public.staff_barber_id(uuid)') IS NOT NULL AS has_staff_barber_id,
-  to_regprocedure('public.auth_user_id_by_email(text)') IS NOT NULL AS has_auth_email_lookup;
+  to_regprocedure('public.auth_user_id_by_email(text)') IS NULL AS privileged_email_lookup_removed;
 
 -- 2) barbers.user_id column exists
 SELECT EXISTS (
@@ -47,8 +47,6 @@ WHERE schemaname = 'storage'
   AND policyname ILIKE 'Staff%barber%'
 ORDER BY policyname;
 
--- 8) auth_user_id_by_email must NOT be executable by anon/authenticated
+-- 8) Privileged auth.users email lookup was removed entirely.
 SELECT
-  has_function_privilege('anon', 'public.auth_user_id_by_email(text)', 'EXECUTE') AS anon_can_lookup,
-  has_function_privilege('authenticated', 'public.auth_user_id_by_email(text)', 'EXECUTE') AS auth_can_lookup,
-  has_function_privilege('service_role', 'public.auth_user_id_by_email(text)', 'EXECUTE') AS service_can_lookup;
+  to_regprocedure('public.auth_user_id_by_email(text)') IS NULL AS auth_email_lookup_absent;
