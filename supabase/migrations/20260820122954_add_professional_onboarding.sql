@@ -204,3 +204,4 @@ GRANT EXECUTE ON FUNCTION public.complete_professional_onboarding(
 ) TO authenticated;
 
 NOTIFY pgrst, 'reload schema';
+
