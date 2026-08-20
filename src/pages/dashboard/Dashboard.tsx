@@ -11,6 +11,7 @@ import { pickDashboardMembership, type DashboardRole } from '../../lib/dashboard
 import { LoadingBlock } from '../../components/EmptyState'
 import { ProfessionalBarbearia } from './professional/ProfessionalBarbearia'
 import { ProfessionalPet } from './professional/ProfessionalPet'
+import { ProfessionalOnboarding } from './professional/ProfessionalOnboarding'
 import { StaffProfessional } from './professional/StaffProfessional'
 
 /**
@@ -239,6 +240,18 @@ export function Dashboard() {
 
   if (role === 'staff' && barber) {
     return <StaffProfessional shop={shop} barber={barber} onUpdate={loadMembership} />
+  }
+
+  if (role === 'owner' && shop.onboarding_completed === false) {
+    return (
+      <SegmentProvider segment={isPet ? 'pet' : 'barbershop'}>
+        <ProfessionalOnboarding
+          shop={shop}
+          segment={isPet ? 'pet' : 'barbershop'}
+          onComplete={loadMembership}
+        />
+      </SegmentProvider>
+    )
   }
 
   if (isPet) {

@@ -16,6 +16,7 @@ export interface Shop {
   subscription_status: SubscriptionStatus
   trial_ends_at: string | null
   complimentary_until?: string | null
+  onboarding_completed?: boolean
   logo_url?: string | null
   slug?: string | null
   segment?: ShopSegment
