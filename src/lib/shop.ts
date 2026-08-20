@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { userFacingError } from './userFacingError'
 
 const MEDIA_FOLDERS = ['logo', 'gallery', 'barbers'] as const
 
@@ -67,11 +68,12 @@ export async function deleteOwnShop(): Promise<void> {
 
   const { error } = await supabase.rpc('delete_own_shop')
   if (error) {
+    console.error('delete_own_shop failed', { code: error.code, message: error.message })
     throw new Error(
       error.message.includes('Could not find the function') ||
         error.code === 'PGRST202'
         ? 'Função de exclusão não encontrada no Supabase. Execute as migrations 010 e 011.'
-        : error.message
+        : userFacingError(error, 'Não foi possível excluir o estabelecimento. Tente novamente.')
     )
   }
 }

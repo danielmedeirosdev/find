@@ -46,6 +46,23 @@ describe('criação do estabelecimento', () => {
     expect(mocks.from).toHaveBeenCalledTimes(1)
   })
 
+  it('não muda uma barbearia existente ao entrar pelo fluxo pet', async () => {
+    const update = vi.fn()
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: { id: 'shop-1', segment: 'barbershop', name: 'Barbearia L' },
+    })
+    const eq = vi.fn(() => ({ maybeSingle }))
+    const select = vi.fn(() => ({ eq }))
+    mocks.from.mockReturnValue({ select, update })
+
+    await expect(
+      ensureBarberShop('user-1', 'Barbearia L', 'pet')
+    ).resolves.toEqual({ id: 'shop-1' })
+
+    expect(update).not.toHaveBeenCalled()
+    expect(mocks.from).toHaveBeenCalledTimes(1)
+  })
+
   it('cria uma loja nova sem cadastrar serviços', async () => {
     const lookup = {
       select: vi.fn(() => ({

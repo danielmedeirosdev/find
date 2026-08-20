@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Navigate, useSearchParams } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { supabase, invokeFunction } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import type { Barber, Shop } from '../../lib/types'
 import { BlockedOverlay } from '../../components/BlockedOverlay'
 import { SegmentProvider } from '../../contexts/SegmentContext'
-import { normalizeSegment, parseSegmentParam } from '../../lib/segments'
-import { ensureBarberShop } from '../../lib/auth'
+import { normalizeSegment } from '../../lib/segments'
 import { pickDashboardMembership, type DashboardRole } from '../../lib/dashboardRole'
 import { shouldShowProfessionalOnboarding } from '../../lib/onboarding'
 import { LoadingBlock } from '../../components/EmptyState'
@@ -20,7 +19,6 @@ import { StaffProfessional } from './professional/StaffProfessional'
  */
 export function Dashboard() {
   const { user, loading: authLoading } = useAuth()
-  const [searchParams] = useSearchParams()
   const [shop, setShop] = useState<Shop | null>(null)
   const [barber, setBarber] = useState<Barber | null>(null)
   const [role, setRole] = useState<DashboardRole | null>(null)
@@ -77,28 +75,7 @@ export function Dashboard() {
 
       if (membership.role === 'owner') {
         const dbSegment = normalizeSegment(resolved.segment)
-        const metaSegment = normalizeSegment(
-          (user.user_metadata as { segment?: string } | undefined)?.segment
-        )
-        const urlSegment = parseSegmentParam(searchParams.get('segment'))
-
-        if (dbSegment !== 'pet' && (metaSegment === 'pet' || urlSegment === 'pet')) {
-          await ensureBarberShop(user.id, resolved.name, 'pet')
-          const { data: fixed } = await supabase
-            .from('shops')
-            .select('*')
-            .eq('id', resolved.id)
-            .single()
-          if (fixed) resolved = fixed as Shop
-          else resolved = { ...resolved, segment: 'pet' }
-        } else if (dbSegment === 'pet') {
-          await ensureBarberShop(user.id, resolved.name, 'pet')
-          if (resolved.segment !== dbSegment) {
-            resolved = { ...resolved, segment: dbSegment }
-          }
-        } else if (resolved.segment !== dbSegment) {
-          resolved = { ...resolved, segment: dbSegment }
-        }
+        if (resolved.segment !== dbSegment) resolved = { ...resolved, segment: dbSegment }
 
         if (
           resolved.subscription_status === 'trial' &&
@@ -139,7 +116,7 @@ export function Dashboard() {
       return
     }
     loadMembership()
-  }, [user, authLoading, searchParams])
+  }, [user, authLoading])
 
   const handleSubscribe = async (billingType: 'PIX' | 'CREDIT_CARD' = 'PIX') => {
     if (!shop || role !== 'owner') return

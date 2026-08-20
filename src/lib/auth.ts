@@ -27,15 +27,8 @@ export async function ensureBarberShop(
     .maybeSingle()
 
   if (existing) {
-    // Sempre prioriza o segmento do fluxo de cadastro/login (o trigger às vezes
-    // cria a loja como barbershop mesmo com metadata pet).
-    if (existing.segment !== segment) {
-      const { error } = await supabase
-        .from('shops')
-        .update({ segment })
-        .eq('id', existing.id)
-      if (error) throw error
-    }
+    // O segmento salvo é a identidade do negócio. Login por outra vitrine
+    // jamais pode reclassificar uma conta existente.
     await attachStoredReferral()
     return { id: existing.id }
   }

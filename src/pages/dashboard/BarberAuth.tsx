@@ -168,11 +168,9 @@ export function BarberAuth() {
             .select('id, segment, name')
             .eq('owner_user_id', user.id)
             .maybeSingle()
-          if (shop) {
-            const intended: ShopSegment =
-              segment === 'pet' || shop.segment === 'pet' ? 'pet' : 'barbershop'
-            await ensureBarberShop(user.id, shop.name || defaultShopName, intended)
-          } else {
+          // Uma conta existente mantém o segmento salvo no banco, mesmo que
+          // o login tenha sido aberto pela vitrine de outro segmento.
+          if (!shop) {
             const { data: staffLink } = await supabase
               .from('barbers')
               .select('id')

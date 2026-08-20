@@ -79,6 +79,14 @@ describe('userFacingError', () => {
     expect(userFacingError(new Error('500 Internal Server Error'), 'Não foi possível salvar')).toBe(
       'Não foi possível salvar'
     )
+    expect(
+      userFacingError(
+        new Error(
+          'update or delete on table "users" violates foreign key constraint "bookings_client_id_fkey"'
+        ),
+        'Não foi possível excluir o estabelecimento.'
+      )
+    ).toBe('Não foi possível excluir o estabelecimento.')
   })
 
   it('keeps Portuguese RPC messages', () => {
