@@ -9,6 +9,7 @@ import {
   paymentMethodLabel,
 } from '../../../lib/format'
 import { CompleteBookingModal } from '../../../components/CompleteBookingModal'
+import { BookingActions, type BookingActionStatus } from '../../../components/BookingActions'
 import { EmptyState, InlineError, LoadingBlock } from '../../../components/EmptyState'
 import { userFacingError } from '../../../lib/userFacingError'
 import type { BookingWithDetails, Service } from '../../../lib/types'
@@ -92,7 +93,7 @@ export function AgendaTab({ shopId, barberId }: Props) {
 
   const updateStatus = async (
     bookingId: string,
-    status: 'confirmed' | 'in_progress' | 'awaiting_payment' | 'no_show' | 'cancelled' | 'scheduled'
+    status: BookingActionStatus
   ) => {
     setActionError('')
     setStatusUpdatingId(bookingId)
@@ -197,6 +198,13 @@ export function AgendaTab({ shopId, barberId }: Props) {
               {bookingStatusLabel(nextUp.status || 'scheduled')}
             </span>
           </div>
+          <BookingActions
+            status={nextUp.status}
+            busy={statusUpdatingId === nextUp.id}
+            onStatusChange={(status) => updateStatus(nextUp.id, status)}
+            onComplete={() => setCompletingBooking(nextUp)}
+            className="mt-4 border-t border-brass/20 pt-4"
+          />
         </section>
       )}
 
@@ -318,52 +326,13 @@ export function AgendaTab({ shopId, barberId }: Props) {
                   </div>
                   <p className="font-mono text-brass shrink-0">{formatPrice(total)}</p>
                 </div>
-                <div className="mt-4 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
-                  {(status === 'scheduled' || !b.status) && (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => updateStatus(b.id, 'confirmed')}
-                      className="min-h-[44px] rounded-lg border border-charcoal-light px-4 py-2.5 text-sm text-charcoal-muted hover:text-white disabled:opacity-50"
-                    >
-                      Confirmar
-                    </button>
-                  )}
-                  {(status === 'scheduled' || status === 'confirmed') && (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => updateStatus(b.id, 'in_progress')}
-                      className="min-h-[44px] rounded-lg border border-charcoal-light px-4 py-2.5 text-sm text-charcoal-muted hover:text-white disabled:opacity-50"
-                    >
-                      Iniciar
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => setCompletingBooking(b)}
-                    className="min-h-[44px] rounded-lg bg-brass px-4 py-2.5 text-sm font-semibold text-charcoal disabled:opacity-50"
-                  >
-                    Finalizar atendimento
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => updateStatus(b.id, 'no_show')}
-                    className="min-h-[44px] rounded-lg border border-charcoal-light px-4 py-2.5 text-sm text-charcoal-muted hover:text-white disabled:opacity-50"
-                  >
-                    Não compareceu
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => updateStatus(b.id, 'cancelled')}
-                    className="min-h-[44px] rounded-lg border border-red-400/50 px-4 py-2.5 text-sm text-red-400 hover:bg-red-400/10 disabled:opacity-50"
-                  >
-                    Cancelado
-                  </button>
-                </div>
+                <BookingActions
+                  status={b.status}
+                  busy={busy}
+                  onStatusChange={(nextStatus) => updateStatus(b.id, nextStatus)}
+                  onComplete={() => setCompletingBooking(b)}
+                  className="mt-4"
+                />
               </article>
             )
           })}

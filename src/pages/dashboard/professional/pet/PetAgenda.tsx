@@ -10,6 +10,7 @@ import {
 } from '../../../../lib/format'
 import { petSizeLabel } from '../../../../lib/pet'
 import { CompleteBookingModal } from '../../../../components/CompleteBookingModal'
+import { BookingActions, type BookingActionStatus } from '../../../../components/BookingActions'
 import { DefaultAvatar } from '../../../../components/MediaUI'
 import { EmptyState, InlineError, LoadingBlock } from '../../../../components/EmptyState'
 import { userFacingError } from '../../../../lib/userFacingError'
@@ -39,6 +40,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
   const [actionError, setActionError] = useState('')
   const [loadError, setLoadError] = useState('')
   const [dayFilter, setDayFilter] = useState<DayFilter>('today')
+  const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null)
   const today = addDaysIso(0)
   const tomorrow = addDaysIso(1)
 
@@ -90,18 +92,21 @@ export function PetAgenda({ shopId, barberId }: Props) {
 
   const updateStatus = async (
     bookingId: string,
-    status: 'confirmed' | 'in_progress' | 'awaiting_payment' | 'no_show' | 'cancelled' | 'scheduled'
+    status: BookingActionStatus
   ) => {
     setActionError('')
+    setStatusUpdatingId(bookingId)
     const { error } = await supabase.rpc('update_booking_status', {
       p_booking_id: bookingId,
       p_status: status,
     })
     if (error) {
       setActionError(userFacingError(error, 'Não foi possível atualizar o atendimento.'))
+      setStatusUpdatingId(null)
       return
     }
-    load()
+    await load()
+    setStatusUpdatingId(null)
   }
 
   const searchClientHistory = async () => {
@@ -168,6 +173,17 @@ export function PetAgenda({ shopId, barberId }: Props) {
           <p className="mt-2 font-mono text-2xl text-brass">{formatTime(nextUp.time)}</p>
           <p className="text-sm text-charcoal-muted">{formatDate(nextUp.date)}</p>
           <p className="mt-2 text-lg font-medium text-white">{nextUp.client_name}</p>
+          <span className="mt-2 inline-block rounded-full bg-charcoal-light px-2.5 py-1 text-xs text-charcoal-muted">
+            {bookingStatusLabel(nextUp.status || 'scheduled')}
+          </span>
+          <BookingActions
+            status={nextUp.status}
+            busy={statusUpdatingId === nextUp.id}
+            includeAwaitingPayment
+            onStatusChange={(status) => updateStatus(nextUp.id, status)}
+            onComplete={() => setCompletingBooking(nextUp)}
+            className="mt-4 border-t border-brass/20 pt-4"
+          />
         </section>
       )}
 
@@ -320,50 +336,14 @@ export function PetAgenda({ shopId, barberId }: Props) {
                   </div>
                   <p className="font-mono text-brass">{formatPrice(total)}</p>
                 </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {(status === 'scheduled' || !b.status) && (
-                    <button
-                      onClick={() => updateStatus(b.id, 'confirmed')}
-                      className="min-h-[44px] rounded-lg border border-charcoal-light px-4 py-2.5 text-sm text-charcoal-muted hover:text-white"
-                    >
-                      Confirmar
-                    </button>
-                  )}
-                  {(status === 'scheduled' || status === 'confirmed') && (
-                    <button
-                      onClick={() => updateStatus(b.id, 'in_progress')}
-                      className="min-h-[44px] rounded-lg border border-charcoal-light px-4 py-2.5 text-sm text-charcoal-muted hover:text-white"
-                    >
-                      Iniciar
-                    </button>
-                  )}
-                  {(status === 'in_progress' || status === 'confirmed' || status === 'scheduled') && (
-                    <button
-                      onClick={() => updateStatus(b.id, 'awaiting_payment')}
-                      className="min-h-[44px] rounded-lg border border-charcoal-light px-4 py-2.5 text-sm text-charcoal-muted hover:text-white"
-                    >
-                      Aguardando pagamento
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setCompletingBooking(b)}
-                    className="min-h-[44px] rounded-lg bg-brass px-4 py-2.5 text-sm font-semibold text-charcoal"
-                  >
-                    Finalizar atendimento
-                  </button>
-                  <button
-                    onClick={() => updateStatus(b.id, 'no_show')}
-                    className="min-h-[44px] rounded-lg border border-charcoal-light px-4 py-2.5 text-sm text-charcoal-muted hover:text-white"
-                  >
-                    Não compareceu
-                  </button>
-                  <button
-                    onClick={() => updateStatus(b.id, 'cancelled')}
-                    className="min-h-[44px] rounded-lg border border-red-400/50 px-4 py-2.5 text-sm text-red-400 hover:bg-red-400/10"
-                  >
-                    Cancelado
-                  </button>
-                </div>
+                <BookingActions
+                  status={b.status}
+                  busy={statusUpdatingId === b.id}
+                  includeAwaitingPayment
+                  onStatusChange={(nextStatus) => updateStatus(b.id, nextStatus)}
+                  onComplete={() => setCompletingBooking(b)}
+                  className="mt-4"
+                />
               </div>
             )
           })}
