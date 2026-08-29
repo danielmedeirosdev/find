@@ -75,13 +75,13 @@ export function ProfessionalShell({
                 <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-charcoal-muted/80">
                   {group.label}
                 </p>
-                <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+                <div className="flex flex-wrap gap-2 pb-1">
                   {group.tabs.map((tab) => (
                     <button
                       key={tab.id}
                       type="button"
                       onClick={() => onTabChange(tab.id)}
-                      className={`shrink-0 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors min-h-[44px] ${
+                      className={`rounded-lg px-4 py-2.5 text-sm font-medium transition-colors min-h-[44px] ${
                         activeTab === tab.id
                           ? 'bg-brass text-charcoal'
                           : 'text-charcoal-muted hover:text-white hover:bg-charcoal-light'
