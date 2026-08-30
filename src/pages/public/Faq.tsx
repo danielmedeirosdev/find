@@ -4,7 +4,7 @@ import { PUBLIC_SITE_ORIGIN } from '../../lib/site'
 import { SUBSCRIPTION_PRICE } from '../../lib/types'
 import { formatPrice } from '../../lib/format'
 
-const CONTACT_EMAIL = 'daniellindomaravijoso@gmail.com'
+const CONTACT_EMAIL = 'danielmedeiros.web@gmail.com.br'
 const PRICE_LABEL = `${formatPrice(SUBSCRIPTION_PRICE)} por mês`
 const SITE_HOST = PUBLIC_SITE_ORIGIN.replace(/^https?:\/\//, '')
 
