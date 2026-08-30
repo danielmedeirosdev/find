@@ -148,52 +148,6 @@ export function MarketingLanding() {
         </div>
       </section>
 
-      <section className="bg-charcoal px-4 py-10 sm:py-16">
-        <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-2">
-          <div className="overflow-hidden rounded-lg border border-white/15 bg-black shadow-2xl">
-            <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
-              <span className="h-2 w-2 rounded-full bg-[#ff5f57]" />
-              <span className="h-2 w-2 rounded-full bg-[#febc2e]" />
-              <span className="h-2 w-2 rounded-full bg-[#28c840]" />
-              <span className="ml-2 font-mono text-[10px] uppercase tracking-wider text-charcoal-muted">
-                FIND BARBEARIA
-              </span>
-            </div>
-            <video
-              className="block aspect-video w-full bg-black object-contain"
-              controls
-              playsInline
-              preload="metadata"
-              poster="/find-demo-poster.jpg"
-            >
-              <source src="/find-demo.mp4" type="video/mp4" />
-              Seu navegador não suporta vídeo.
-            </video>
-          </div>
-
-          <div className="overflow-hidden rounded-lg border border-white/15 bg-black shadow-2xl">
-            <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
-              <span className="h-2 w-2 rounded-full bg-[#ff5f57]" />
-              <span className="h-2 w-2 rounded-full bg-[#febc2e]" />
-              <span className="h-2 w-2 rounded-full bg-[#28c840]" />
-              <span className="ml-2 font-mono text-[10px] uppercase tracking-wider text-charcoal-muted">
-                FIND PET
-              </span>
-            </div>
-            <video
-              className="block aspect-video w-full bg-black object-contain"
-              controls
-              playsInline
-              preload="metadata"
-              poster="/find-pet-demo-poster.jpg"
-            >
-              <source src="/find-pet-demo.mp4" type="video/mp4" />
-              Seu navegador não suporta vídeo.
-            </video>
-          </div>
-        </div>
-      </section>
-
       <section className="bg-paper px-4 py-16 sm:py-24">
         <div className="mx-auto max-w-5xl">
           <div className="mb-10 max-w-xl">
