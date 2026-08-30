@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { PUBLIC_SITE_ORIGIN } from '../../lib/site'
 
 const LAST_UPDATED = '11 de agosto de 2026'
-const CONTACT_EMAIL = 'daniellindomaravijoso@gmail.com'
+const CONTACT_EMAIL = 'danielmedeiros.web@gmail.com.br'
 
 export function PrivacyPolicy() {
   return (
