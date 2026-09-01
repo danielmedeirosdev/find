@@ -31,6 +31,7 @@ export const PRODUCT_RELEASES: ProductRelease[] = [
       { title: 'Preço flexível por serviço', description: 'Perguntas personalizadas e descontos por dia agora participam do cálculo real do preço e dos registros financeiros.', icon: 'tag' },
       { title: 'Gestão essencial', description: 'Melhorias em retorno e recorrência, equipe, financeiro, clínica básica e estoque básico conforme o ramo escolhido.', icon: 'chart' },
       { title: 'Identidade PET renovada', description: 'Visual em grafite, off-white e tons de âmbar, mel e caramelo, com leitura e hierarquia aprimoradas.', icon: 'sparkles' },
+      { title: 'Página inicial mais viva', description: 'Novo campo de pontos interativo em grafite e dourado, leve e adaptado para computador, celular e redução de movimento.', icon: 'sparkles' },
       { title: 'Conexão mais compreensível', description: 'Falhas de rede deixaram de exibir mensagens técnicas em inglês e agora orientam o usuário com clareza.', icon: 'refresh' },
     ],
   },

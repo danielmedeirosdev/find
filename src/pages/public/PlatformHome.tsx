@@ -4,6 +4,7 @@ import { BrandAccent } from '../../components/BrandAccent'
 import { SegmentMark, CtaArrow } from '../../components/SegmentMark'
 import { ReferralLandingSection } from '../../components/ReferralLandingSection'
 import { AppIcon, type AppIconName } from '../../components/AppIcon'
+import { DotField } from '../../components/DotField'
 
 const TRUST = [
   { title: 'Sem aplicativo', text: 'Agende pelo site, no celular ou no computador.' },
@@ -29,7 +30,9 @@ const FOOTER_LINKS: { to: string; label: string; icon: AppIconName }[] = [
 export function PlatformHome() {
   return (
     <div className="relative overflow-hidden">
-      <section className="mx-auto flex min-h-[62vh] max-w-3xl flex-col items-center px-2 pb-6 pt-8 text-center sm:pt-14">
+      <section className="relative isolate mx-auto flex min-h-[62vh] max-w-3xl flex-col items-center overflow-hidden rounded-[2rem] border border-ink/[0.07] px-3 pb-8 pt-10 text-center shadow-[0_30px_90px_rgba(65,52,28,0.08)] sm:px-8 sm:pt-16">
+        <DotField className="-z-10 [mask-image:linear-gradient(to_bottom,black_0%,black_68%,transparent_100%)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-[radial-gradient(ellipse_at_top,rgba(201,162,39,0.14),transparent_70%)]" aria-hidden="true" />
         <p className="platform-fade text-xs font-semibold uppercase tracking-[0.35em] text-brass">
           Agendamento online
         </p>
