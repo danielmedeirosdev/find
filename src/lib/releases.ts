@@ -27,7 +27,7 @@ export const PRODUCT_RELEASES: ProductRelease[] = [
       { title: 'Configuração guiada', description: 'Novo passo a passo de entrada com escolha do ramo, dados essenciais, serviços, equipe e horários.', icon: 'sparkles' },
       { title: 'Agenda e dias de folga', description: 'Horários e ausências da equipe ficaram mais claros, com aviso público quando o estabelecimento está fechado no dia.', icon: 'agenda' },
       { title: 'Feriados e fechamentos', description: 'O estabelecimento agora pode fechar um dia ou período inteiro, explicar o motivo ao cliente e bloquear novos agendamentos sem apagar reservas existentes.', icon: 'calendar-off' },
-      { title: 'Taxi Pet', description: 'Busca do animal com endereço, instruções e taxa incluída no valor final do agendamento.', icon: 'car' },
+      { title: 'Táxi Dog / Táxi Pet', description: 'O cliente solicita a busca e informa o endereço. O estabelecimento usa uma taxa fixa ou confirma o valor da rota ao aceitar o agendamento, podendo revisar no fim. A cobrança entra no total e no financeiro.', icon: 'car' },
       { title: 'Preço flexível por serviço', description: 'Perguntas personalizadas e descontos por dia agora participam do cálculo real do preço e dos registros financeiros.', icon: 'tag' },
       { title: 'Gestão essencial', description: 'Melhorias em retorno e recorrência, equipe, financeiro, clínica básica e estoque básico conforme o ramo escolhido.', icon: 'chart' },
       { title: 'Identidade PET renovada', description: 'Visual em grafite, off-white e tons de âmbar, mel e caramelo, com leitura e hierarquia aprimoradas.', icon: 'sparkles' },

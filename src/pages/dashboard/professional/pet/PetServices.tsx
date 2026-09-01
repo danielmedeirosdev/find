@@ -5,7 +5,10 @@ import { defaultSizeRules } from '../../../../lib/pet'
 import { FieldHint, FieldLabel } from '../../../../components/FormHints'
 import { ServiceProfessionalPicker } from '../../../../components/ServiceProfessionalPicker'
 import { ServiceAdvancedSettings } from '../../../../components/ServiceAdvancedSettings'
-import { PET_SIZES, type PetSize, type Service, type ServiceSizeRule } from '../../../../lib/types'
+import { AppIcon } from '../../../../components/AppIcon'
+import { InlineError } from '../../../../components/EmptyState'
+import { userFacingError } from '../../../../lib/userFacingError'
+import { PET_SIZES, type PetSize, type Service, type ServicePetTransport, type ServiceSizeRule } from '../../../../lib/types'
 
 interface Props {
   shopId: string
@@ -14,6 +17,12 @@ interface Props {
 export function PetServices({ shopId }: Props) {
   const [services, setServices] = useState<Service[]>([])
   const [rules, setRules] = useState<ServiceSizeRule[]>([])
+  const [transportSettings, setTransportSettings] = useState<ServicePetTransport[]>([])
+  const [transportFee, setTransportFee] = useState('0')
+  const [transportPricingMode, setTransportPricingMode] = useState<'quote' | 'fixed'>('quote')
+  const [transportSaving, setTransportSaving] = useState(false)
+  const [transportError, setTransportError] = useState('')
+  const [transportNotice, setTransportNotice] = useState('')
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
   const [duration, setDuration] = useState('60')
@@ -26,16 +35,23 @@ export function PetServices({ shopId }: Props) {
     setServices(list)
 
     if (list.length > 0) {
-      const { data: r } = await supabase
-        .from('service_size_rules')
-        .select('*')
-        .in(
-          'service_id',
-          list.map((s) => s.id)
-        )
+      const serviceIds = list.map((service) => service.id)
+      const [{ data: r }, { data: transport }] = await Promise.all([
+        supabase.from('service_size_rules').select('*').in('service_id', serviceIds),
+        supabase.from('service_pet_transport').select('*').in('service_id', serviceIds),
+      ])
       setRules((r as ServiceSizeRule[]) || [])
+      const transportList = (transport as ServicePetTransport[]) || []
+      setTransportSettings(transportList)
+      const enabledTransport = transportList.filter((item) => item.enabled)
+      const enabledFees = enabledTransport.map((item) => Number(item.fee))
+      setTransportFee(String(enabledFees.length ? Math.max(...enabledFees) : 0))
+      setTransportPricingMode(enabledTransport.length && enabledTransport.every((item) => item.pricing_mode === 'fixed') ? 'fixed' : 'quote')
     } else {
       setRules([])
+      setTransportSettings([])
+      setTransportFee('0')
+      setTransportPricingMode('quote')
     }
     setLoading(false)
   }, [shopId])
@@ -62,6 +78,17 @@ export function PetServices({ shopId }: Props) {
     if (error || !data) return
 
     await supabase.from('service_size_rules').insert(defaultSizeRules(data.id, baseDuration, basePrice))
+
+    const enabledTransport = transportSettings.filter((item) => item.enabled)
+    if (enabledTransport.length) {
+      await supabase.from('service_pet_transport').upsert({
+        shop_id: shopId,
+        service_id: data.id,
+        enabled: true,
+        fee: enabledTransport[0].pricing_mode === 'quote' ? 0 : Math.max(...enabledTransport.map((item) => Number(item.fee))),
+        pricing_mode: enabledTransport[0].pricing_mode,
+      })
+    }
 
     setName('')
     setPrice('')
@@ -100,7 +127,47 @@ export function PetServices({ shopId }: Props) {
     load()
   }
 
+  const saveShopTransport = async (enabled: boolean, pricingMode = transportPricingMode) => {
+    setTransportError('')
+    setTransportNotice('')
+    if (!services.length) {
+      setTransportError('Cadastre pelo menos um serviço antes de ativar o Táxi Pet.')
+      return
+    }
+    const fee = pricingMode === 'quote' ? 0 : Number(transportFee.replace(',', '.'))
+    if (!Number.isFinite(fee) || fee < 0) {
+      setTransportError('Informe uma taxa válida. Use 0 se a busca for gratuita.')
+      return
+    }
+
+    setTransportSaving(true)
+    const { error } = await supabase.from('service_pet_transport').upsert(
+      services.map((service) => ({
+        shop_id: shopId,
+        service_id: service.id,
+        enabled,
+        fee,
+        pricing_mode: pricingMode,
+      })),
+    )
+    setTransportSaving(false)
+    if (error) {
+      setTransportError(userFacingError(error, 'Não foi possível salvar o Táxi Pet.'))
+      return
+    }
+    setTransportNotice(
+      enabled
+        ? pricingMode === 'quote'
+          ? 'Táxi Pet disponível. O cliente informa o endereço e você define o valor no atendimento.'
+          : 'Táxi Pet disponível para todos os serviços com a taxa fixa configurada.'
+        : 'Táxi Pet desativado. A opção deixou de aparecer para novos clientes.',
+    )
+    await load()
+  }
+
   if (loading) return <p className="text-charcoal-muted">Carregando...</p>
+
+  const transportEnabled = transportSettings.some((item) => item.enabled)
 
   return (
     <div>
@@ -108,6 +175,69 @@ export function PetServices({ shopId }: Props) {
       <p className="text-sm text-charcoal-muted mb-6">
         Cadastre banho, tosa e outros serviços. Defina duração e preço por porte do pet.
       </p>
+
+      <section className="mb-8 rounded-2xl border border-brass/35 bg-gradient-to-br from-brass/10 to-transparent p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex max-w-2xl items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brass/15 text-brass">
+              <AppIcon name="car" size={20} />
+            </span>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brass">Serviço do estabelecimento</p>
+              <h3 className="mt-1 text-lg font-semibold text-white">Táxi Dog / Táxi Pet</h3>
+              <p className="mt-1 text-sm leading-6 text-charcoal-muted">
+                Informe se sua equipe busca o animal na casa do cliente. Ao ativar, a opção aparece no agendamento e a taxa entra no valor final.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={transportEnabled}
+            disabled={transportSaving || !services.length}
+            onClick={() => saveShopTransport(!transportEnabled)}
+            className={`min-h-11 rounded-xl px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-45 ${
+              transportEnabled
+                ? 'bg-brass text-charcoal'
+                : 'border border-charcoal-light bg-charcoal text-charcoal-muted hover:border-brass/40 hover:text-white'
+            }`}
+          >
+            {transportSaving ? 'Salvando...' : transportEnabled ? 'Disponível' : 'Não oferecemos'}
+          </button>
+        </div>
+
+        {transportEnabled ? (
+          <div className="mt-5 border-t border-charcoal-light/70 pt-4">
+            <p className="text-xs font-medium text-charcoal-muted">Como o valor será definido?</p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <button type="button" aria-pressed={transportPricingMode === 'quote'} onClick={() => { setTransportPricingMode('quote'); saveShopTransport(true, 'quote') }} disabled={transportSaving} className={`rounded-xl border p-3 text-left transition ${transportPricingMode === 'quote' ? 'border-brass bg-brass/10' : 'border-charcoal-light bg-charcoal/40'}`}>
+                <span className="block text-sm font-semibold text-white">Conforme o endereço</span>
+                <span className="mt-1 block text-xs leading-5 text-charcoal-muted">O cliente informa onde mora e o valor é preenchido ao finalizar o atendimento.</span>
+              </button>
+              <button type="button" aria-pressed={transportPricingMode === 'fixed'} onClick={() => { setTransportPricingMode('fixed'); saveShopTransport(true, 'fixed') }} disabled={transportSaving} className={`rounded-xl border p-3 text-left transition ${transportPricingMode === 'fixed' ? 'border-brass bg-brass/10' : 'border-charcoal-light bg-charcoal/40'}`}>
+                <span className="block text-sm font-semibold text-white">Taxa fixa</span>
+                <span className="mt-1 block text-xs leading-5 text-charcoal-muted">O mesmo valor é informado e somado automaticamente em todos os agendamentos.</span>
+              </button>
+            </div>
+            {transportPricingMode === 'fixed' ? (
+              <div className="mt-4 flex flex-wrap items-end gap-3">
+                <label className="w-full max-w-xs text-xs font-medium text-charcoal-muted">
+                  Taxa cobrada por agendamento
+                  <input value={transportFee} onChange={(event) => setTransportFee(event.target.value)} inputMode="decimal" placeholder="Ex: 15,00" className="mt-1.5 min-h-11 w-full rounded-xl border border-charcoal-light bg-charcoal px-3 text-sm text-white outline-none focus:border-brass" />
+                </label>
+                <button type="button" onClick={() => saveShopTransport(true, 'fixed')} disabled={transportSaving} className="min-h-11 rounded-xl border border-brass/40 px-4 text-sm font-semibold text-brass transition hover:bg-brass/10 disabled:opacity-50">Salvar taxa fixa</button>
+              </div>
+            ) : (
+              <p className="mt-4 rounded-xl bg-charcoal/40 px-4 py-3 text-sm leading-6 text-charcoal-muted">
+                Na confirmação, o cliente verá “valor a confirmar”. O endereço ficará destacado na agenda para você calcular a rota.
+              </p>
+            )}
+          </div>
+        ) : null}
+        {transportError ? <div className="mt-4"><InlineError message={transportError} /></div> : null}
+        {transportNotice ? <p role="status" className="mt-4 rounded-xl border border-brass/20 bg-charcoal/35 px-4 py-3 text-sm text-brass-light">{transportNotice}</p> : null}
+        {!services.length ? <p className="mt-4 text-xs text-charcoal-muted">Cadastre o primeiro serviço para liberar esta configuração.</p> : null}
+      </section>
 
       <div className="mb-8 grid gap-3 sm:grid-cols-4">
         <div>
@@ -192,7 +322,7 @@ export function PetServices({ shopId }: Props) {
                   </div>
 
                   <div className="border-t border-charcoal-light pt-5">
-                    <ServiceAdvancedSettings shopId={shopId} serviceId={s.id} enablePetTransport />
+                    <ServiceAdvancedSettings shopId={shopId} serviceId={s.id} />
                   </div>
 
                   <div>

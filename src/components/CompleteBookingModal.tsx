@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { formatPrice } from '../lib/format'
 import { getTotalPrice } from '../lib/booking'
 import { packageRemaining } from '../lib/notifications'
+import { userFacingError } from '../lib/userFacingError'
 import type { BookingWithDetails, CustomerPackage, PaymentMethod, Service } from '../lib/types'
 
 interface Props {
@@ -21,6 +22,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix')
   const [packages, setPackages] = useState<CustomerPackage[]>([])
   const [selectedPackageId, setSelectedPackageId] = useState<string>('')
+  const [transportFee, setTransportFee] = useState(String(Number(booking.pet_transport_fee || 0).toFixed(2)).replace('.', ','))
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -41,7 +43,12 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
 
   const selectedServices = shopServices.filter((s) => selectedIds.has(s.id))
   const selectionUnchanged = selectedIds.size === initialIds.size && Array.from(selectedIds).every((id) => initialIds.has(id))
-  const total = selectionUnchanged && booking.quoted_amount != null ? Number(booking.quoted_amount) : getTotalPrice(selectedServices)
+  const parsedTransportFee = Number(transportFee.replace(',', '.'))
+  const currentTransportFee = Number(booking.pet_transport_fee || 0)
+  const baseTotal = selectionUnchanged && booking.quoted_amount != null
+    ? Math.max(0, Number(booking.quoted_amount) - currentTransportFee)
+    : getTotalPrice(selectedServices) + Number(booking.extras_amount || 0)
+  const total = baseTotal + (booking.pet_transport_requested && Number.isFinite(parsedTransportFee) ? parsedTransportFee : 0)
 
   const toggleService = (id: string) => {
     setSelectedIds((prev) => {
@@ -57,9 +64,26 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
       setError('Selecione ao menos um serviço.')
       return
     }
+    if (booking.pet_transport_requested && (!Number.isFinite(parsedTransportFee) || parsedTransportFee < 0)) {
+      setError('Informe um valor válido para o Táxi Pet.')
+      return
+    }
 
     setSubmitting(true)
     setError('')
+
+    if (booking.pet_transport_requested) {
+      const { error: transportError } = await supabase.rpc('set_pet_transport_fee', {
+        p_booking_id: booking.id,
+        p_fee: parsedTransportFee,
+      })
+
+      if (transportError) {
+        setError(userFacingError(transportError, 'Não foi possível salvar o valor do Táxi Pet.'))
+        setSubmitting(false)
+        return
+      }
+    }
 
     const { error: rpcError } = await supabase.rpc('complete_booking', {
       p_booking_id: booking.id,
@@ -70,7 +94,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
     })
 
     if (rpcError) {
-      setError(rpcError.message)
+      setError(userFacingError(rpcError, 'Não foi possível finalizar o atendimento.'))
       setSubmitting(false)
       return
     }
@@ -116,7 +140,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
           <div className="mb-6 rounded-xl border border-charcoal-light bg-charcoal-light/20 p-4">
             <p className="mb-2 text-sm font-medium text-white">Detalhes combinados</p>
             {booking.booking_custom_field_answers?.map((answer) => <p key={answer.id} className="text-sm text-charcoal-muted"><span className="text-white">{answer.field_label}:</span> {answer.answer}{Number(answer.price_delta) > 0 ? ` · + ${formatPrice(Number(answer.price_delta))}` : ''}</p>)}
-            {booking.pet_transport_requested && <div className="mt-3 border-t border-charcoal-light pt-3 text-sm"><p className="font-medium text-brass">Táxi Pet — buscar em casa</p><p className="text-charcoal-muted">{booking.pet_transport_address}</p>{booking.pet_transport_notes && <p className="text-charcoal-muted">{booking.pet_transport_notes}</p>}</div>}
+            {booking.pet_transport_requested && <div className="mt-3 border-t border-charcoal-light pt-3 text-sm"><p className="font-medium text-brass">Táxi Dog / Táxi Pet — buscar em casa</p><p className="mt-1 text-white">{booking.pet_transport_address}</p>{booking.pet_transport_notes && <p className="mt-1 text-charcoal-muted">{booking.pet_transport_notes}</p>}<label className="mt-4 block font-medium text-white">Valor do transporte (R$)<input type="text" inputMode="decimal" value={transportFee} onChange={(event) => setTransportFee(event.target.value.replace(/[^0-9,.]/g, ''))} placeholder="0,00" className="mt-1.5 min-h-11 w-full rounded-lg border border-charcoal-light bg-charcoal px-3 text-white outline-none focus:border-brass" /></label><p className="mt-1 text-xs text-charcoal-muted">Confirme o valor da rota. Ele será somado ao total e registrado no financeiro.</p></div>}
           </div>
         ) : null}
 

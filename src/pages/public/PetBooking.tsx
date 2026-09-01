@@ -263,6 +263,7 @@ export function PetBooking() {
   )
   const extrasAmount = customAnswersExtra(selectedCustomAnswers, customOptions)
   const transportAvailable = transportSettings.some((item) => item.enabled && selectedServiceIds.has(item.service_id))
+  const transportPricePending = transportSettings.some((item) => item.enabled && selectedServiceIds.has(item.service_id) && item.pricing_mode === 'quote')
   const taxiFee = petTransport ? petTransportFee(selectedServiceIds, transportSettings) : 0
   const quotedTotal = discountedServicesPrice + extrasAmount + taxiFee
   const discountAmount = Math.max(0, totalPrice - discountedServicesPrice)
@@ -767,7 +768,12 @@ export function PetBooking() {
                         onChange={() => toggleService(s.id)}
                         className="accent-brass"
                       />
-                      <span className="font-medium">{s.name}</span>
+                      <span>
+                        <span className="font-medium">{s.name}</span>
+                        {transportSettings.some((item) => item.service_id === s.id && item.enabled) ? (
+                          <span className="mt-1 block text-xs font-medium text-brass">Táxi Pet disponível</span>
+                        ) : null}
+                      </span>
                     </div>
                     <div className="text-right font-mono text-sm">
                       <div className="text-brass">{formatPrice(price)}</div>
@@ -803,8 +809,28 @@ export function PetBooking() {
             )}
             {transportAvailable && (
               <div className="mt-5 rounded-2xl border border-brass/35 bg-brass/5 p-4">
-                <label className="flex cursor-pointer items-start justify-between gap-4"><span><span className="block font-semibold">Táxi Pet — buscar em casa</span><span className="mt-1 block text-sm text-ink-muted">A equipe busca o pet no endereço informado. Taxa: {formatPrice(petTransportFee(selectedServiceIds, transportSettings))}</span></span><input type="checkbox" checked={petTransport} onChange={(e) => setPetTransport(e.target.checked)} className="mt-1 h-5 w-5 accent-[#d6a33d]" /></label>
-                {petTransport && <div className="mt-4 space-y-3"><input value={transportAddress} onChange={(e) => setTransportAddress(e.target.value)} placeholder="Endereço completo para buscar o pet" maxLength={500} className="min-h-11 w-full rounded-xl border border-paper-dark px-3 text-sm focus:border-brass focus:outline-none" /><textarea value={transportNotes} onChange={(e) => setTransportNotes(e.target.value)} placeholder="Complemento, referência ou instruções (opcional)" rows={2} maxLength={500} className="w-full rounded-xl border border-paper-dark px-3 py-2 text-sm focus:border-brass focus:outline-none" /></div>}
+                <div>
+                  <p className="font-semibold">Precisa que busquem seu pet em casa?</p>
+                  <p className="mt-1 text-sm text-ink-muted">
+                    {transportPricePending
+                      ? 'Táxi Dog / Táxi Pet disponível. O estabelecimento confirma o valor após analisar seu endereço.'
+                      : `Táxi Dog / Táxi Pet disponível. Taxa fixa: ${formatPrice(petTransportFee(selectedServiceIds, transportSettings))}`}
+                  </p>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-2" role="group" aria-label="Escolha do Táxi Pet">
+                  <button type="button" aria-pressed={!petTransport} onClick={() => setPetTransport(false)} className={`min-h-11 rounded-xl border px-3 text-sm font-semibold transition ${!petTransport ? 'border-ink bg-ink text-paper' : 'border-paper-dark bg-white text-ink'}`}>
+                    Não preciso
+                  </button>
+                  <button type="button" aria-pressed={petTransport} onClick={() => setPetTransport(true)} className={`min-h-11 rounded-xl border px-3 text-sm font-semibold transition ${petTransport ? 'border-brass bg-brass text-charcoal' : 'border-paper-dark bg-white text-ink'}`}>
+                    Quero que busquem
+                  </button>
+                </div>
+                {petTransport ? (
+                  <div className="mt-4 space-y-3">
+                    <label className="block text-sm font-medium">Endereço da busca<input value={transportAddress} onChange={(e) => setTransportAddress(e.target.value)} placeholder="Rua, número, bairro e cidade" maxLength={500} className="mt-1.5 min-h-11 w-full rounded-xl border border-paper-dark px-3 text-sm focus:border-brass focus:outline-none" /></label>
+                    <label className="block text-sm font-medium">Instruções para a equipe <span className="font-normal text-ink-muted">(opcional)</span><textarea value={transportNotes} onChange={(e) => setTransportNotes(e.target.value)} placeholder="Complemento, referência ou cuidados na retirada" rows={2} maxLength={500} className="mt-1.5 w-full rounded-xl border border-paper-dark px-3 py-2 text-sm focus:border-brass focus:outline-none" /></label>
+                  </div>
+                ) : null}
               </div>
             )}
             {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
@@ -967,8 +993,9 @@ export function PetBooking() {
               <p className="text-ink-muted">{formatDuration(duration)}</p>
               {discountAmount > 0 && <p className="text-emerald-700">Desconto do dia: − {formatPrice(discountAmount)}</p>}
               {extrasAmount > 0 && <p className="text-ink-muted">Adicionais: + {formatPrice(extrasAmount)}</p>}
-              {petTransport && <p className="text-ink-muted">Táxi Pet: + {formatPrice(taxiFee)} · {transportAddress}</p>}
+              {petTransport && <p className="text-ink-muted">Táxi Pet: {transportPricePending ? 'valor a confirmar' : `+ ${formatPrice(taxiFee)}`} · {transportAddress}</p>}
               <p className="font-mono text-brass text-lg">{formatPrice(quotedTotal)}</p>
+              {petTransport && transportPricePending && <p className="text-xs text-ink-muted">Subtotal dos serviços. A taxa do transporte será acrescentada após a confirmação da rota.</p>}
               <p className="text-ink-muted">
                 {customerName || customer?.name} · {phone}
               </p>

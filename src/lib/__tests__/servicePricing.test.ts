@@ -25,12 +25,20 @@ describe('service pricing', () => {
 
   it('charges taxi pet once using the highest enabled fee among selected services', () => {
     const transport: ServicePetTransport[] = [
-      { shop_id: 'shop-1', service_id: 'service-1', enabled: true, fee: 12 },
-      { shop_id: 'shop-1', service_id: 'service-2', enabled: true, fee: 20 },
-      { shop_id: 'shop-1', service_id: 'service-3', enabled: false, fee: 30 },
+      { shop_id: 'shop-1', service_id: 'service-1', enabled: true, fee: 12, pricing_mode: 'fixed' },
+      { shop_id: 'shop-1', service_id: 'service-2', enabled: true, fee: 20, pricing_mode: 'fixed' },
+      { shop_id: 'shop-1', service_id: 'service-3', enabled: false, fee: 30, pricing_mode: 'fixed' },
     ]
 
     expect(petTransportFee(new Set(['service-1', 'service-2', 'service-3']), transport)).toBe(20)
     expect(petTransportFee(new Set(['service-3']), transport)).toBe(0)
+  })
+
+  it('leaves taxi pet out of the quote when the fee depends on the address', () => {
+    const transport: ServicePetTransport[] = [
+      { shop_id: 'shop-1', service_id: 'service-1', enabled: true, fee: 0, pricing_mode: 'quote' },
+    ]
+
+    expect(petTransportFee(new Set(['service-1']), transport)).toBe(0)
   })
 })

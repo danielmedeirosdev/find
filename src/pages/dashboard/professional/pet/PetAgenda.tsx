@@ -46,6 +46,8 @@ export function PetAgenda({ shopId, barberId }: Props) {
   const [shopServices, setShopServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
   const [completingBooking, setCompletingBooking] = useState<BookingWithDetails | null>(null)
+  const [confirmingTransportBooking, setConfirmingTransportBooking] = useState<BookingWithDetails | null>(null)
+  const [confirmationTransportFee, setConfirmationTransportFee] = useState('0,00')
   const [clientSearch, setClientSearch] = useState('')
   const [clientHistory, setClientHistory] = useState<BookingWithDetails[]>([])
   const [searching, setSearching] = useState(false)
@@ -112,6 +114,39 @@ export function PetAgenda({ shopId, barberId }: Props) {
     }
     await load()
     setStatusUpdatingId(null)
+  }
+
+  const requestStatusChange = (booking: BookingWithDetails, status: BookingActionStatus) => {
+    if (status === 'confirmed' && booking.pet_transport_requested) {
+      setConfirmationTransportFee(String(Number(booking.pet_transport_fee || 0).toFixed(2)).replace('.', ','))
+      setConfirmingTransportBooking(booking)
+      return
+    }
+    updateStatus(booking.id, status)
+  }
+
+  const confirmTransportAndBooking = async () => {
+    if (!confirmingTransportBooking) return
+    const fee = Number(confirmationTransportFee.replace(',', '.'))
+    if (!Number.isFinite(fee) || fee < 0) {
+      setActionError('Informe um valor válido para o Táxi Pet.')
+      return
+    }
+
+    const booking = confirmingTransportBooking
+    setStatusUpdatingId(booking.id)
+    setActionError('')
+    const { error } = await supabase.rpc('set_pet_transport_fee', {
+      p_booking_id: booking.id,
+      p_fee: fee,
+    })
+    if (error) {
+      setActionError(userFacingError(error, 'Não foi possível salvar o valor do Táxi Pet.'))
+      setStatusUpdatingId(null)
+      return
+    }
+    setConfirmingTransportBooking(null)
+    await updateStatus(booking.id, 'confirmed')
   }
 
   const searchClientHistory = async () => {
@@ -390,7 +425,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
                     {b.notes && (
                       <p className="text-sm text-brass mt-1">Obs: {b.notes}</p>
                     )}
-                    {b.pet_transport_requested && <p className="mt-1 text-sm font-medium text-brass">Táxi Pet · buscar em {b.pet_transport_address}</p>}
+                    {b.pet_transport_requested && <p className="mt-1 text-sm font-medium text-brass">Táxi Pet · {Number(b.pet_transport_fee || 0) > 0 ? formatPrice(Number(b.pet_transport_fee)) : 'valor a definir'} · buscar em {b.pet_transport_address}</p>}
                   </div>
                   <p className="font-mono text-brass">{formatPrice(total)}</p>
                 </div>
@@ -398,7 +433,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
                   status={b.status}
                   busy={statusUpdatingId === b.id}
                   includeAwaitingPayment
-                  onStatusChange={(nextStatus) => updateStatus(b.id, nextStatus)}
+                  onStatusChange={(nextStatus) => requestStatusChange(b, nextStatus)}
                   onComplete={() => setCompletingBooking(b)}
                   className="mt-4"
                 />
@@ -419,6 +454,26 @@ export function PetAgenda({ shopId, barberId }: Props) {
           }}
         />
       )}
+
+      {confirmingTransportBooking ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-labelledby="transport-confirm-title">
+          <div className="w-full max-w-md rounded-2xl border border-brass/30 bg-charcoal p-5 shadow-2xl sm:p-6">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brass">Confirmar rota</p>
+            <h3 id="transport-confirm-title" className="mt-1 text-xl font-semibold text-white">Táxi Dog / Táxi Pet</h3>
+            <p className="mt-2 text-sm leading-6 text-charcoal-muted">Revise o local da busca e informe o valor combinado antes de confirmar o agendamento.</p>
+            <div className="mt-4 rounded-xl border border-charcoal-light bg-charcoal-dark/50 p-4 text-sm">
+              <p className="font-medium text-white">{confirmingTransportBooking.pet_transport_address}</p>
+              {confirmingTransportBooking.pet_transport_notes ? <p className="mt-1 text-charcoal-muted">{confirmingTransportBooking.pet_transport_notes}</p> : null}
+            </div>
+            <label className="mt-4 block text-sm font-medium text-white">Valor do transporte (R$)<input autoFocus type="text" inputMode="decimal" value={confirmationTransportFee} onChange={(event) => setConfirmationTransportFee(event.target.value.replace(/[^0-9,.]/g, ''))} placeholder="0,00" className="mt-1.5 min-h-11 w-full rounded-xl border border-charcoal-light bg-charcoal-dark px-3 text-white outline-none focus:border-brass" /></label>
+            <p className="mt-2 text-xs text-charcoal-muted">Use 0,00 quando a busca for gratuita. O valor será somado ao total do agendamento.</p>
+            <div className="mt-6 flex gap-3">
+              <button type="button" onClick={() => setConfirmingTransportBooking(null)} disabled={statusUpdatingId === confirmingTransportBooking.id} className="min-h-11 flex-1 rounded-xl border border-charcoal-light px-4 text-sm text-charcoal-muted hover:text-white disabled:opacity-50">Voltar</button>
+              <button type="button" onClick={confirmTransportAndBooking} disabled={statusUpdatingId === confirmingTransportBooking.id} className="min-h-11 flex-1 rounded-xl bg-brass px-4 text-sm font-semibold text-charcoal disabled:opacity-50">{statusUpdatingId === confirmingTransportBooking.id ? 'Confirmando...' : 'Salvar e confirmar'}</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

@@ -3,16 +3,15 @@ import { supabase } from '../lib/supabase'
 import { DAY_NAMES } from '../lib/types'
 import { InlineError } from './EmptyState'
 import { userFacingError } from '../lib/userFacingError'
-import type { ServiceCustomField, ServiceCustomFieldOption, ServiceCustomFieldType, ServicePetTransport, ServiceWeekdayDiscount } from '../lib/types'
+import type { ServiceCustomField, ServiceCustomFieldOption, ServiceCustomFieldType, ServiceWeekdayDiscount } from '../lib/types'
 
-interface Props { shopId: string; serviceId: string; enablePetTransport?: boolean }
+interface Props { shopId: string; serviceId: string }
 type OptionDraft = { label: string; price: string }
 
-export function ServiceAdvancedSettings({ shopId, serviceId, enablePetTransport = false }: Props) {
+export function ServiceAdvancedSettings({ shopId, serviceId }: Props) {
   const [fields, setFields] = useState<ServiceCustomField[]>([])
   const [options, setOptions] = useState<ServiceCustomFieldOption[]>([])
   const [discounts, setDiscounts] = useState<ServiceWeekdayDiscount[]>([])
-  const [transport, setTransport] = useState<ServicePetTransport | null>(null)
   const [fieldLabel, setFieldLabel] = useState('')
   const [fieldType, setFieldType] = useState<ServiceCustomFieldType>('single_choice')
   const [required, setRequired] = useState(false)
@@ -20,13 +19,12 @@ export function ServiceAdvancedSettings({ shopId, serviceId, enablePetTransport 
   const [error, setError] = useState('')
 
   const load = useCallback(async () => {
-    const [{ data: fieldData, error: fieldError }, { data: discountData, error: discountError }, { data: transportData, error: transportError }] = await Promise.all([
+    const [{ data: fieldData, error: fieldError }, { data: discountData, error: discountError }] = await Promise.all([
       supabase.from('service_custom_fields').select('*').eq('service_id', serviceId).order('sort_order'),
       supabase.from('service_weekday_discounts').select('*').eq('service_id', serviceId),
-      supabase.from('service_pet_transport').select('*').eq('service_id', serviceId).maybeSingle(),
     ])
-    if (fieldError || discountError || transportError) {
-      setError(userFacingError(fieldError || discountError || transportError, 'Não foi possível carregar as configurações do serviço.'))
+    if (fieldError || discountError) {
+      setError(userFacingError(fieldError || discountError, 'Não foi possível carregar as configurações do serviço.'))
       return
     }
     const list = (fieldData as ServiceCustomField[]) || []
@@ -39,7 +37,6 @@ export function ServiceAdvancedSettings({ shopId, serviceId, enablePetTransport 
     setFields(list)
     setOptions(optionList)
     setDiscounts((discountData as ServiceWeekdayDiscount[]) || [])
-    setTransport((transportData as ServicePetTransport | null) || null)
   }, [serviceId])
 
   useEffect(() => { load() }, [load])
@@ -85,12 +82,6 @@ export function ServiceAdvancedSettings({ shopId, serviceId, enablePetTransport 
     await load()
   }
 
-  const saveTransport = async (enabled: boolean, fee = Number(transport?.fee || 0)) => {
-    const { error: upsertError } = await supabase.from('service_pet_transport').upsert({ shop_id: shopId, service_id: serviceId, enabled, fee: Math.max(0, fee) })
-    if (upsertError) setError(userFacingError(upsertError, 'Não foi possível salvar o Táxi Pet.'))
-    else await load()
-  }
-
   return (
     <div className="space-y-6">
       {error && <InlineError message={error} />}
@@ -118,8 +109,6 @@ export function ServiceAdvancedSettings({ shopId, serviceId, enablePetTransport 
       </section>
 
       <section className="border-t border-charcoal-light pt-5"><h4 className="text-sm font-semibold text-white">Desconto por dia</h4><p className="mt-1 text-xs text-charcoal-muted">Percentual aplicado automaticamente conforme a data escolhida.</p><div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">{DAY_NAMES.map((day, index) => <label key={day} className="text-xs text-charcoal-muted">{day.slice(0, 3)}<input type="number" min="0" max="100" defaultValue={discounts.find((item) => item.day_of_week === index)?.discount_percent || ''} onBlur={(e) => saveDiscount(index, e.target.value)} placeholder="0%" className="mt-1 min-h-10 w-full rounded-lg border border-charcoal-light bg-charcoal px-2 text-sm text-white" /></label>)}</div></section>
-
-      {enablePetTransport && <section className="border-t border-charcoal-light pt-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><h4 className="text-sm font-semibold text-white">Táxi Pet — buscar em casa</h4><p className="mt-1 text-xs text-charcoal-muted">A taxa é cobrada uma vez por agendamento, usando o maior valor entre os serviços.</p></div><label className="flex items-center gap-2 text-sm text-white"><input type="checkbox" checked={Boolean(transport?.enabled)} onChange={(e) => saveTransport(e.target.checked)} className="accent-[#d6a33d]" />Disponível</label></div>{transport?.enabled && <label className="mt-3 block max-w-xs text-xs text-charcoal-muted">Taxa da busca<input type="number" min="0" step="0.01" defaultValue={transport.fee} onBlur={(e) => saveTransport(true, Number(e.target.value))} className="mt-1 min-h-11 w-full rounded-xl border border-charcoal-light bg-charcoal px-3 text-sm text-white" /></label>}</section>}
     </div>
   )
 }

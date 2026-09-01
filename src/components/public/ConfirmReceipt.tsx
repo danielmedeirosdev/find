@@ -50,6 +50,7 @@ export function ConfirmReceipt({
   signedIn: boolean
 }) {
   const total = view.quotedAmount ?? view.services.reduce((sum, service) => sum + Number(service.price), 0)
+  const transportPricePending = Boolean(view.petTransportRequested) && Number(view.petTransportFee || 0) === 0
   const listPath = view.isPet ? '/pet' : '/barbearia'
 
   return (
@@ -109,7 +110,7 @@ export function ConfirmReceipt({
 
           {view.notes ? <ReceiptRow label="Observação">{view.notes}</ReceiptRow> : null}
 
-          {view.petTransportRequested ? <ReceiptRow label="Táxi Pet"><p className="font-semibold">Busca em casa confirmada</p><p className="text-ink-muted">{view.petTransportAddress}</p>{Number(view.petTransportFee || 0) > 0 ? <p className="mt-1 text-brass">Taxa: {formatPrice(Number(view.petTransportFee))}</p> : null}</ReceiptRow> : null}
+          {view.petTransportRequested ? <ReceiptRow label="Táxi Dog / Táxi Pet"><p className="font-semibold">Busca em casa solicitada</p><p className="text-ink-muted">{view.petTransportAddress}</p>{transportPricePending ? <p className="mt-1 font-medium text-brass">Valor a confirmar após a análise do endereço.</p> : <p className="mt-1 text-brass">Taxa: {formatPrice(Number(view.petTransportFee))}</p>}</ReceiptRow> : null}
 
           {Number(view.discountAmount || 0) > 0 || Number(view.extrasAmount || 0) > 0 ? <ReceiptRow label="Ajustes do valor">{Number(view.discountAmount || 0) > 0 ? <p className="text-emerald-700">Desconto do dia: − {formatPrice(Number(view.discountAmount))}</p> : null}{Number(view.extrasAmount || 0) > 0 ? <p>Adicionais: + {formatPrice(Number(view.extrasAmount))}</p> : null}</ReceiptRow> : null}
 
@@ -120,10 +121,11 @@ export function ConfirmReceipt({
 
           <div className="flex items-baseline justify-between py-4">
             <span className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
-              Total
+              {transportPricePending ? 'Subtotal dos serviços' : 'Total'}
             </span>
             <span className="font-display text-2xl text-brass">{formatPrice(total)}</span>
           </div>
+          {transportPricePending ? <p className="-mt-2 pb-4 text-xs text-ink-muted">O valor do Táxi Pet será acrescentado quando o estabelecimento confirmar a rota.</p> : null}
         </div>
       </div>
 

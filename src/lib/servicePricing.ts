@@ -13,5 +13,7 @@ export function customAnswersExtra(answers: CustomFieldAnswerInput[], options: S
 }
 
 export function petTransportFee(selectedServiceIds: Set<string>, settings: ServicePetTransport[]): number {
-  return settings.filter((item) => item.enabled && selectedServiceIds.has(item.service_id)).reduce((highest, item) => Math.max(highest, Number(item.fee || 0)), 0)
+  const selectedSettings = settings.filter((item) => item.enabled && selectedServiceIds.has(item.service_id))
+  if (selectedSettings.some((item) => item.pricing_mode === 'quote')) return 0
+  return selectedSettings.reduce((highest, item) => Math.max(highest, Number(item.fee || 0)), 0)
 }

@@ -221,7 +221,13 @@ export type ServiceCustomFieldType = 'single_choice' | 'text'
 export interface ServiceCustomField { id: string; shop_id: string; service_id: string; label: string; field_type: ServiceCustomFieldType; required: boolean; sort_order: number }
 export interface ServiceCustomFieldOption { id: string; shop_id: string; field_id: string; label: string; price_delta: number; sort_order: number }
 export interface ServiceWeekdayDiscount { service_id: string; shop_id: string; day_of_week: number; discount_percent: number }
-export interface ServicePetTransport { service_id: string; shop_id: string; enabled: boolean; fee: number }
+export interface ServicePetTransport {
+  service_id: string
+  shop_id: string
+  enabled: boolean
+  fee: number
+  pricing_mode: 'quote' | 'fixed'
+}
 export interface CustomFieldAnswerInput { field_id: string; option_id?: string | null; value?: string | null }
 export interface BookingCustomFieldAnswer { id: string; booking_id: string; shop_id: string; field_id: string | null; field_label: string; answer: string; price_delta: number }
 
