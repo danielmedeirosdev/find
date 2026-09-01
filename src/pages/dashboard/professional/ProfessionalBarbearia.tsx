@@ -13,33 +13,36 @@ import { ReviewsTab } from '../tabs/Reviews'
 import { ShopLinkTab } from '../tabs/ShopLink'
 import { SubscriptionTab } from '../tabs/Subscription'
 import { ReferralTab } from '../tabs/Referral'
+import { UpdatesTab } from '../tabs/Updates'
+import type { ProfessionalTabGroup } from './ProfessionalShell'
 
-const BARBEARIA_TAB_GROUPS: { label: string; tabs: { id: string; label: string }[] }[] = [
+const BARBEARIA_TAB_GROUPS: ProfessionalTabGroup[] = [
   {
     label: 'Dia a dia',
     tabs: [
-      { id: 'overview', label: 'Visão geral' },
-      { id: 'agenda', label: 'Agenda' },
-      { id: 'notifications', label: 'Notificações' },
+      { id: 'overview', label: 'Visão geral', icon: 'home' },
+      { id: 'agenda', label: 'Agenda', icon: 'agenda' },
+      { id: 'notifications', label: 'Notificações', icon: 'bell' },
     ],
   },
   {
     label: 'Cadastros',
     tabs: [
-      { id: 'team', label: 'Equipe e horários' },
-      { id: 'services', label: 'Serviços' },
+      { id: 'team', label: 'Equipe e horários', icon: 'users' },
+      { id: 'services', label: 'Serviços', icon: 'briefcase' },
     ],
   },
   {
     label: 'Negócio',
     tabs: [
-      { id: 'cashflow', label: 'Fluxo de Caixa' },
-      { id: 'reports', label: 'Relatórios' },
-      { id: 'reviews', label: 'Avaliações' },
-      { id: 'info', label: 'Informações' },
-      { id: 'link', label: 'Link da Barbearia' },
-      { id: 'referral', label: 'Indique e ganhe' },
-      { id: 'subscription', label: 'Assinatura' },
+      { id: 'cashflow', label: 'Fluxo de Caixa', icon: 'wallet' },
+      { id: 'reports', label: 'Relatórios', icon: 'chart' },
+      { id: 'reviews', label: 'Avaliações', icon: 'star' },
+      { id: 'info', label: 'Informações', icon: 'store' },
+      { id: 'link', label: 'Link da Barbearia', icon: 'link' },
+      { id: 'referral', label: 'Indique e ganhe', icon: 'heart' },
+      { id: 'subscription', label: 'Assinatura', icon: 'receipt' },
+      { id: 'updates', label: 'Novidades', icon: 'sparkles' },
     ],
   },
 ]
@@ -95,6 +98,7 @@ export function ProfessionalBarbearia({
       {activeTab === 'reviews' && <ReviewsTab shopId={shop.id} segment="barbershop" />}
       {activeTab === 'link' && <ShopLinkTab shop={shop} onUpdate={onUpdate} />}
       {activeTab === 'referral' && <ReferralTab shop={shop} onUpdate={onUpdate} />}
+      {activeTab === 'updates' && <UpdatesTab />}
       {activeTab === 'subscription' && (
         <SubscriptionTab
           shop={shop}

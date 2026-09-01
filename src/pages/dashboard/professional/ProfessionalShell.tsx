@@ -3,10 +3,12 @@ import { SegmentProvider } from '../../../contexts/SegmentContext'
 import { BrandAccent } from '../../../components/BrandAccent'
 import type { Shop, ShopSegment } from '../../../lib/types'
 import { getSegment } from '../../../lib/segments'
+import { AppIcon, type AppIconName } from '../../../components/AppIcon'
 
 export interface ProfessionalTab {
   id: string
   label: string
+  icon?: AppIconName
 }
 
 export interface ProfessionalTabGroup {
@@ -81,12 +83,14 @@ export function ProfessionalShell({
                       key={tab.id}
                       type="button"
                       onClick={() => onTabChange(tab.id)}
-                      className={`rounded-lg px-4 py-2.5 text-sm font-medium transition-colors min-h-[44px] ${
+                      aria-current={activeTab === tab.id ? 'page' : undefined}
+                      className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-[background-color,color,transform,box-shadow] ${
                         activeTab === tab.id
-                          ? 'bg-brass text-charcoal'
-                          : 'text-charcoal-muted hover:text-white hover:bg-charcoal-light'
+                          ? 'bg-brass text-charcoal shadow-[0_8px_22px_rgba(0,0,0,0.18)]'
+                          : 'text-charcoal-muted hover:-translate-y-0.5 hover:bg-charcoal-light hover:text-white'
                       }`}
                     >
+                      {tab.icon ? <AppIcon name={tab.icon} size={17} /> : null}
                       {tab.label}
                     </button>
                   ))}
@@ -104,19 +108,23 @@ export function ProfessionalShell({
                 key={tab.id}
                 type="button"
                 onClick={() => onTabChange(tab.id)}
-                className={`shrink-0 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors min-h-[44px] ${
+                aria-current={activeTab === tab.id ? 'page' : undefined}
+                className={`inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-[background-color,color,transform,box-shadow] ${
                   activeTab === tab.id
-                    ? 'bg-brass text-charcoal'
-                    : 'text-charcoal-muted hover:text-white hover:bg-charcoal-light'
+                    ? 'bg-brass text-charcoal shadow-[0_8px_22px_rgba(0,0,0,0.18)]'
+                    : 'text-charcoal-muted hover:-translate-y-0.5 hover:bg-charcoal-light hover:text-white'
                 }`}
               >
+                {tab.icon ? <AppIcon name={tab.icon} size={17} /> : null}
                 {tab.label}
               </button>
             ))}
           </nav>
         )}
 
-        {children}
+        <div key={activeTab} className="panel-enter">
+          {children}
+        </div>
       </div>
     </SegmentProvider>
   )

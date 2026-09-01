@@ -4,6 +4,7 @@ import { SegmentProvider } from '../contexts/SegmentContext'
 import { BrandAccent } from './BrandAccent'
 import { SetupBanner } from './SetupBanner'
 import { getSegmentFromPath } from '../lib/segments'
+import { AppIcon } from './AppIcon'
 
 export function PublicLayout() {
   const { user } = useAuth()
@@ -21,7 +22,8 @@ export function PublicLayout() {
     pathname.startsWith('/confirmacao') ||
     pathname.startsWith('/avaliar') ||
     pathname.startsWith('/privacidade') ||
-    pathname.startsWith('/faq')
+    pathname.startsWith('/faq') ||
+    pathname.startsWith('/novidades')
       ? 'platform'
       : 'barbershop')
   const isPet = segmentId === 'pet'
@@ -49,6 +51,13 @@ export function PublicLayout() {
                 Início
               </Link>
             )}
+            <Link
+              to="/novidades"
+              className="hidden items-center gap-1.5 text-ink-muted transition-colors hover:text-brass md:inline-flex"
+            >
+              <AppIcon name="sparkles" size={15} />
+              Novidades
+            </Link>
             {segmentMeta && !isShopList && (
               <Link
                 to={segmentMeta.path}
@@ -88,7 +97,9 @@ export function PublicLayout() {
           isHome ? 'max-w-4xl' : isShopList ? 'max-w-6xl' : 'max-w-5xl'
         }`}
       >
-        <Outlet />
+        <div key={pathname} className="page-enter">
+          <Outlet />
+        </div>
       </main>
       {!isHome && (
         <footer className="mt-16 border-t border-paper-dark/80 py-8 text-center text-sm text-ink-muted">
@@ -106,6 +117,10 @@ export function PublicLayout() {
             </Link>
             <Link to="/privacidade" className="transition-colors hover:text-brass">
               Privacidade
+            </Link>
+            <Link to="/novidades" className="inline-flex items-center gap-1.5 transition-colors hover:text-brass">
+              <AppIcon name="sparkles" size={14} />
+              Novidades
             </Link>
           </p>
         </footer>

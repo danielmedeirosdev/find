@@ -22,6 +22,17 @@
 body {
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background: var(--color-paper);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--color-brass);
+  outline-offset: 3px;
 }
 
 .btn-primary {
@@ -36,6 +47,7 @@ body {
 
 .btn-primary:hover {
   background-color: var(--color-brass-light);
+  transform: translateY(-1px);
 }
 
 .btn-primary:disabled {
@@ -49,12 +61,13 @@ body {
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--color-ink);
-  transition: border-color 0.15s ease, color 0.15s ease;
+  transition: border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
 .btn-secondary:hover {
   border-color: var(--color-brass);
   color: var(--color-brass);
+  transform: translateY(-1px);
 }
 
 .public-shell {
@@ -147,6 +160,37 @@ body {
   animation: platformFadeUp 0.55s ease-out both;
 }
 
+.page-enter,
+.panel-enter {
+  animation: contentEnter 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes contentEnter {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.release-card,
+.release-note {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.release-card:hover {
+  border-color: color-mix(in srgb, var(--color-brass) 38%, transparent);
+  box-shadow: 0 22px 60px rgba(25, 21, 15, 0.1);
+}
+
+.release-note:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--color-brass) 28%, transparent);
+}
+
 .platform-fade-delay-1 {
   animation-delay: 0.08s;
 }
@@ -161,8 +205,21 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .platform-fade {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .platform-fade,
+  .page-enter,
+  .panel-enter {
     animation: none;
+  }
+
+  .release-card,
+  .release-note,
+  .btn-primary,
+  .btn-secondary {
+    transition: none;
   }
 }
 

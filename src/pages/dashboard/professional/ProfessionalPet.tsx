@@ -16,6 +16,8 @@ import { CashFlowTab } from '../tabs/CashFlow'
 import { ReportsTab } from '../tabs/Reports'
 import { SubscriptionTab } from '../tabs/Subscription'
 import { ReferralTab } from '../tabs/Referral'
+import { UpdatesTab } from '../tabs/Updates'
+import type { ProfessionalTabGroup, ProfessionalTab } from './ProfessionalShell'
 
 const PetClinical = lazy(() =>
   import('./pet/PetClinical').then((module) => ({ default: module.PetClinical }))
@@ -24,34 +26,35 @@ const PetInventory = lazy(() =>
   import('./pet/PetInventory').then((module) => ({ default: module.PetInventory }))
 )
 
-const PET_TAB_GROUPS: { label: string; tabs: { id: string; label: string }[] }[] = [
+const PET_TAB_GROUPS: ProfessionalTabGroup[] = [
   {
     label: 'Dia a dia',
     tabs: [
-      { id: 'overview', label: 'Visão geral' },
-      { id: 'agenda', label: 'Agenda' },
+      { id: 'overview', label: 'Visão geral', icon: 'home' },
+      { id: 'agenda', label: 'Agenda', icon: 'agenda' },
     ],
   },
   {
     label: 'Cadastros',
     tabs: [
-      { id: 'pets', label: 'Pets' },
-      { id: 'customers', label: 'Clientes' },
-      { id: 'services', label: 'Serviços' },
-      { id: 'team', label: 'Equipe' },
-      { id: 'packages', label: 'Pacotes' },
+      { id: 'pets', label: 'Pets', icon: 'paw' },
+      { id: 'customers', label: 'Clientes', icon: 'users' },
+      { id: 'services', label: 'Serviços', icon: 'briefcase' },
+      { id: 'team', label: 'Equipe', icon: 'users' },
+      { id: 'packages', label: 'Pacotes', icon: 'package' },
     ],
   },
   {
     label: 'Negócio',
     tabs: [
-      { id: 'cashflow', label: 'Financeiro' },
-      { id: 'reports', label: 'Relatórios' },
-      { id: 'reviews', label: 'Avaliações' },
-      { id: 'info', label: 'Meu pet shop' },
-      { id: 'link', label: 'Link público' },
-      { id: 'referral', label: 'Indique e ganhe' },
-      { id: 'subscription', label: 'Plano' },
+      { id: 'cashflow', label: 'Financeiro', icon: 'wallet' },
+      { id: 'reports', label: 'Relatórios', icon: 'chart' },
+      { id: 'reviews', label: 'Avaliações', icon: 'star' },
+      { id: 'info', label: 'Meu pet shop', icon: 'store' },
+      { id: 'link', label: 'Link público', icon: 'link' },
+      { id: 'referral', label: 'Indique e ganhe', icon: 'heart' },
+      { id: 'subscription', label: 'Plano', icon: 'receipt' },
+      { id: 'updates', label: 'Novidades', icon: 'sparkles' },
     ],
   },
 ]
@@ -75,12 +78,12 @@ export function ProfessionalPet({
   subscribeError,
 }: Props) {
   const [searchParams, setSearchParams] = useSearchParams()
-  const resourceTabs: { id: string; label: string }[] = []
+  const resourceTabs: ProfessionalTab[] = []
   if (shop.pet_business_type === 'veterinary_clinic' || shop.pet_business_type === 'mixed') {
-    resourceTabs.push({ id: 'clinical', label: 'Consultas e vacinas' })
+    resourceTabs.push({ id: 'clinical', label: 'Consultas e vacinas', icon: 'stethoscope' })
   }
   if (shop.pet_business_type === 'pet_shop' || shop.pet_business_type === 'mixed') {
-    resourceTabs.push({ id: 'inventory', label: 'Estoque' })
+    resourceTabs.push({ id: 'inventory', label: 'Estoque', icon: 'package' })
   }
   const petTabGroups = resourceTabs.length
     ? [
@@ -133,6 +136,7 @@ export function ProfessionalPet({
       ) : null}
       {activeTab === 'link' && <PetShopLink shop={shop} onUpdate={onUpdate} />}
       {activeTab === 'referral' && <ReferralTab shop={shop} onUpdate={onUpdate} />}
+      {activeTab === 'updates' && <UpdatesTab />}
       {activeTab === 'subscription' && (
         <SubscriptionTab
           shop={shop}
