@@ -3,6 +3,7 @@ import { ACTIVE_SEGMENTS, SEGMENTS } from '../../lib/segments'
 import { BrandAccent } from '../../components/BrandAccent'
 import { SegmentMark, CtaArrow } from '../../components/SegmentMark'
 import { ReferralLandingSection } from '../../components/ReferralLandingSection'
+import { AppIcon, type AppIconName } from '../../components/AppIcon'
 
 const TRUST = [
   { title: 'Sem aplicativo', text: 'Agende pelo site, no celular ou no computador.' },
@@ -14,6 +15,15 @@ const STEPS = [
   { n: '01', title: 'Escolha o lugar', text: 'Barbearias ou pet shops próximos de você.' },
   { n: '02', title: 'Serviço e horário', text: 'Veja a agenda livre e escolha o que combina.' },
   { n: '03', title: 'Confirme', text: 'Informe seus dados e pronto: horário marcado.' },
+]
+
+const FOOTER_LINKS: { to: string; label: string; icon: AppIconName }[] = [
+  { to: '/barbearia', label: 'Barbearias', icon: 'scissors' },
+  { to: '/pet', label: 'Pet shops', icon: 'paw' },
+  { to: '/minhas-reservas', label: 'Minhas reservas', icon: 'agenda' },
+  { to: '/entrar', label: 'Entrar', icon: 'users' },
+  { to: '/faq', label: 'Perguntas frequentes', icon: 'help' },
+  { to: '/privacidade', label: 'Privacidade', icon: 'shield' },
 ]
 
 export function PlatformHome() {
@@ -116,14 +126,18 @@ export function PlatformHome() {
             </Link>
           </div>
           <div className="mt-5 border-t border-ink/10 pt-4">
-            <p className="mt-0 flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-ink-muted">
-              <Link to="/faq" className="underline-offset-2 hover:text-brass hover:underline">
-                Perguntas frequentes
-              </Link>
-              <Link to="/privacidade" className="underline-offset-2 hover:text-brass hover:underline">
-                Privacidade
-              </Link>
-            </p>
+            <nav className="flex flex-wrap justify-center gap-2" aria-label="Links úteis">
+              {FOOTER_LINKS.map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-ink/[0.04] px-3 py-2 text-xs font-medium text-ink-muted transition-[background-color,color,transform] hover:-translate-y-0.5 hover:bg-brass/10 hover:text-ink"
+                >
+                  <AppIcon name={item.icon} size={14} />
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
           </div>
         </div>
       </section>

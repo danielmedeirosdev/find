@@ -4,7 +4,6 @@ import { SegmentProvider } from '../contexts/SegmentContext'
 import { BrandAccent } from './BrandAccent'
 import { SetupBanner } from './SetupBanner'
 import { getSegmentFromPath } from '../lib/segments'
-import { UpdatesButton } from './UpdatesButton'
 
 export function PublicLayout() {
   const { user } = useAuth()
@@ -50,7 +49,6 @@ export function PublicLayout() {
                 Início
               </Link>
             )}
-            <UpdatesButton />
             {segmentMeta && !isShopList && (
               <Link
                 to={segmentMeta.path}

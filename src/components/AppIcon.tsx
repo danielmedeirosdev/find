@@ -11,6 +11,7 @@ export type AppIconName =
   | 'check'
   | 'clock'
   | 'heart'
+  | 'help'
   | 'home'
   | 'link'
   | 'megaphone'
@@ -47,6 +48,7 @@ const paths: Record<AppIconName, ReactNode> = {
   check: <path d="m5 12 4 4L19 6" />,
   clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   heart: <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" />,
+  help: <><circle cx="12" cy="12" r="9" /><path d="M9.7 9a2.4 2.4 0 1 1 3.5 2.1c-.8.4-1.2 1-1.2 1.9M12 17h.01" /></>,
   home: <><path d="m3 11 9-8 9 8" /><path d="M5 10v11h14V10M9 21v-7h6v7" /></>,
   link: <><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1" /><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1" /></>,
   megaphone: <><path d="m3 11 15-6v14L3 13z" /><path d="M11 16v3a2 2 0 0 1-4 0v-4" /><path d="M21 9v6" /></>,

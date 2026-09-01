@@ -67,7 +67,7 @@ export function ProfessionalShell({
               {subtitle || meta.panelSubtitle}
             </p>
           </div>
-          <UpdatesButton variant="dashboard" className="sm:ml-auto" />
+          <UpdatesButton className="sm:ml-auto" />
         </div>
 
         <BrandAccent className="mb-6 max-w-sm" height="h-1" segment={segment} />
