@@ -75,3 +75,30 @@ export function parseOnboardingStaff(rows: OnboardingStaffInput[]) {
     return { name: row.name.trim(), role: row.role.trim() || null }
   })
 }
+import type { PetBusinessType, PetOnboardingMode } from './types'
+
+export const PET_BUSINESS_TYPES: { value: PetBusinessType; label: string; description: string }[] = [
+  { value: 'grooming', label: 'Banho e Tosa', description: 'Higiene, estética e cuidados recorrentes.' },
+  { value: 'veterinary_clinic', label: 'Clínica Veterinária', description: 'Consultas, retornos e acompanhamento básico.' },
+  { value: 'pet_shop', label: 'Pet Shop', description: 'Produtos, serviços e relacionamento com tutores.' },
+  { value: 'daycare_boarding', label: 'Creche / Hospedagem', description: 'Rotina de permanência, diária e cuidados.' },
+  { value: 'dog_walker', label: 'Dog Walker / Passeio', description: 'Passeios e atendimentos recorrentes.' },
+  { value: 'training', label: 'Adestramento', description: 'Sessões, evolução e acompanhamento.' },
+  { value: 'mixed', label: 'Negócio Pet Completo', description: 'Mais de uma frente de atendimento PET.' },
+  { value: 'other', label: 'Outro', description: 'Uma operação PET com formato diferente.' },
+]
+
+export function isPetBusinessType(value: string): value is PetBusinessType {
+  return PET_BUSINESS_TYPES.some((option) => option.value === value)
+}
+
+export function parsePetOnboardingChoice(
+  businessType: string,
+  mode: string
+): { pet_business_type: PetBusinessType; pet_onboarding_mode: PetOnboardingMode } {
+  if (!isPetBusinessType(businessType)) throw new Error('Selecione o ramo principal do negócio.')
+  if (mode !== 'self_service' && mode !== 'guided') {
+    throw new Error('Escolha como você quer começar.')
+  }
+  return { pet_business_type: businessType, pet_onboarding_mode: mode }
+}

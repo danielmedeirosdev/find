@@ -10,6 +10,9 @@ import {
   getAvailableSlots,
   getNextDatesForDay,
   loadOccupiedSlots,
+  loadPublicTimeOff,
+  isShopClosedOnDate,
+  localDateIso,
 } from '../../lib/booking'
 import { formatPrice, formatDuration, formatPhone } from '../../lib/format'
 import {
@@ -18,6 +21,7 @@ import {
   rememberBookingPhone,
 } from '../../lib/secureBooking'
 import { DAY_NAMES } from '../../lib/types'
+import { applyWeekdayDiscount, customAnswersExtra } from '../../lib/servicePricing'
 import type {
   PublicShop,
   Service,
@@ -26,6 +30,12 @@ import type {
   PublicBookingSlot,
   BookingConfirmationState,
   ShopPhoto,
+  BarberTimeOff,
+  ServiceBarber,
+  ServiceCustomField,
+  ServiceCustomFieldOption,
+  ServiceWeekdayDiscount,
+  CustomFieldAnswerInput,
 } from '../../lib/types'
 import { BrandAccent } from '../../components/BrandAccent'
 import { BookingStepper } from '../../components/public/BookingStepper'
@@ -52,12 +62,18 @@ export function ShopBooking() {
   const [barbers, setBarbers] = useState<PublicBarber[]>([])
   const [schedules, setSchedules] = useState<BarberSchedule[]>([])
   const [occupiedSlots, setOccupiedSlots] = useState<PublicBookingSlot[]>([])
+  const [timeOff, setTimeOff] = useState<BarberTimeOff[]>([])
+  const [serviceBarbers, setServiceBarbers] = useState<ServiceBarber[]>([])
+  const [customFields, setCustomFields] = useState<ServiceCustomField[]>([])
+  const [customOptions, setCustomOptions] = useState<ServiceCustomFieldOption[]>([])
+  const [weekdayDiscounts, setWeekdayDiscounts] = useState<ServiceWeekdayDiscount[]>([])
   const [photos, setPhotos] = useState<ShopPhoto[]>([])
   const [shopStats, setShopStats] = useState<RatingStats | null>(null)
   const [barberStats, setBarberStats] = useState<Record<string, BarberRatingStats>>({})
 
   const [step, setStep] = useState<Step>(1)
   const [selectedServiceIds, setSelectedServiceIds] = useState<Set<string>>(new Set())
+  const [customAnswers, setCustomAnswers] = useState<CustomFieldAnswerInput[]>([])
   const [selectedBarberId, setSelectedBarberId] = useState<string | null>(null)
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
@@ -95,7 +111,7 @@ export function ShopBooking() {
         return
       }
 
-      const [{ data: svc }, { data: barb }, { data: ph }, stats, bStats] = await Promise.all([
+      const [{ data: svc }, { data: barb }, { data: ph }, { data: mappings }, stats, bStats] = await Promise.all([
         supabase.from('services').select('*').eq('shop_id', shopId).order('name'),
         supabase.from('public_barbers').select('*').eq('shop_id', shopId).order('name'),
         supabase
@@ -104,9 +120,32 @@ export function ShopBooking() {
           .eq('shop_id', shopId)
           .order('sort_order')
           .limit(6),
+        supabase.from('service_barbers').select('*').eq('shop_id', shopId),
         fetchShopRatingStats(shopId!),
         fetchBarberRatingStatsMap(shopId!),
       ])
+
+      const serviceList = svc || []
+      if (serviceList.length > 0) {
+        const serviceIds = serviceList.map((service) => service.id)
+        const [{ data: fields }, { data: discounts }] = await Promise.all([
+          supabase.from('service_custom_fields').select('*').in('service_id', serviceIds).order('sort_order'),
+          supabase.from('service_weekday_discounts').select('*').in('service_id', serviceIds),
+        ])
+        const fieldList = (fields as ServiceCustomField[]) || []
+        let optionList: ServiceCustomFieldOption[] = []
+        if (fieldList.length > 0) {
+          const { data } = await supabase
+            .from('service_custom_field_options')
+            .select('*')
+            .in('field_id', fieldList.map((field) => field.id))
+            .order('sort_order')
+          optionList = (data as ServiceCustomFieldOption[]) || []
+        }
+        setCustomFields(fieldList)
+        setCustomOptions(optionList)
+        setWeekdayDiscounts((discounts as ServiceWeekdayDiscount[]) || [])
+      }
 
       const barberIds = (barb || []).map((b) => b.id)
       let sched: BarberSchedule[] = []
@@ -119,17 +158,23 @@ export function ShopBooking() {
       }
 
       let slots: PublicBookingSlot[] = []
+      let unavailable: BarberTimeOff[] = []
       try {
-        slots = await loadOccupiedSlots(shopId!)
+        ;[slots, unavailable] = await Promise.all([
+          loadOccupiedSlots(shopId!),
+          loadPublicTimeOff(shopId!),
+        ])
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Não foi possível carregar a agenda.')
       }
 
       setShop(shopData)
-      setServices(svc || [])
+      setServices(serviceList)
       setBarbers(barb || [])
       setSchedules(sched)
       setOccupiedSlots(slots)
+      setTimeOff(unavailable)
+      setServiceBarbers((mappings as ServiceBarber[]) || [])
       setPhotos((ph as ShopPhoto[]) || [])
       setShopStats(stats)
       setBarberStats(bStats)
@@ -138,10 +183,58 @@ export function ShopBooking() {
     load()
   }, [shopId, navigate])
 
+  useEffect(() => {
+    if (!shopId || step !== 3) return
+    Promise.all([loadOccupiedSlots(shopId), loadPublicTimeOff(shopId)])
+      .then(([slots, unavailable]) => {
+        setOccupiedSlots(slots)
+        setTimeOff(unavailable)
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : 'Não foi possível atualizar a agenda.')
+      })
+  }, [shopId, step])
+
   const selectedServices = useMemo(
     () => services.filter((s) => selectedServiceIds.has(s.id)),
     [services, selectedServiceIds]
   )
+  const activeCustomFields = useMemo(
+    () => customFields.filter((field) => selectedServiceIds.has(field.service_id)),
+    [customFields, selectedServiceIds]
+  )
+  const selectedCustomAnswers = useMemo(
+    () => customAnswers.filter((answer) => activeCustomFields.some((field) => field.id === answer.field_id)),
+    [customAnswers, activeCustomFields]
+  )
+  const baseServicesAmount = getTotalPrice(selectedServices)
+  const discountedServicesAmount = selectedServices.reduce(
+    (sum, service) => sum + applyWeekdayDiscount(Number(service.price), service.id, selectedDate, weekdayDiscounts),
+    0
+  )
+  const extrasAmount = customAnswersExtra(selectedCustomAnswers, customOptions)
+  const discountAmount = Math.max(0, baseServicesAmount - discountedServicesAmount)
+  const quotedTotal = discountedServicesAmount + extrasAmount
+  const eligibleBarbers = useMemo(() => {
+    if (selectedServiceIds.size === 0) return barbers
+    return barbers.filter((professional) =>
+      Array.from(selectedServiceIds).every((serviceId) => {
+        const restrictedTo = serviceBarbers.filter((item) => item.service_id === serviceId)
+        return restrictedTo.length === 0 || restrictedTo.some((item) => item.barber_id === professional.id)
+      })
+    )
+  }, [barbers, selectedServiceIds, serviceBarbers])
+
+  useEffect(() => {
+    if (selectedBarberId && !eligibleBarbers.some((item) => item.id === selectedBarberId)) {
+      setSelectedBarberId(eligibleBarbers.length === 1 ? eligibleBarbers[0].id : null)
+      setSelectedDay(null)
+      setSelectedDate(null)
+      setSelectedTime(null)
+    } else if (!selectedBarberId && eligibleBarbers.length === 1) {
+      setSelectedBarberId(eligibleBarbers[0].id)
+    }
+  }, [eligibleBarbers, selectedBarberId])
 
   const selectedBarber = barbers.find((b) => b.id === selectedBarberId)
   const barberSchedules = schedules.filter((s) => s.barber_id === selectedBarberId)
@@ -158,7 +251,9 @@ export function ShopBooking() {
           daySchedule,
           occupiedSlots.filter((s) => s.barber_id === selectedBarberId),
           selectedServices,
-          selectedDate
+          selectedDate,
+          undefined,
+          timeOff
         )
       : []
 
@@ -169,6 +264,29 @@ export function ShopBooking() {
       else next.add(id)
       return next
     })
+  }
+
+  const setCustomAnswer = (fieldId: string, value: Partial<CustomFieldAnswerInput>) => {
+    setCustomAnswers((current) => {
+      const exists = current.some((answer) => answer.field_id === fieldId)
+      return exists
+        ? current.map((answer) => answer.field_id === fieldId ? { ...answer, ...value } : answer)
+        : [...current, { field_id: fieldId, ...value }]
+    })
+  }
+
+  const continueFromServices = () => {
+    const missing = activeCustomFields.find((field) => {
+      if (!field.required) return false
+      const answer = selectedCustomAnswers.find((item) => item.field_id === field.id)
+      return field.field_type === 'single_choice' ? !answer?.option_id : !answer?.value?.trim()
+    })
+    if (missing) {
+      setError(`Responda: ${missing.label}`)
+      return
+    }
+    setError('')
+    setStep(2)
   }
 
   const handleSubmit = async () => {
@@ -217,6 +335,7 @@ export function ShopBooking() {
         bookingId,
         phone: normalizedPhone,
         serviceIds: selectedServices.map((service) => service.id),
+        customAnswers: selectedCustomAnswers,
       })
     } catch (err) {
       const msg = bookingErrorMessage(err)
@@ -245,6 +364,9 @@ export function ShopBooking() {
       clientName: clientName.trim(),
       clientPhone: normalizedPhone,
       services: selectedServices,
+      quotedAmount: quotedTotal,
+      discountAmount,
+      extrasAmount,
     }
 
     rememberBookingPhone(bookingId, normalizedPhone)
@@ -253,6 +375,9 @@ export function ShopBooking() {
 
   if (loading) return <PageLoader label="Carregando agendamento" />
   if (!shop) return <p className="text-center text-ink-muted">Estabelecimento não encontrado.</p>
+
+  const today = localDateIso()
+  const closedToday = isShopClosedOnDate(schedules, timeOff, barbers.map((item) => item.id), today)
 
   const steps: { n: Step; label: string }[] = [
     { n: 1, label: 'Serviços' },
@@ -302,6 +427,12 @@ export function ShopBooking() {
           </div>
         )}
         <BrandAccent className="mt-2 max-w-md" segment="barbershop" />
+        {closedToday && (
+          <div role="status" className="mt-5 rounded-2xl border border-brass/35 bg-brass/10 px-5 py-4 text-center">
+            <p className="text-base font-semibold text-ink">Estamos fechados hoje. Volte amanhã!</p>
+            <p className="mt-1 text-sm text-ink-muted">Você ainda pode consultar e agendar os próximos dias disponíveis.</p>
+          </div>
+        )}
       </div>
 
       <BookingStepper steps={steps} current={step} />
@@ -336,16 +467,54 @@ export function ShopBooking() {
                 </label>
               ))}
             </div>
+            {activeCustomFields.length > 0 && (
+              <div className="mt-5 space-y-4 rounded-2xl border border-paper-dark p-4">
+                <div>
+                  <h3 className="font-semibold">Detalhes do serviço</h3>
+                  <p className="text-xs text-ink-muted">Responda para o profissional preparar o atendimento.</p>
+                </div>
+                {activeCustomFields.map((field) => {
+                  const answer = selectedCustomAnswers.find((item) => item.field_id === field.id)
+                  return (
+                    <label key={field.id} className="block text-sm font-medium">
+                      {field.label}{field.required && <span className="text-red-500"> *</span>}
+                      {field.field_type === 'single_choice' ? (
+                        <select
+                          value={answer?.option_id || ''}
+                          onChange={(event) => setCustomAnswer(field.id, { option_id: event.target.value || null, value: null })}
+                          className="mt-1.5 min-h-11 w-full rounded-xl border border-paper-dark bg-white px-3 text-sm focus:border-brass focus:outline-none"
+                        >
+                          <option value="">Selecione</option>
+                          {customOptions.filter((option) => option.field_id === field.id).map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {option.label}{Number(option.price_delta) > 0 ? ` (+${formatPrice(Number(option.price_delta))})` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          value={answer?.value || ''}
+                          onChange={(event) => setCustomAnswer(field.id, { value: event.target.value, option_id: null })}
+                          maxLength={500}
+                          className="mt-1.5 min-h-11 w-full rounded-xl border border-paper-dark px-3 text-sm focus:border-brass focus:outline-none"
+                        />
+                      )}
+                    </label>
+                  )
+                })}
+              </div>
+            )}
             {selectedServices.length > 0 && (
               <div className="mt-6 flex justify-between rounded-lg bg-paper p-4 font-mono">
                 <span>Total: {formatDuration(getTotalDuration(selectedServices))}</span>
                 <span className="text-brass font-semibold">
-                  {formatPrice(getTotalPrice(selectedServices))}
+                  {formatPrice(quotedTotal)}
                 </span>
               </div>
             )}
+            {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
             <button
-              onClick={() => setStep(2)}
+              onClick={continueFromServices}
               disabled={selectedServices.length === 0}
               className="btn-primary mt-6 w-full"
             >
@@ -358,7 +527,7 @@ export function ShopBooking() {
           <div>
             <h2 className="font-display text-2xl mb-4">Escolha o profissional</h2>
             <div className="space-y-3">
-              {barbers.map((b) => {
+              {eligibleBarbers.map((b) => {
                 const days = getActiveDays(schedules.filter((s) => s.barber_id === b.id))
                 const stats = barberStats[b.id]
                 return (
@@ -404,6 +573,11 @@ export function ShopBooking() {
                   </button>
                 )
               })}
+              {eligibleBarbers.length === 0 && (
+                <p className="rounded-xl border border-brass/30 bg-brass/5 p-4 text-sm text-ink-muted">
+                  Nenhum profissional atende essa combinação. Volte e escolha outra combinação de serviços.
+                </p>
+              )}
             </div>
             {selectedBarberId && activeDays.length > 0 && (
               <div className="mt-6">
@@ -539,8 +713,10 @@ export function ShopBooking() {
               <p className="mt-2 text-ink-muted">
                 {selectedServices.map((s) => s.name).join(', ')}
               </p>
+              {discountAmount > 0 && <p className="mt-2 text-emerald-700">Desconto do dia: − {formatPrice(discountAmount)}</p>}
+              {extrasAmount > 0 && <p className="mt-1 text-ink-muted">Adicionais: + {formatPrice(extrasAmount)}</p>}
               <p className="mt-2 font-mono text-brass">
-                {formatPrice(getTotalPrice(selectedServices))}
+                {formatPrice(quotedTotal)}
               </p>
             </div>
 

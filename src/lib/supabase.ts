@@ -31,11 +31,18 @@ export const supabase = createClient(
 )
 
 export function authErrorMessage(err: unknown): string {
-  if (err instanceof TypeError && /fetch|load failed|network/i.test(err.message)) {
+  const message =
+    err instanceof Error
+      ? err.message
+      : typeof err === 'object' && err !== null && 'message' in err
+        ? String(err.message)
+        : ''
+
+  if (/failed to fetch|fetch failed|load failed|network|network request/i.test(message)) {
     return 'Não foi possível conectar ao servidor. Verifique sua conexão com a internet e tente novamente.'
   }
   if (err instanceof Error) {
-    const msg = err.message || ''
+    const msg = message
     if (/PGRST|42501|permission denied|row-level security/i.test(msg)) {
       return 'Você não tem permissão para esta ação.'
     }

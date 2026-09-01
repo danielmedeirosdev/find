@@ -1,5 +1,15 @@
 export type SubscriptionStatus = 'trial' | 'active' | 'blocked'
 export type ShopSegment = 'barbershop' | 'pet'
+export type PetBusinessType =
+  | 'grooming'
+  | 'veterinary_clinic'
+  | 'pet_shop'
+  | 'daycare_boarding'
+  | 'dog_walker'
+  | 'training'
+  | 'mixed'
+  | 'other'
+export type PetOnboardingMode = 'self_service' | 'guided'
 export type PetSize = 'pequeno' | 'medio' | 'grande'
 
 export interface Shop {
@@ -17,6 +27,9 @@ export interface Shop {
   trial_ends_at: string | null
   complimentary_until?: string | null
   onboarding_completed?: boolean
+  pet_business_type?: PetBusinessType | null
+  pet_onboarding_mode?: PetOnboardingMode | null
+  pet_setup_help_requested_at?: string | null
   logo_url?: string | null
   slug?: string | null
   segment?: ShopSegment
@@ -62,6 +75,7 @@ export interface Barber {
   name: string
   photo_url?: string | null
   role?: string | null
+  specialty?: string | null
   commission_percent?: number | null
   /** Linked auth user for staff panel login (set only via edge function). */
   user_id?: string | null
@@ -116,6 +130,14 @@ export interface Booking {
   duration_minutes?: number | null
   customer_package_id?: string | null
   notes?: string | null
+  quoted_amount?: number | null
+  services_amount?: number | null
+  discount_amount?: number
+  extras_amount?: number
+  pet_transport_requested?: boolean
+  pet_transport_fee?: number
+  pet_transport_address?: string | null
+  pet_transport_notes?: string | null
   created_at: string
 }
 
@@ -180,8 +202,80 @@ export interface Pet {
   special_needs: string | null
   allergies: string | null
   preferences: string | null
+  last_visit: string | null
+  recommended_frequency_days: number | null
+  next_recommended_visit: string | null
+  preferred_professional_id: string | null
   created_at: string
   shop_customers?: ShopCustomer
+}
+
+export interface ServiceBarber {
+  service_id: string
+  barber_id: string
+  shop_id: string
+  created_at?: string
+}
+
+export type ServiceCustomFieldType = 'single_choice' | 'text'
+export interface ServiceCustomField { id: string; shop_id: string; service_id: string; label: string; field_type: ServiceCustomFieldType; required: boolean; sort_order: number }
+export interface ServiceCustomFieldOption { id: string; shop_id: string; field_id: string; label: string; price_delta: number; sort_order: number }
+export interface ServiceWeekdayDiscount { service_id: string; shop_id: string; day_of_week: number; discount_percent: number }
+export interface ServicePetTransport { service_id: string; shop_id: string; enabled: boolean; fee: number }
+export interface CustomFieldAnswerInput { field_id: string; option_id?: string | null; value?: string | null }
+export interface BookingCustomFieldAnswer { id: string; booking_id: string; shop_id: string; field_id: string | null; field_label: string; answer: string; price_delta: number }
+
+export interface BarberTimeOff {
+  id: string
+  shop_id: string
+  barber_id: string
+  starts_on: string
+  ends_on: string
+  start_time: string | null
+  end_time: string | null
+  reason?: string | null
+  created_at?: string
+}
+
+export interface PetConsultation {
+  id: string
+  shop_id: string
+  pet_id: string
+  veterinarian_id: string | null
+  consultation_date: string
+  weight_kg: number | null
+  notes: string | null
+  return_date: string | null
+  created_at: string
+  pets?: Pick<Pet, 'id' | 'name'>
+  barbers?: Pick<Barber, 'id' | 'name'> | null
+}
+
+export interface PetVaccination {
+  id: string
+  shop_id: string
+  pet_id: string
+  vaccine_name: string
+  administered_on: string | null
+  next_due_date: string | null
+  veterinarian_name: string | null
+  notes: string | null
+  created_at: string
+  pets?: Pick<Pet, 'id' | 'name'>
+}
+
+export interface InventoryProduct {
+  id: string
+  shop_id: string
+  name: string
+  sku: string | null
+  cost_price: number
+  sale_price: number
+  quantity: number
+  minimum_stock: number
+  active: boolean
+  created_at: string
+  updated_at: string
 }
 
 export interface ServiceSizeRule {
@@ -225,6 +319,12 @@ export interface BookingConfirmationState {
   petSize?: string
   durationMinutes?: number
   notes?: string
+  quotedAmount?: number
+  discountAmount?: number
+  extrasAmount?: number
+  petTransportRequested?: boolean
+  petTransportFee?: number
+  petTransportAddress?: string
 }
 
 export interface BookingService {
@@ -241,6 +341,7 @@ export interface BookingWithDetails extends Booking {
     service_id: string
     services: Service
   }>
+  booking_custom_field_answers?: BookingCustomFieldAnswer[]
 }
 
 export interface ServicePackage {

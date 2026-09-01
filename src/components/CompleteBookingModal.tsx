@@ -40,7 +40,8 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
   }, [booking.pet_id])
 
   const selectedServices = shopServices.filter((s) => selectedIds.has(s.id))
-  const total = getTotalPrice(selectedServices)
+  const selectionUnchanged = selectedIds.size === initialIds.size && Array.from(selectedIds).every((id) => initialIds.has(id))
+  const total = selectionUnchanged && booking.quoted_amount != null ? Number(booking.quoted_amount) : getTotalPrice(selectedServices)
 
   const toggleService = (id: string) => {
     setSelectedIds((prev) => {
@@ -110,6 +111,14 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
             ))}
           </div>
         </div>
+
+        {(booking.booking_custom_field_answers?.length || booking.pet_transport_requested) ? (
+          <div className="mb-6 rounded-xl border border-charcoal-light bg-charcoal-light/20 p-4">
+            <p className="mb-2 text-sm font-medium text-white">Detalhes combinados</p>
+            {booking.booking_custom_field_answers?.map((answer) => <p key={answer.id} className="text-sm text-charcoal-muted"><span className="text-white">{answer.field_label}:</span> {answer.answer}{Number(answer.price_delta) > 0 ? ` · + ${formatPrice(Number(answer.price_delta))}` : ''}</p>)}
+            {booking.pet_transport_requested && <div className="mt-3 border-t border-charcoal-light pt-3 text-sm"><p className="font-medium text-brass">Táxi Pet — buscar em casa</p><p className="text-charcoal-muted">{booking.pet_transport_address}</p>{booking.pet_transport_notes && <p className="text-charcoal-muted">{booking.pet_transport_notes}</p>}</div>}
+          </div>
+        ) : null}
 
         {packages.length > 0 && (
           <div className="mb-6">

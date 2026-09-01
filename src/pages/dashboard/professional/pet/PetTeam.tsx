@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../../../lib/supabase'
 import { deleteShopMedia, uploadShopMedia } from '../../../../lib/media'
 import { DefaultAvatar, ImageDropzone, ProgressBar, Toast } from '../../../../components/MediaUI'
@@ -16,12 +16,13 @@ export function PetTeam({ shopId }: Props) {
   const [schedules, setSchedules] = useState<BarberSchedule[]>([])
   const [newName, setNewName] = useState('')
   const [newRole, setNewRole] = useState('')
+  const [newSpecialty, setNewSpecialty] = useState('')
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState<string | null>(null)
   const [uploadingId, setUploadingId] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const { data: barb } = await supabase
       .from('barbers')
       .select('*')
@@ -41,11 +42,11 @@ export function PetTeam({ shopId }: Props) {
     setBarbers(barb || [])
     setSchedules(sched)
     setLoading(false)
-  }
+  }, [shopId])
 
   useEffect(() => {
     load()
-  }, [shopId])
+  }, [load])
 
   const addBarber = async () => {
     if (!newName.trim()) return
@@ -53,9 +54,11 @@ export function PetTeam({ shopId }: Props) {
       shop_id: shopId,
       name: newName.trim(),
       role: newRole.trim() || null,
+      specialty: newSpecialty.trim() || null,
     })
     setNewName('')
     setNewRole('')
+    setNewSpecialty('')
     load()
   }
 
@@ -70,6 +73,13 @@ export function PetTeam({ shopId }: Props) {
     await supabase
       .from('barbers')
       .update({ role: role.trim() || null })
+      .eq('id', barberId)
+  }
+
+  const updateSpecialty = async (barberId: string, specialty: string) => {
+    await supabase
+      .from('barbers')
+      .update({ specialty: specialty.trim() || null })
       .eq('id', barberId)
   }
 
@@ -165,7 +175,7 @@ export function PetTeam({ shopId }: Props) {
       <Toast message={toast} onClose={() => setToast(null)} />
       <h2 className="font-display text-2xl text-white mb-2">Equipe e horários</h2>
       <p className="text-sm text-charcoal-muted mb-6">
-        Cadastre profissionais de banho e tosa com foto, cargo e horários de atendimento.
+        Organize cargo, especialidade, comissão e horários de cada profissional.
       </p>
 
       <div className="mb-8 flex flex-wrap gap-2">
@@ -179,6 +189,12 @@ export function PetTeam({ shopId }: Props) {
           value={newRole}
           onChange={(e) => setNewRole(e.target.value)}
           placeholder="Cargo (ex: Banho e tosa / Tosador)"
+          className="w-48 rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
+        />
+        <input
+          value={newSpecialty}
+          onChange={(e) => setNewSpecialty(e.target.value)}
+          placeholder="Especialidade (opcional)"
           className="w-48 rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
         />
         <button
@@ -234,6 +250,12 @@ export function PetTeam({ shopId }: Props) {
                       onBlur={(e) => updateRole(barber.id, e.target.value)}
                       placeholder="Cargo (ex: Banho e tosa / Tosador)"
                       className="mt-1 w-full max-w-xs rounded border border-charcoal-light bg-charcoal px-2 py-1 text-sm text-white focus:border-brass focus:outline-none"
+                    />
+                    <input
+                      defaultValue={barber.specialty || ''}
+                      onBlur={(e) => updateSpecialty(barber.id, e.target.value)}
+                      placeholder="Especialidade"
+                      className="mt-2 w-full max-w-xs rounded border border-charcoal-light bg-charcoal px-2 py-1 text-sm text-white focus:border-brass focus:outline-none"
                     />
                     {uploadingId === barber.id && (
                       <div className="mt-2 w-40">

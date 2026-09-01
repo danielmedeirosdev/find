@@ -17,6 +17,12 @@ export type ReceiptView = {
   petName?: string | null
   petSize?: string | null
   notes?: string | null
+  quotedAmount?: number | null
+  discountAmount?: number
+  extrasAmount?: number
+  petTransportRequested?: boolean
+  petTransportFee?: number
+  petTransportAddress?: string | null
 }
 
 function ReceiptRow({
@@ -43,7 +49,7 @@ export function ConfirmReceipt({
   view: ReceiptView
   signedIn: boolean
 }) {
-  const total = view.services.reduce((sum, service) => sum + Number(service.price), 0)
+  const total = view.quotedAmount ?? view.services.reduce((sum, service) => sum + Number(service.price), 0)
   const listPath = view.isPet ? '/pet' : '/barbearia'
 
   return (
@@ -102,6 +108,10 @@ export function ConfirmReceipt({
           </ReceiptRow>
 
           {view.notes ? <ReceiptRow label="Observação">{view.notes}</ReceiptRow> : null}
+
+          {view.petTransportRequested ? <ReceiptRow label="Táxi Pet"><p className="font-semibold">Busca em casa confirmada</p><p className="text-ink-muted">{view.petTransportAddress}</p>{Number(view.petTransportFee || 0) > 0 ? <p className="mt-1 text-brass">Taxa: {formatPrice(Number(view.petTransportFee))}</p> : null}</ReceiptRow> : null}
+
+          {Number(view.discountAmount || 0) > 0 || Number(view.extrasAmount || 0) > 0 ? <ReceiptRow label="Ajustes do valor">{Number(view.discountAmount || 0) > 0 ? <p className="text-emerald-700">Desconto do dia: − {formatPrice(Number(view.discountAmount))}</p> : null}{Number(view.extrasAmount || 0) > 0 ? <p>Adicionais: + {formatPrice(Number(view.extrasAmount))}</p> : null}</ReceiptRow> : null}
 
           <ReceiptRow label="Cliente">
             <p>{view.clientName}</p>

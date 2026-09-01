@@ -4,7 +4,8 @@ import { deleteShopMedia, uploadShopMedia } from '../../../../lib/media'
 import { ImageDropzone, ProgressBar, Toast } from '../../../../components/MediaUI'
 import { DeleteShopControl } from '../../../../components/DeleteShopControl'
 import { FieldHint, FieldLabel } from '../../../../components/FormHints'
-import type { Shop, ShopPhoto } from '../../../../lib/types'
+import { PET_BUSINESS_TYPES } from '../../../../lib/onboarding'
+import type { PetBusinessType, Shop, ShopPhoto } from '../../../../lib/types'
 
 interface Props {
   shop: Shop
@@ -17,6 +18,9 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
   const [description, setDescription] = useState(shop.description || '')
   const [address, setAddress] = useState(shop.address || '')
   const [phone, setPhone] = useState(shop.phone || '')
+  const [businessType, setBusinessType] = useState<PetBusinessType | ''>(
+    shop.pet_business_type || ''
+  )
   const [logoUrl, setLogoUrl] = useState(shop.logo_url || '')
   const [photos, setPhotos] = useState<ShopPhoto[]>([])
   const [saving, setSaving] = useState(false)
@@ -45,6 +49,7 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
     setDescription(shop.description || '')
     setAddress(shop.address || '')
     setPhone(shop.phone || '')
+    setBusinessType(shop.pet_business_type || '')
     setLogoUrl(shop.logo_url || '')
   }, [shop])
 
@@ -58,6 +63,7 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
       slogan: slogan.trim() || null,
       address: address.trim() || null,
       phone: phone.trim() || null,
+      pet_business_type: businessType || null,
     }
 
     let { error } = await supabase
@@ -242,6 +248,25 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
           <p className="text-xs text-charcoal-muted">
             Arraste para reordenar. As fotos aparecem em grade na página pública (sem esticar).
           </p>
+        </div>
+
+        <div>
+          <FieldLabel>Ramo principal</FieldLabel>
+          <select
+            value={businessType}
+            onChange={(event) => setBusinessType(event.target.value as PetBusinessType | '')}
+            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white focus:border-brass focus:outline-none"
+          >
+            <option value="">Não informado</option>
+            {PET_BUSINESS_TYPES.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <FieldHint>
+            Organiza recursos e indicadores sem criar outro dashboard.
+          </FieldHint>
         </div>
 
         <div>

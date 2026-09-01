@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import type {
   BookingWithDetails,
+  CustomFieldAnswerInput,
   Pet,
   PetSize,
   ShopCustomer,
@@ -101,12 +102,20 @@ export async function finalizePublicBooking(input: {
   phone: string
   serviceIds: string[]
   petIds?: string[]
+  customAnswers?: CustomFieldAnswerInput[]
+  petTransport?: boolean
+  transportAddress?: string
+  transportNotes?: string
 }) {
   const { error } = await supabase.rpc('finalize_public_booking', {
     p_booking_id: input.bookingId,
     p_phone: input.phone,
     p_service_ids: input.serviceIds,
     p_pet_ids: input.petIds || [],
+    p_custom_answers: input.customAnswers || [],
+    p_pet_transport: Boolean(input.petTransport),
+    p_transport_address: input.transportAddress?.trim() || null,
+    p_transport_notes: input.transportNotes?.trim() || null,
   })
   if (error) throw error
 }

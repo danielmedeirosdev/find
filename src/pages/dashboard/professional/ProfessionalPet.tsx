@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { Shop, SubscribeHandler } from '../../../lib/types'
 import { ProfessionalShell } from './ProfessionalShell'
@@ -16,11 +17,18 @@ import { ReportsTab } from '../tabs/Reports'
 import { SubscriptionTab } from '../tabs/Subscription'
 import { ReferralTab } from '../tabs/Referral'
 
+const PetClinical = lazy(() =>
+  import('./pet/PetClinical').then((module) => ({ default: module.PetClinical }))
+)
+const PetInventory = lazy(() =>
+  import('./pet/PetInventory').then((module) => ({ default: module.PetInventory }))
+)
+
 const PET_TAB_GROUPS: { label: string; tabs: { id: string; label: string }[] }[] = [
   {
     label: 'Dia a dia',
     tabs: [
-      { id: 'overview', label: 'Início' },
+      { id: 'overview', label: 'Visão geral' },
       { id: 'agenda', label: 'Agenda' },
     ],
   },
@@ -28,7 +36,7 @@ const PET_TAB_GROUPS: { label: string; tabs: { id: string; label: string }[] }[]
     label: 'Cadastros',
     tabs: [
       { id: 'pets', label: 'Pets' },
-      { id: 'customers', label: 'Donos' },
+      { id: 'customers', label: 'Clientes' },
       { id: 'services', label: 'Serviços' },
       { id: 'team', label: 'Equipe' },
       { id: 'packages', label: 'Pacotes' },
@@ -37,7 +45,7 @@ const PET_TAB_GROUPS: { label: string; tabs: { id: string; label: string }[] }[]
   {
     label: 'Negócio',
     tabs: [
-      { id: 'cashflow', label: 'Caixa' },
+      { id: 'cashflow', label: 'Financeiro' },
       { id: 'reports', label: 'Relatórios' },
       { id: 'reviews', label: 'Avaliações' },
       { id: 'info', label: 'Meu pet shop' },
@@ -48,7 +56,6 @@ const PET_TAB_GROUPS: { label: string; tabs: { id: string; label: string }[] }[]
   },
 ]
 
-const PET_TABS = PET_TAB_GROUPS.flatMap((g) => g.tabs)
 type PetTabId = string
 
 interface Props {
@@ -68,8 +75,23 @@ export function ProfessionalPet({
   subscribeError,
 }: Props) {
   const [searchParams, setSearchParams] = useSearchParams()
+  const resourceTabs: { id: string; label: string }[] = []
+  if (shop.pet_business_type === 'veterinary_clinic' || shop.pet_business_type === 'mixed') {
+    resourceTabs.push({ id: 'clinical', label: 'Consultas e vacinas' })
+  }
+  if (shop.pet_business_type === 'pet_shop' || shop.pet_business_type === 'mixed') {
+    resourceTabs.push({ id: 'inventory', label: 'Estoque' })
+  }
+  const petTabGroups = resourceTabs.length
+    ? [
+        ...PET_TAB_GROUPS.slice(0, 2),
+        { label: 'Recursos PET', tabs: resourceTabs },
+        ...PET_TAB_GROUPS.slice(2),
+      ]
+    : PET_TAB_GROUPS
+  const petTabs = petTabGroups.flatMap((group) => group.tabs)
   const raw = searchParams.get('aba') || 'overview'
-  const activeTab: PetTabId = PET_TABS.some((t) => t.id === raw)
+  const activeTab: PetTabId = petTabs.some((t) => t.id === raw)
     ? (raw as PetTabId)
     : 'overview'
 
@@ -79,14 +101,16 @@ export function ProfessionalPet({
     <ProfessionalShell
       shop={shop}
       segment="pet"
-      tabs={PET_TABS}
-      tabGroups={PET_TAB_GROUPS}
+      tabs={petTabs}
+      tabGroups={petTabGroups}
       activeTab={activeTab}
       onTabChange={setTab}
       title={shop.name?.trim() || 'Meu Pet Shop'}
-      subtitle="Área do dono · banho, tosa e cuidados"
+      subtitle="Gestão profissional para negócios PET"
     >
-      {activeTab === 'overview' && <PetOverview shopId={shop.id} onNavigate={setTab} />}
+      {activeTab === 'overview' && (
+        <PetOverview shopId={shop.id} businessType={shop.pet_business_type} onNavigate={setTab} />
+      )}
       {activeTab === 'info' && <PetShopInfo shop={shop} onUpdate={onUpdate} />}
       {activeTab === 'team' && <PetTeam shopId={shop.id} />}
       {activeTab === 'services' && <PetServices shopId={shop.id} />}
@@ -97,6 +121,16 @@ export function ProfessionalPet({
       {activeTab === 'cashflow' && <CashFlowTab shopId={shop.id} />}
       {activeTab === 'reports' && <ReportsTab shopId={shop.id} />}
       {activeTab === 'reviews' && <PetReviews shopId={shop.id} />}
+      {activeTab === 'clinical' ? (
+        <Suspense fallback={<p className="text-charcoal-muted">Carregando clínica...</p>}>
+          <PetClinical shopId={shop.id} />
+        </Suspense>
+      ) : null}
+      {activeTab === 'inventory' ? (
+        <Suspense fallback={<p className="text-charcoal-muted">Carregando estoque...</p>}>
+          <PetInventory shopId={shop.id} />
+        </Suspense>
+      ) : null}
       {activeTab === 'link' && <PetShopLink shop={shop} onUpdate={onUpdate} />}
       {activeTab === 'referral' && <ReferralTab shop={shop} onUpdate={onUpdate} />}
       {activeTab === 'subscription' && (

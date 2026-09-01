@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../../../lib/supabase'
 import { formatPrice, formatDuration } from '../../../../lib/format'
 import { defaultSizeRules } from '../../../../lib/pet'
 import { FieldHint, FieldLabel } from '../../../../components/FormHints'
+import { ServiceProfessionalPicker } from '../../../../components/ServiceProfessionalPicker'
+import { ServiceAdvancedSettings } from '../../../../components/ServiceAdvancedSettings'
 import { PET_SIZES, type PetSize, type Service, type ServiceSizeRule } from '../../../../lib/types'
 
 interface Props {
@@ -18,12 +20,8 @@ export function PetServices({ shopId }: Props) {
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
 
-  const load = async () => {
-    const { data } = await supabase
-      .from('services')
-      .select('*')
-      .eq('shop_id', shopId)
-      .order('name')
+  const load = useCallback(async () => {
+    const { data } = await supabase.from('services').select('*').eq('shop_id', shopId).order('name')
     const list = data || []
     setServices(list)
 
@@ -40,11 +38,11 @@ export function PetServices({ shopId }: Props) {
       setRules([])
     }
     setLoading(false)
-  }
+  }, [shopId])
 
   useEffect(() => {
     load()
-  }, [shopId])
+  }, [load])
 
   const addService = async () => {
     if (!name.trim() || !price) return
@@ -176,7 +174,7 @@ export function PetServices({ shopId }: Props) {
                     onClick={() => setEditingId(editingId === s.id ? null : s.id)}
                     className="text-sm text-brass"
                   >
-                    {editingId === s.id ? 'Fechar' : 'Duração por porte'}
+                    {editingId === s.id ? 'Fechar' : 'Configurar serviço'}
                   </button>
                   <button
                     onClick={() => removeService(s.id)}
@@ -188,8 +186,19 @@ export function PetServices({ shopId }: Props) {
               </div>
 
               {editingId === s.id && (
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                  {PET_SIZES.map(({ value, label }) => {
+                <div className="mt-4 space-y-5 border-t border-charcoal-light pt-4">
+                  <div>
+                    <ServiceProfessionalPicker shopId={shopId} serviceId={s.id} />
+                  </div>
+
+                  <div className="border-t border-charcoal-light pt-5">
+                    <ServiceAdvancedSettings shopId={shopId} serviceId={s.id} enablePetTransport />
+                  </div>
+
+                  <div>
+                    <p className="mb-3 text-sm font-semibold text-white">Preço e duração por porte</p>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                    {PET_SIZES.map(({ value, label }) => {
                     const rule = rules.find((r) => r.service_id === s.id && r.size === value)
                     return (
                       <div key={value} className="rounded bg-charcoal-light/30 p-3 space-y-2">
@@ -218,7 +227,9 @@ export function PetServices({ shopId }: Props) {
                         </label>
                       </div>
                     )
-                  })}
+                    })}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

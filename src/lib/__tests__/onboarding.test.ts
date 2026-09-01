@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   parseOnboardingProfile,
+  parsePetOnboardingChoice,
   parseOnboardingServices,
   parseOnboardingStaff,
   shouldShowProfessionalOnboarding,
@@ -66,5 +67,15 @@ describe('configuração inicial profissional', () => {
     expect(shouldShowProfessionalOnboarding('owner', true)).toBe(false)
     expect(shouldShowProfessionalOnboarding('staff', false)).toBe(false)
     expect(shouldShowProfessionalOnboarding('owner', undefined)).toBe(false)
+  })
+
+  it('valida e preserva escolhas estruturadas do onboarding PET', () => {
+    expect(parsePetOnboardingChoice('veterinary_clinic', 'guided')).toEqual({
+      pet_business_type: 'veterinary_clinic',
+      pet_onboarding_mode: 'guided',
+    })
+    expect(() => parsePetOnboardingChoice('clinica', 'guided')).toThrow(
+      'Selecione o ramo principal do negócio.'
+    )
   })
 })

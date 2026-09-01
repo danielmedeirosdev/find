@@ -1,6 +1,13 @@
 import { timeToMinutes, minutesToTime } from './format'
 import { supabase } from './supabase'
-import type { BarberSchedule, PublicBookingSlot, Service } from './types'
+import type { BarberSchedule, BarberTimeOff, PublicBookingSlot, Service } from './types'
+
+export function localDateIso(date = new Date()): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 export function bookingErrorMessage(err: unknown): string {
   const message =
@@ -22,7 +29,7 @@ export function bookingErrorMessage(err: unknown): string {
 
 /** Horários que ainda ocupam a agenda (alinhado a bookings_active_slot_uidx). */
 export async function loadOccupiedSlots(shopId: string): Promise<PublicBookingSlot[]> {
-  const today = new Date().toISOString().slice(0, 10)
+  const today = localDateIso()
   const { data, error } = await supabase
     .from('public_booking_slots')
     .select('shop_id, barber_id, date, time, duration_minutes')
@@ -33,6 +40,20 @@ export async function loadOccupiedSlots(shopId: string): Promise<PublicBookingSl
     throw new Error('Não foi possível carregar a agenda. Atualize a página e tente novamente.')
   }
   return (data as PublicBookingSlot[]) || []
+}
+
+export async function loadPublicTimeOff(shopId: string): Promise<BarberTimeOff[]> {
+  const today = localDateIso()
+  const { data, error } = await supabase
+    .from('barber_time_off')
+    .select('id, shop_id, barber_id, starts_on, ends_on, start_time, end_time')
+    .eq('shop_id', shopId)
+    .gte('ends_on', today)
+
+  if (error) {
+    throw new Error('Não foi possível carregar as folgas da equipe. Atualize a página e tente novamente.')
+  }
+  return (data as BarberTimeOff[]) || []
 }
 
 
@@ -75,7 +96,8 @@ export function getAvailableSlots(
   occupiedSlots: PublicBookingSlot[],
   selectedServices: Service[],
   date: string,
-  overrideDurationMinutes?: number
+  overrideDurationMinutes?: number,
+  timeOff: BarberTimeOff[] = []
 ): string[] {
   const totalDuration =
     overrideDurationMinutes != null && overrideDurationMinutes > 0
@@ -93,10 +115,19 @@ export function getAvailableSlots(
     return { start, end: start + dur }
   })
 
+  const blocked: Array<{ start: number; end: number }> = timeOff
+    .filter((item) => item.barber_id === schedule.barber_id && date >= item.starts_on && date <= item.ends_on)
+    .map((item) => ({
+      start: item.start_time ? timeToMinutes(item.start_time) : 0,
+      end: item.end_time ? timeToMinutes(item.end_time) : 24 * 60,
+    }))
+
   const slots: string[] = []
   for (let t = workStart; t + totalDuration <= workEnd; t += SLOT_INTERVAL) {
     const slotEnd = t + totalDuration
-    const hasConflict = occupied.some((o) => rangesOverlap(t, slotEnd, o.start, o.end))
+    const hasConflict = [...occupied, ...blocked].some((o) =>
+      rangesOverlap(t, slotEnd, o.start, o.end)
+    )
     if (!hasConflict) {
       slots.push(minutesToTime(t))
     }
@@ -114,8 +145,34 @@ export function getNextDatesForDay(dayOfWeek: number, count = 8): string[] {
     const d = new Date(today)
     d.setDate(today.getDate() + i)
     if (d.getDay() === dayOfWeek) {
-      dates.push(d.toISOString().slice(0, 10))
+      dates.push(localDateIso(d))
     }
   }
   return dates
+}
+
+export function isShopClosedOnDate(
+  schedules: BarberSchedule[],
+  timeOff: BarberTimeOff[],
+  barberIds: string[],
+  date: string
+): boolean {
+  const dayOfWeek = new Date(`${date}T12:00:00`).getDay()
+  const activeProfessionals = new Set(
+    schedules
+      .filter((schedule) => schedule.is_active && schedule.day_of_week === dayOfWeek && barberIds.includes(schedule.barber_id))
+      .map((schedule) => schedule.barber_id)
+  )
+  if (activeProfessionals.size === 0) return true
+
+  return Array.from(activeProfessionals).every((professionalId) =>
+    timeOff.some(
+      (item) =>
+        item.barber_id === professionalId &&
+        date >= item.starts_on &&
+        date <= item.ends_on &&
+        item.start_time === null &&
+        item.end_time === null
+    )
+  )
 }

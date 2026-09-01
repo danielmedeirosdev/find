@@ -38,6 +38,7 @@ export function PetsTab({ shopId }: Props) {
   const [weightKg, setWeightKg] = useState('')
   const [birthDate, setBirthDate] = useState('')
   const [specialNeeds, setSpecialNeeds] = useState('')
+  const [recommendedFrequencyDays, setRecommendedFrequencyDays] = useState('')
   const [history, setHistory] = useState<BookingWithDetails[]>([])
 
   const load = useCallback(async () => {
@@ -93,6 +94,7 @@ export function PetsTab({ shopId }: Props) {
     setWeightKg('')
     setBirthDate('')
     setSpecialNeeds('')
+    setRecommendedFrequencyDays('')
     setShowForm(false)
   }
 
@@ -146,6 +148,9 @@ export function PetsTab({ shopId }: Props) {
       weight_kg: weightKg ? Number(weightKg) : null,
       birth_date: birthDate || null,
       special_needs: specialNeeds.trim() || null,
+      recommended_frequency_days: recommendedFrequencyDays
+        ? Number(recommendedFrequencyDays)
+        : null,
     })
     if (error) {
       setToast(error.message)
@@ -178,6 +183,39 @@ export function PetsTab({ shopId }: Props) {
     if (pet.photo_url) await deleteShopMedia(pet.photo_url)
     await supabase.from('pets').delete().eq('id', pet.id)
     if (selected?.id === pet.id) setSelected(null)
+    load()
+  }
+
+  const updateReturnPlan = async (pet: Pet, rawValue: string) => {
+    const value = rawValue.trim() ? Number(rawValue) : null
+    if (value !== null && (!Number.isInteger(value) || value < 1 || value > 730)) {
+      setToast('A frequência deve ser um número de dias entre 1 e 730.')
+      return
+    }
+    const nextVisit =
+      value && pet.last_visit
+        ? (() => {
+            const date = new Date(`${pet.last_visit}T12:00:00`)
+            date.setDate(date.getDate() + value)
+            return date.toISOString().slice(0, 10)
+          })()
+        : null
+    const { error } = await supabase
+      .from('pets')
+      .update({ recommended_frequency_days: value, next_recommended_visit: nextVisit })
+      .eq('id', pet.id)
+      .eq('shop_id', shopId)
+    if (error) {
+      setToast(error.message)
+      return
+    }
+    const updated = {
+      ...pet,
+      recommended_frequency_days: value,
+      next_recommended_visit: nextVisit,
+    }
+    setSelected(updated)
+    setToast('Plano de retorno atualizado.')
     load()
   }
 
@@ -320,7 +358,7 @@ export function PetsTab({ shopId }: Props) {
               />
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <FieldLabel>Peso (kg)</FieldLabel>
               <input
@@ -344,6 +382,18 @@ export function PetsTab({ shopId }: Props) {
               <input
                 value={specialNeeds}
                 onChange={(e) => setSpecialNeeds(e.target.value)}
+                className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white focus:border-brass focus:outline-none"
+              />
+            </div>
+            <div>
+              <FieldLabel>Retorno recomendado (dias)</FieldLabel>
+              <input
+                value={recommendedFrequencyDays}
+                onChange={(e) => setRecommendedFrequencyDays(e.target.value)}
+                type="number"
+                min="1"
+                max="730"
+                placeholder="Ex: 30"
                 className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white focus:border-brass focus:outline-none"
               />
             </div>
@@ -466,6 +516,27 @@ export function PetsTab({ shopId }: Props) {
                   </p>
                 </>
               )}
+              <div className="pt-3">
+                <FieldLabel>Plano de retorno</FieldLabel>
+                <input
+                  key={`${selected.id}-${selected.recommended_frequency_days || ''}`}
+                  type="number"
+                  min="1"
+                  max="730"
+                  defaultValue={selected.recommended_frequency_days || ''}
+                  onBlur={(event) => updateReturnPlan(selected, event.target.value)}
+                  placeholder="Frequência em dias"
+                  className="w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2 text-white focus:border-brass focus:outline-none"
+                />
+                <p className="mt-2 text-xs text-charcoal-muted">
+                  {selected.last_visit
+                    ? `Última visita: ${formatDate(selected.last_visit)}`
+                    : 'A última visita será registrada ao concluir um atendimento.'}
+                  {selected.next_recommended_visit
+                    ? ` · Próximo retorno: ${formatDate(selected.next_recommended_visit)}`
+                    : ''}
+                </p>
+              </div>
               <p className="text-charcoal-muted pt-3">Histórico</p>
               {history.length === 0 ? (
                 <p className="text-sm text-charcoal-muted">Sem atendimentos registrados.</p>

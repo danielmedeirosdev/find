@@ -28,6 +28,12 @@ function viewFromState(state: BookingConfirmationState): ReceiptView {
     petName: state.petName,
     petSize: state.petSize,
     notes: state.notes,
+    quotedAmount: state.quotedAmount,
+    discountAmount: state.discountAmount,
+    extrasAmount: state.extrasAmount,
+    petTransportRequested: state.petTransportRequested,
+    petTransportFee: state.petTransportFee,
+    petTransportAddress: state.petTransportAddress,
   }
 }
 
@@ -52,6 +58,12 @@ function viewFromBooking(booking: BookingWithDetails): ReceiptView {
     petName: booking.pets?.name,
     petSize: booking.pets?.size ? petSizeLabel(booking.pets.size) : null,
     notes: booking.notes,
+    quotedAmount: booking.quoted_amount,
+    discountAmount: booking.discount_amount,
+    extrasAmount: booking.extras_amount,
+    petTransportRequested: booking.pet_transport_requested,
+    petTransportFee: booking.pet_transport_fee,
+    petTransportAddress: booking.pet_transport_address,
   }
 }
 

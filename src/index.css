@@ -229,18 +229,18 @@ body {
   border-color: #c9a227 !important;
 }
 
-/* —— FIND PET: oliva sólida (quente, sem teal/azul) —— */
+/* —— ONEFIND PET: grafite, off-white e âmbar/mel —— */
 .segment-pet,
 [data-segment='pet'] {
-  --color-paper: #f2efe6;
-  --color-paper-dark: #e4dece;
-  --color-ink: #2a2418;
-  --color-ink-muted: #6a5f4d;
-  --color-brass: #6a7d3a;
-  --color-brass-light: #84964f;
-  --color-charcoal: #1c1a14;
-  --color-charcoal-light: #2c2920;
-  --color-charcoal-muted: #8a8478;
+  --color-paper: #f5f1e8;
+  --color-paper-dark: #e8dfd0;
+  --color-ink: #211d18;
+  --color-ink-muted: #6d6255;
+  --color-brass: #d39a3b;
+  --color-brass-light: #e3b662;
+  --color-charcoal: #171613;
+  --color-charcoal-light: #292620;
+  --color-charcoal-muted: #aaa094;
 }
 
 /*
@@ -251,33 +251,33 @@ body {
 [data-segment='pet'] .bg-brass.text-charcoal,
 .segment-pet .bg-brass.text-white,
 [data-segment='pet'] .bg-brass.text-white {
-  color: #1c1a14 !important;
+  color: #171613 !important;
 }
 .segment-pet .bg-brass,
 [data-segment='pet'] .bg-brass {
-  background-color: #6a7d3a !important;
+  background-color: #d39a3b !important;
 }
 .segment-pet .hover\:bg-brass:hover,
 [data-segment='pet'] .hover\:bg-brass:hover,
 .segment-pet .hover\:bg-brass-light:hover,
 [data-segment='pet'] .hover\:bg-brass-light:hover {
-  background-color: #84964f !important;
+  background-color: #e3b662 !important;
 }
 .segment-pet .bg-brass-light,
 [data-segment='pet'] .bg-brass-light {
-  background-color: #84964f !important;
+  background-color: #e3b662 !important;
 }
 .segment-pet .text-brass,
 [data-segment='pet'] .text-brass {
-  color: #6a7d3a !important;
+  color: #d39a3b !important;
 }
 .segment-pet .hover\:text-brass:hover,
 [data-segment='pet'] .hover\:text-brass:hover {
-  color: #84964f !important;
+  color: #e3b662 !important;
 }
 .segment-pet .border-brass,
 [data-segment='pet'] .border-brass {
-  border-color: #6a7d3a !important;
+  border-color: #d39a3b !important;
 }
 .segment-pet .hover\:border-brass:hover,
 [data-segment='pet'] .hover\:border-brass:hover,
@@ -285,15 +285,15 @@ body {
 [data-segment='pet'] .hover\:border-brass\/40:hover,
 .segment-pet .hover\:border-brass\/50:hover,
 [data-segment='pet'] .hover\:border-brass\/50:hover {
-  border-color: rgba(106, 125, 58, 0.55) !important;
+  border-color: rgba(211, 154, 59, 0.58) !important;
 }
 .segment-pet .ring-brass\/20,
 [data-segment='pet'] .ring-brass\/20 {
-  --tw-ring-color: rgba(106, 125, 58, 0.25) !important;
+  --tw-ring-color: rgba(211, 154, 59, 0.25) !important;
 }
 .segment-pet .accent-brass,
 [data-segment='pet'] .accent-brass {
-  accent-color: #6a7d3a !important;
+  accent-color: #d39a3b !important;
 }
 .segment-pet .bg-brass\/5,
 [data-segment='pet'] .bg-brass\/5,
@@ -301,37 +301,37 @@ body {
 [data-segment='pet'] .bg-brass\/10,
 .segment-pet .bg-brass\/15,
 [data-segment='pet'] .bg-brass\/15 {
-  background-color: rgba(106, 125, 58, 0.12) !important;
+  background-color: rgba(211, 154, 59, 0.12) !important;
 }
 .segment-pet .text-brass\/70,
 [data-segment='pet'] .text-brass\/70,
 .segment-pet .text-brass\/80,
 [data-segment='pet'] .text-brass\/80 {
-  color: rgba(106, 125, 58, 0.85) !important;
+  color: rgba(227, 182, 98, 0.9) !important;
 }
 .segment-pet .focus\:border-brass:focus,
 [data-segment='pet'] .focus\:border-brass:focus {
-  border-color: #6a7d3a !important;
+  border-color: #d39a3b !important;
 }
 .segment-pet .bg-paper,
 [data-segment='pet'] .bg-paper {
-  background-color: #f2efe6 !important;
+  background-color: #f5f1e8 !important;
 }
 .segment-pet .bg-paper-dark,
 [data-segment='pet'] .bg-paper-dark {
-  background-color: #e4dece !important;
+  background-color: #e8dfd0 !important;
 }
 .segment-pet .border-paper-dark,
 [data-segment='pet'] .border-paper-dark {
-  border-color: #e4dece !important;
+  border-color: #e8dfd0 !important;
 }
 .segment-pet .text-ink,
 [data-segment='pet'] .text-ink {
-  color: #2a2418 !important;
+  color: #211d18 !important;
 }
 .segment-pet .text-ink-muted,
 [data-segment='pet'] .text-ink-muted {
-  color: #6a5f4d !important;
+  color: #6d6255 !important;
 }
 
 /* Painel dark PET */
@@ -339,7 +339,7 @@ body {
 [data-segment='pet'].bg-charcoal,
 .segment-pet .bg-charcoal,
 [data-segment='pet'] .bg-charcoal {
-  background-color: #1c1a14 !important;
+  background-color: #171613 !important;
 }
 .segment-pet .bg-charcoal-light,
 [data-segment='pet'] .bg-charcoal-light,
@@ -347,25 +347,25 @@ body {
 [data-segment='pet'] .bg-charcoal-light\/30,
 .segment-pet .bg-charcoal-light\/40,
 [data-segment='pet'] .bg-charcoal-light\/40 {
-  background-color: #2c2920 !important;
+  background-color: #292620 !important;
 }
 .segment-pet .border-charcoal-light,
 [data-segment='pet'] .border-charcoal-light {
-  border-color: #3d392e !important;
+  border-color: #403a31 !important;
 }
 .segment-pet .text-charcoal-muted,
 [data-segment='pet'] .text-charcoal-muted {
-  color: #8a8478 !important;
+  color: #aaa094 !important;
 }
 
 .pet-accent-stripe {
   background: linear-gradient(
     90deg,
-    #4f5e2c 0%,
-    #6a7d3a 35%,
-    #a3b36a 50%,
-    #6a7d3a 65%,
-    #4f5e2c 100%
+    #9a6528 0%,
+    #d39a3b 35%,
+    #f0c978 50%,
+    #d39a3b 65%,
+    #9a6528 100%
   );
   background-size: 220% 100%;
   animation: petAccentShift 9s ease-in-out infinite;
@@ -390,8 +390,8 @@ body {
 .segment-pet .pet-hero-glow,
 [data-segment='pet'] .pet-hero-glow {
   background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(106, 125, 58, 0.18), transparent 60%),
-    linear-gradient(180deg, #f2efe6 0%, #e8e2d4 100%);
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(211, 154, 59, 0.18), transparent 60%),
+    linear-gradient(180deg, #f5f1e8 0%, #e9e0d2 100%);
 }
 
 /* Nunca mostre barber-pole dentro de superfícies PET */
@@ -400,11 +400,11 @@ body {
 [data-professional='pet'] .barber-pole-stripe {
   background: linear-gradient(
     90deg,
-    #4f5e2c 0%,
-    #6a7d3a 35%,
-    #a3b36a 50%,
-    #6a7d3a 65%,
-    #4f5e2c 100%
+    #9a6528 0%,
+    #d39a3b 35%,
+    #f0c978 50%,
+    #d39a3b 65%,
+    #9a6528 100%
   ) !important;
   animation: petAccentShift 9s ease-in-out infinite;
   background-size: 220% 100%;

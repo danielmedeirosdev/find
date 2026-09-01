@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { formatPrice, formatDuration } from '../../../lib/format'
 import { FieldHint, FieldLabel } from '../../../components/FormHints'
+import { ServiceProfessionalPicker } from '../../../components/ServiceProfessionalPicker'
+import { ServiceAdvancedSettings } from '../../../components/ServiceAdvancedSettings'
 import type { Service } from '../../../lib/types'
 
 interface Props {
@@ -14,8 +16,9 @@ export function ServicesTab({ shopId }: Props) {
   const [price, setPrice] = useState('')
   const [duration, setDuration] = useState('30')
   const [loading, setLoading] = useState(true)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const { data } = await supabase
       .from('services')
       .select('*')
@@ -23,11 +26,11 @@ export function ServicesTab({ shopId }: Props) {
       .order('name')
     setServices(data || [])
     setLoading(false)
-  }
+  }, [shopId])
 
   useEffect(() => {
     load()
-  }, [shopId])
+  }, [load])
 
   const addService = async () => {
     if (!name.trim() || !price) return
@@ -112,7 +115,7 @@ export function ServicesTab({ shopId }: Props) {
       ) : (
         <div className="space-y-4">
           {services.map((s) => (
-            <div key={s.id} className="rounded-lg border border-charcoal-light p-4">
+            <div key={s.id} className="rounded-2xl border border-charcoal-light bg-charcoal-dark/30 p-4">
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <span className="font-medium text-white">{s.name}</span>
@@ -123,13 +126,19 @@ export function ServicesTab({ shopId }: Props) {
                     {formatDuration(s.duration_minutes)}
                   </span>
                 </div>
-                <button
-                  onClick={() => removeService(s.id)}
-                  className="text-sm text-red-400 hover:text-red-300"
-                >
-                  Remover
-                </button>
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setEditingId(editingId === s.id ? null : s.id)} className="text-sm text-brass">
+                    {editingId === s.id ? 'Fechar' : 'Configurar serviço'}
+                  </button>
+                  <button onClick={() => removeService(s.id)} className="text-sm text-red-400 hover:text-red-300">Remover</button>
+                </div>
               </div>
+              {editingId === s.id && (
+                <div className="mt-4 space-y-5 border-t border-charcoal-light pt-4">
+                  <ServiceProfessionalPicker shopId={shopId} serviceId={s.id} />
+                  <ServiceAdvancedSettings shopId={shopId} serviceId={s.id} />
+                </div>
+              )}
             </div>
           ))}
         </div>

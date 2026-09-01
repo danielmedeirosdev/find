@@ -119,7 +119,7 @@ export function BarberAuth() {
           },
         })
         if (signUpError) {
-          setError(signUpError.message)
+          setError(authErrorMessage(signUpError))
           setLoading(false)
           return
         }
@@ -155,7 +155,7 @@ export function BarberAuth() {
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
         if (signInError) {
-          setError(signInError.message)
+          setError(authErrorMessage(signInError))
           setLoading(false)
           return
         }
