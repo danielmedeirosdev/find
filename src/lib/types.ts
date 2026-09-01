@@ -237,6 +237,15 @@ export interface BarberTimeOff {
   created_at?: string
 }
 
+export interface ShopClosure {
+  id: string
+  shop_id: string
+  starts_on: string
+  ends_on: string
+  label: string
+  created_at?: string
+}
+
 export interface PetConsultation {
   id: string
   shop_id: string

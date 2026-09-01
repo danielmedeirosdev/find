@@ -15,6 +15,7 @@ import { DefaultAvatar } from '../../../../components/MediaUI'
 import { EmptyState, InlineError, LoadingBlock } from '../../../../components/EmptyState'
 import { userFacingError } from '../../../../lib/userFacingError'
 import { ProfessionalTimeOff } from '../../../../components/ProfessionalTimeOff'
+import { ShopClosures } from '../../../../components/ShopClosures'
 import { localDateIso } from '../../../../lib/booking'
 import type { BookingWithDetails, Service } from '../../../../lib/types'
 
@@ -181,7 +182,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
             </p>
           </div>
           <button type="button" onClick={() => setShowAvailability((current) => !current)} className="min-h-11 rounded-xl border border-brass/35 bg-brass/5 px-4 text-sm font-medium text-brass transition hover:bg-brass/10">
-            {showAvailability ? 'Fechar disponibilidade' : 'Configurar folgas'}
+            {showAvailability ? 'Fechar configurações' : barberId ? 'Configurar folgas' : 'Folgas e feriados'}
           </button>
         </div>
         <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -204,7 +205,12 @@ export function PetAgenda({ shopId, barberId }: Props) {
         </div>
       </header>
 
-      {showAvailability && <div className="mb-6"><ProfessionalTimeOff shopId={shopId} barberId={barberId} /></div>}
+      {showAvailability ? (
+        <div className="mb-6 space-y-4">
+          {!barberId ? <ShopClosures shopId={shopId} /> : null}
+          <ProfessionalTimeOff shopId={shopId} barberId={barberId} />
+        </div>
+      ) : null}
       {(actionError || loadError) && (
         <div className="mb-4">
           <InlineError message={actionError || loadError} />

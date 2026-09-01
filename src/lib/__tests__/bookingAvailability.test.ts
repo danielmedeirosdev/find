@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { getAvailableSlots, isShopClosedOnDate, localDateIso } from '../booking'
-import type { BarberSchedule, BarberTimeOff, Service } from '../types'
+import { getAvailableSlots, getShopClosureForDate, isShopClosedOnDate, localDateIso } from '../booking'
+import type { BarberSchedule, BarberTimeOff, Service, ShopClosure } from '../types'
 
 const schedule: BarberSchedule = {
   id: 'schedule-1',
@@ -30,6 +30,14 @@ function timeOff(overrides: Partial<BarberTimeOff>): BarberTimeOff {
     end_time: null,
     ...overrides,
   }
+}
+
+const holiday: ShopClosure = {
+  id: 'closure-1',
+  shop_id: 'shop-1',
+  starts_on: '2026-09-07',
+  ends_on: '2026-09-08',
+  label: 'Feriado nacional',
 }
 
 describe('professional time off availability', () => {
@@ -75,5 +83,26 @@ describe('shop open state', () => {
     expect(
       isShopClosedOnDate([schedule], [timeOff({ starts_on: '2026-09-07', ends_on: '2026-09-07' })], ['professional-1'], '2026-09-07')
     ).toBe(true)
+  })
+
+  it('reports the whole establishment closed during a configured holiday', () => {
+    expect(
+      isShopClosedOnDate([schedule], [], ['professional-1'], '2026-09-07', [holiday])
+    ).toBe(true)
+    expect(getShopClosureForDate([holiday], '2026-09-08')?.label).toBe('Feriado nacional')
+  })
+
+  it('removes every slot while the establishment is closed', () => {
+    expect(
+      getAvailableSlots(schedule, [], [service], '2026-09-07', undefined, [], [holiday])
+    ).toEqual([])
+  })
+
+  it('keeps slots available after the closing period ends', () => {
+    const laterHoliday = { ...holiday, starts_on: '2026-09-01', ends_on: '2026-09-06' }
+    expect(
+      getAvailableSlots(schedule, [], [service], '2026-09-07', undefined, [], [laterHoliday])
+        .length
+    ).toBeGreaterThan(0)
   })
 })

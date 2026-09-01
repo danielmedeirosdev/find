@@ -9,7 +9,9 @@ import {
   getNextDatesForDay,
   loadOccupiedSlots,
   loadPublicTimeOff,
+  loadPublicShopClosures,
   isShopClosedOnDate,
+  getShopClosureForDate,
   localDateIso,
 } from '../../lib/booking'
 import { getPetServicesDuration, getPetServicesPrice, petSizeLabel } from '../../lib/pet'
@@ -22,7 +24,7 @@ import {
   rememberBookingPhone,
   upsertPetCustomer,
 } from '../../lib/secureBooking'
-import { formatDuration, formatPhone, formatPrice } from '../../lib/format'
+import { formatDate, formatDuration, formatPhone, formatPrice } from '../../lib/format'
 import { DefaultAvatar } from '../../components/MediaUI'
 import { BrandAccent } from '../../components/BrandAccent'
 import { BookingStepper } from '../../components/public/BookingStepper'
@@ -35,6 +37,7 @@ import type {
   PublicBarber,
   BarberSchedule,
   BarberTimeOff,
+  ShopClosure,
   BookingConfirmationState,
   Pet,
   PetSize,
@@ -66,6 +69,7 @@ export function PetBooking() {
   const [schedules, setSchedules] = useState<BarberSchedule[]>([])
   const [occupiedSlots, setOccupiedSlots] = useState<PublicBookingSlot[]>([])
   const [timeOff, setTimeOff] = useState<BarberTimeOff[]>([])
+  const [shopClosures, setShopClosures] = useState<ShopClosure[]>([])
   const [customFields, setCustomFields] = useState<ServiceCustomField[]>([])
   const [customOptions, setCustomOptions] = useState<ServiceCustomFieldOption[]>([])
   const [weekdayDiscounts, setWeekdayDiscounts] = useState<ServiceWeekdayDiscount[]>([])
@@ -163,10 +167,12 @@ export function PetBooking() {
 
       let slots: PublicBookingSlot[] = []
       let unavailable: BarberTimeOff[] = []
+      let closures: ShopClosure[] = []
       try {
-        ;[slots, unavailable] = await Promise.all([
+        ;[slots, unavailable, closures] = await Promise.all([
           loadOccupiedSlots(shopId!),
           loadPublicTimeOff(shopId!),
+          loadPublicShopClosures(shopId!),
         ])
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Não foi possível carregar a agenda.')
@@ -180,6 +186,7 @@ export function PetBooking() {
       setSchedules(sched)
       setOccupiedSlots(slots)
       setTimeOff(unavailable)
+      setShopClosures(closures)
       if ((barb || []).length === 1) setSelectedBarberId(barb![0].id)
       setLoading(false)
     }
@@ -189,10 +196,11 @@ export function PetBooking() {
   // Atualiza horários ocupados ao chegar na etapa de agenda
   useEffect(() => {
     if (!shopId || step !== 4) return
-    Promise.all([loadOccupiedSlots(shopId), loadPublicTimeOff(shopId)])
-      .then(([slots, unavailable]) => {
+    Promise.all([loadOccupiedSlots(shopId), loadPublicTimeOff(shopId), loadPublicShopClosures(shopId)])
+      .then(([slots, unavailable, closures]) => {
         setOccupiedSlots(slots)
         setTimeOff(unavailable)
+        setShopClosures(closures)
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : 'Não foi possível carregar a agenda.')
@@ -303,7 +311,11 @@ export function PetBooking() {
   const selectedBarber = barbers.find((b) => b.id === selectedBarberId)
   const barberSchedules = schedules.filter((s) => s.barber_id === selectedBarberId)
   const activeDays = getActiveDays(barberSchedules)
-  const availableDates = selectedDay !== null ? getNextDatesForDay(selectedDay) : []
+  const availableDates = selectedDay !== null
+    ? getNextDatesForDay(selectedDay, 12)
+        .filter((date) => !getShopClosureForDate(shopClosures, date))
+        .slice(0, 8)
+    : []
   const daySchedule =
     selectedDay !== null ? getScheduleForDay(barberSchedules, selectedDay) : undefined
 
@@ -315,7 +327,8 @@ export function PetBooking() {
           selectedServices,
           selectedDate,
           duration,
-          timeOff
+          timeOff,
+          shopClosures
         )
       : []
 
@@ -471,12 +484,16 @@ export function PetBooking() {
       const msg = bookingErrorMessage(err)
       setError(msg)
       setSubmitting(false)
-      if (/horário|reservado/i.test(msg) && shopId) {
+      if (/horário|reservado|fechado/i.test(msg) && shopId) {
         setSelectedTime(null)
         setStep(4)
         try {
-          const slots = await loadOccupiedSlots(shopId)
+          const [slots, closures] = await Promise.all([
+            loadOccupiedSlots(shopId),
+            loadPublicShopClosures(shopId),
+          ])
           setOccupiedSlots(slots)
+          setShopClosures(closures)
         } catch {
           /* already showing booking conflict */
         }
@@ -526,7 +543,8 @@ export function PetBooking() {
   if (!shop) return <p className="text-center text-ink-muted">Pet shop não encontrado.</p>
 
   const today = localDateIso()
-  const closedToday = isShopClosedOnDate(schedules, timeOff, barbers.map((item) => item.id), today)
+  const todayClosure = getShopClosureForDate(shopClosures, today)
+  const closedToday = isShopClosedOnDate(schedules, timeOff, barbers.map((item) => item.id), today, shopClosures)
 
   const steps: { n: Step; label: string }[] = [
     { n: 1, label: 'Telefone' },
@@ -553,8 +571,12 @@ export function PetBooking() {
 
       {closedToday && (
         <div role="status" className="mb-6 rounded-2xl border border-brass/35 bg-brass/10 px-5 py-4 text-center">
-          <p className="text-base font-semibold text-ink">Estamos fechados hoje. Volte amanhã!</p>
-          <p className="mt-1 text-sm text-ink-muted">Você ainda pode consultar e agendar os próximos dias disponíveis.</p>
+          <p className="text-base font-semibold text-ink">Estamos fechados hoje.</p>
+          <p className="mt-1 text-sm text-ink-muted">
+            {todayClosure
+              ? `${todayClosure.label}. Fechado até ${formatDate(todayClosure.ends_on)}. Consulte os próximos dias disponíveis.`
+              : 'Volte amanhã! Você ainda pode consultar os próximos dias disponíveis.'}
+          </p>
         </div>
       )}
 

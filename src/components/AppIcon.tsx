@@ -7,6 +7,7 @@ export type AppIconName =
   | 'bell'
   | 'briefcase'
   | 'car'
+  | 'calendar-off'
   | 'chart'
   | 'check'
   | 'clock'
@@ -44,6 +45,7 @@ const paths: Record<AppIconName, ReactNode> = {
   bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" /><path d="M10 21h4" /></>,
   briefcase: <><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18M10 12v2h4v-2" /></>,
   car: <><path d="m5 17-2-1v-4l2-1 2-4h10l2 4 2 1v4l-2 1" /><path d="M5 17h14M7 17v2M17 17v2M7 13h.01M17 13h.01" /></>,
+  'calendar-off': <><path d="M16 3v4M8 3v4M4 10h12M4 6h14a2 2 0 0 1 2 2v8M5 5l14 14M6 21h10a2 2 0 0 0 2-2" /></>,
   chart: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
   check: <path d="m5 12 4 4L19 6" />,
   clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,

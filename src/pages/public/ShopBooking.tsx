@@ -11,10 +11,12 @@ import {
   getNextDatesForDay,
   loadOccupiedSlots,
   loadPublicTimeOff,
+  loadPublicShopClosures,
   isShopClosedOnDate,
+  getShopClosureForDate,
   localDateIso,
 } from '../../lib/booking'
-import { formatPrice, formatDuration, formatPhone } from '../../lib/format'
+import { formatPrice, formatDuration, formatPhone, formatDate } from '../../lib/format'
 import {
   createPublicBooking,
   finalizePublicBooking,
@@ -31,6 +33,7 @@ import type {
   BookingConfirmationState,
   ShopPhoto,
   BarberTimeOff,
+  ShopClosure,
   ServiceBarber,
   ServiceCustomField,
   ServiceCustomFieldOption,
@@ -63,6 +66,7 @@ export function ShopBooking() {
   const [schedules, setSchedules] = useState<BarberSchedule[]>([])
   const [occupiedSlots, setOccupiedSlots] = useState<PublicBookingSlot[]>([])
   const [timeOff, setTimeOff] = useState<BarberTimeOff[]>([])
+  const [shopClosures, setShopClosures] = useState<ShopClosure[]>([])
   const [serviceBarbers, setServiceBarbers] = useState<ServiceBarber[]>([])
   const [customFields, setCustomFields] = useState<ServiceCustomField[]>([])
   const [customOptions, setCustomOptions] = useState<ServiceCustomFieldOption[]>([])
@@ -159,10 +163,12 @@ export function ShopBooking() {
 
       let slots: PublicBookingSlot[] = []
       let unavailable: BarberTimeOff[] = []
+      let closures: ShopClosure[] = []
       try {
-        ;[slots, unavailable] = await Promise.all([
+        ;[slots, unavailable, closures] = await Promise.all([
           loadOccupiedSlots(shopId!),
           loadPublicTimeOff(shopId!),
+          loadPublicShopClosures(shopId!),
         ])
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Não foi possível carregar a agenda.')
@@ -174,6 +180,7 @@ export function ShopBooking() {
       setSchedules(sched)
       setOccupiedSlots(slots)
       setTimeOff(unavailable)
+      setShopClosures(closures)
       setServiceBarbers((mappings as ServiceBarber[]) || [])
       setPhotos((ph as ShopPhoto[]) || [])
       setShopStats(stats)
@@ -185,10 +192,11 @@ export function ShopBooking() {
 
   useEffect(() => {
     if (!shopId || step !== 3) return
-    Promise.all([loadOccupiedSlots(shopId), loadPublicTimeOff(shopId)])
-      .then(([slots, unavailable]) => {
+    Promise.all([loadOccupiedSlots(shopId), loadPublicTimeOff(shopId), loadPublicShopClosures(shopId)])
+      .then(([slots, unavailable, closures]) => {
         setOccupiedSlots(slots)
         setTimeOff(unavailable)
+        setShopClosures(closures)
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : 'Não foi possível atualizar a agenda.')
@@ -240,7 +248,11 @@ export function ShopBooking() {
   const barberSchedules = schedules.filter((s) => s.barber_id === selectedBarberId)
   const activeDays = getActiveDays(barberSchedules)
 
-  const availableDates = selectedDay !== null ? getNextDatesForDay(selectedDay) : []
+  const availableDates = selectedDay !== null
+    ? getNextDatesForDay(selectedDay, 12)
+        .filter((date) => !getShopClosureForDate(shopClosures, date))
+        .slice(0, 8)
+    : []
 
   const daySchedule =
     selectedDay !== null ? getScheduleForDay(barberSchedules, selectedDay) : undefined
@@ -253,7 +265,8 @@ export function ShopBooking() {
           selectedServices,
           selectedDate,
           undefined,
-          timeOff
+          timeOff,
+          shopClosures
         )
       : []
 
@@ -341,12 +354,16 @@ export function ShopBooking() {
       const msg = bookingErrorMessage(err)
       setError(msg)
       setSubmitting(false)
-      if (/horário|reservado/i.test(msg) && shopId) {
+      if (/horário|reservado|fechado/i.test(msg) && shopId) {
         setSelectedTime(null)
         setStep(3)
         try {
-          const slots = await loadOccupiedSlots(shopId)
+          const [slots, closures] = await Promise.all([
+            loadOccupiedSlots(shopId),
+            loadPublicShopClosures(shopId),
+          ])
           setOccupiedSlots(slots)
+          setShopClosures(closures)
         } catch {
           /* already showing booking conflict */
         }
@@ -377,7 +394,8 @@ export function ShopBooking() {
   if (!shop) return <p className="text-center text-ink-muted">Estabelecimento não encontrado.</p>
 
   const today = localDateIso()
-  const closedToday = isShopClosedOnDate(schedules, timeOff, barbers.map((item) => item.id), today)
+  const todayClosure = getShopClosureForDate(shopClosures, today)
+  const closedToday = isShopClosedOnDate(schedules, timeOff, barbers.map((item) => item.id), today, shopClosures)
 
   const steps: { n: Step; label: string }[] = [
     { n: 1, label: 'Serviços' },
@@ -429,8 +447,12 @@ export function ShopBooking() {
         <BrandAccent className="mt-2 max-w-md" segment="barbershop" />
         {closedToday && (
           <div role="status" className="mt-5 rounded-2xl border border-brass/35 bg-brass/10 px-5 py-4 text-center">
-            <p className="text-base font-semibold text-ink">Estamos fechados hoje. Volte amanhã!</p>
-            <p className="mt-1 text-sm text-ink-muted">Você ainda pode consultar e agendar os próximos dias disponíveis.</p>
+            <p className="text-base font-semibold text-ink">Estamos fechados hoje.</p>
+            <p className="mt-1 text-sm text-ink-muted">
+              {todayClosure
+                ? `${todayClosure.label}. Fechado até ${formatDate(todayClosure.ends_on)}. Consulte os próximos dias disponíveis.`
+                : 'Volte amanhã! Você ainda pode consultar os próximos dias disponíveis.'}
+            </p>
           </div>
         )}
       </div>

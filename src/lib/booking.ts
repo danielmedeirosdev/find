@@ -1,6 +1,6 @@
 import { timeToMinutes, minutesToTime } from './format'
 import { supabase } from './supabase'
-import type { BarberSchedule, BarberTimeOff, PublicBookingSlot, Service } from './types'
+import type { BarberSchedule, BarberTimeOff, PublicBookingSlot, Service, ShopClosure } from './types'
 
 export function localDateIso(date = new Date()): string {
   const year = date.getFullYear()
@@ -56,6 +56,21 @@ export async function loadPublicTimeOff(shopId: string): Promise<BarberTimeOff[]
   return (data as BarberTimeOff[]) || []
 }
 
+export async function loadPublicShopClosures(shopId: string): Promise<ShopClosure[]> {
+  const today = localDateIso()
+  const { data, error } = await supabase
+    .from('shop_closures')
+    .select('id, shop_id, starts_on, ends_on, label')
+    .eq('shop_id', shopId)
+    .gte('ends_on', today)
+    .order('starts_on')
+
+  if (error) {
+    throw new Error('Não foi possível carregar os feriados e fechamentos. Atualize a página e tente novamente.')
+  }
+  return (data as ShopClosure[]) || []
+}
+
 
 const SLOT_INTERVAL = 15
 const DEFAULT_SLOT_DURATION = 30
@@ -97,13 +112,14 @@ export function getAvailableSlots(
   selectedServices: Service[],
   date: string,
   overrideDurationMinutes?: number,
-  timeOff: BarberTimeOff[] = []
+  timeOff: BarberTimeOff[] = [],
+  shopClosures: ShopClosure[] = []
 ): string[] {
   const totalDuration =
     overrideDurationMinutes != null && overrideDurationMinutes > 0
       ? overrideDurationMinutes
       : getTotalDuration(selectedServices)
-  if (totalDuration === 0) return []
+  if (totalDuration === 0 || getShopClosureForDate(shopClosures, date)) return []
 
   const daySlots = occupiedSlots.filter((s) => s.date === date)
   const workStart = timeToMinutes(schedule.start_time)
@@ -155,8 +171,10 @@ export function isShopClosedOnDate(
   schedules: BarberSchedule[],
   timeOff: BarberTimeOff[],
   barberIds: string[],
-  date: string
+  date: string,
+  shopClosures: ShopClosure[] = []
 ): boolean {
+  if (getShopClosureForDate(shopClosures, date)) return true
   const dayOfWeek = new Date(`${date}T12:00:00`).getDay()
   const activeProfessionals = new Set(
     schedules
@@ -175,4 +193,11 @@ export function isShopClosedOnDate(
         item.end_time === null
     )
   )
+}
+
+export function getShopClosureForDate(
+  shopClosures: ShopClosure[],
+  date: string
+): ShopClosure | undefined {
+  return shopClosures.find((item) => date >= item.starts_on && date <= item.ends_on)
 }
