@@ -16,7 +16,6 @@ import { CashFlowTab } from '../tabs/CashFlow'
 import { ReportsTab } from '../tabs/Reports'
 import { SubscriptionTab } from '../tabs/Subscription'
 import { ReferralTab } from '../tabs/Referral'
-import { UpdatesTab } from '../tabs/Updates'
 import type { ProfessionalTabGroup, ProfessionalTab } from './ProfessionalShell'
 
 const PetClinical = lazy(() =>
@@ -54,7 +53,6 @@ const PET_TAB_GROUPS: ProfessionalTabGroup[] = [
       { id: 'link', label: 'Link público', icon: 'link' },
       { id: 'referral', label: 'Indique e ganhe', icon: 'heart' },
       { id: 'subscription', label: 'Plano', icon: 'receipt' },
-      { id: 'updates', label: 'Novidades', icon: 'sparkles' },
     ],
   },
 ]
@@ -136,7 +134,6 @@ export function ProfessionalPet({
       ) : null}
       {activeTab === 'link' && <PetShopLink shop={shop} onUpdate={onUpdate} />}
       {activeTab === 'referral' && <ReferralTab shop={shop} onUpdate={onUpdate} />}
-      {activeTab === 'updates' && <UpdatesTab />}
       {activeTab === 'subscription' && (
         <SubscriptionTab
           shop={shop}

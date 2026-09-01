@@ -13,7 +13,6 @@ import { ReviewsTab } from '../tabs/Reviews'
 import { ShopLinkTab } from '../tabs/ShopLink'
 import { SubscriptionTab } from '../tabs/Subscription'
 import { ReferralTab } from '../tabs/Referral'
-import { UpdatesTab } from '../tabs/Updates'
 import type { ProfessionalTabGroup } from './ProfessionalShell'
 
 const BARBEARIA_TAB_GROUPS: ProfessionalTabGroup[] = [
@@ -42,7 +41,6 @@ const BARBEARIA_TAB_GROUPS: ProfessionalTabGroup[] = [
       { id: 'link', label: 'Link da Barbearia', icon: 'link' },
       { id: 'referral', label: 'Indique e ganhe', icon: 'heart' },
       { id: 'subscription', label: 'Assinatura', icon: 'receipt' },
-      { id: 'updates', label: 'Novidades', icon: 'sparkles' },
     ],
   },
 ]
@@ -98,7 +96,6 @@ export function ProfessionalBarbearia({
       {activeTab === 'reviews' && <ReviewsTab shopId={shop.id} segment="barbershop" />}
       {activeTab === 'link' && <ShopLinkTab shop={shop} onUpdate={onUpdate} />}
       {activeTab === 'referral' && <ReferralTab shop={shop} onUpdate={onUpdate} />}
-      {activeTab === 'updates' && <UpdatesTab />}
       {activeTab === 'subscription' && (
         <SubscriptionTab
           shop={shop}

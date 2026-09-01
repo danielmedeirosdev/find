@@ -29,6 +29,7 @@ export type AppIconName =
   | 'tag'
   | 'users'
   | 'wallet'
+  | 'x'
 
 interface Props extends SVGProps<SVGSVGElement> {
   name: AppIconName
@@ -64,6 +65,7 @@ const paths: Record<AppIconName, ReactNode> = {
   tag: <><path d="M20 13 13 20l-9-9V4h7z" /><circle cx="8" cy="8" r="1" /></>,
   users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" /></>,
   wallet: <><path d="M4 6h15a2 2 0 0 1 2 2v11H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14" /><path d="M16 11h5v5h-5a2.5 2.5 0 0 1 0-5" /></>,
+  x: <><path d="m6 6 12 12M18 6 6 18" /></>,
 }
 
 export function AppIcon({ name, size = 20, className = '', ...props }: Props) {

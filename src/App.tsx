@@ -15,7 +15,6 @@ import { ClientAuth } from './pages/public/ClientAuth'
 import { MyBookings } from './pages/public/MyBookings'
 import { PrivacyPolicy } from './pages/public/PrivacyPolicy'
 import { Faq } from './pages/public/Faq'
-import { Updates } from './pages/public/Updates'
 import { NotFound } from './pages/public/NotFound'
 import { AuthCallback } from './pages/AuthCallback'
 import { BarberAuth } from './pages/dashboard/BarberAuth'
@@ -45,7 +44,7 @@ export default function App() {
             <Route path="minhas-reservas" element={<MyBookings />} />
             <Route path="privacidade" element={<PrivacyPolicy />} />
             <Route path="faq" element={<Faq />} />
-            <Route path="novidades" element={<Updates />} />
+            <Route path="novidades" element={<Navigate to="/" replace />} />
             <Route path="*" element={<NotFound />} />
           </Route>
 

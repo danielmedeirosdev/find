@@ -191,6 +191,21 @@ html {
   border-color: color-mix(in srgb, var(--color-brass) 28%, transparent);
 }
 
+.updates-drawer {
+  animation: drawerEnter 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes drawerEnter {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 .platform-fade-delay-1 {
   animation-delay: 0.08s;
 }
@@ -213,6 +228,14 @@ html {
   .page-enter,
   .panel-enter {
     animation: none;
+  }
+
+  .updates-drawer {
+    animation: none;
+  }
+
+  .updates-unread-pulse {
+    animation: none !important;
   }
 
   .release-card,

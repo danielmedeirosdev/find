@@ -4,6 +4,7 @@ import { BrandAccent } from '../../../components/BrandAccent'
 import type { Shop, ShopSegment } from '../../../lib/types'
 import { getSegment } from '../../../lib/segments'
 import { AppIcon, type AppIconName } from '../../../components/AppIcon'
+import { UpdatesButton } from '../../../components/UpdatesButton'
 
 export interface ProfessionalTab {
   id: string
@@ -66,6 +67,7 @@ export function ProfessionalShell({
               {subtitle || meta.panelSubtitle}
             </p>
           </div>
+          <UpdatesButton variant="dashboard" className="sm:ml-auto" />
         </div>
 
         <BrandAccent className="mb-6 max-w-sm" height="h-1" segment={segment} />

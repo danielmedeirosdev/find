@@ -4,7 +4,7 @@ import { SegmentProvider } from '../contexts/SegmentContext'
 import { BrandAccent } from './BrandAccent'
 import { SetupBanner } from './SetupBanner'
 import { getSegmentFromPath } from '../lib/segments'
-import { AppIcon } from './AppIcon'
+import { UpdatesButton } from './UpdatesButton'
 
 export function PublicLayout() {
   const { user } = useAuth()
@@ -22,8 +22,7 @@ export function PublicLayout() {
     pathname.startsWith('/confirmacao') ||
     pathname.startsWith('/avaliar') ||
     pathname.startsWith('/privacidade') ||
-    pathname.startsWith('/faq') ||
-    pathname.startsWith('/novidades')
+    pathname.startsWith('/faq')
       ? 'platform'
       : 'barbershop')
   const isPet = segmentId === 'pet'
@@ -51,13 +50,7 @@ export function PublicLayout() {
                 Início
               </Link>
             )}
-            <Link
-              to="/novidades"
-              className="hidden items-center gap-1.5 text-ink-muted transition-colors hover:text-brass md:inline-flex"
-            >
-              <AppIcon name="sparkles" size={15} />
-              Novidades
-            </Link>
+            <UpdatesButton />
             {segmentMeta && !isShopList && (
               <Link
                 to={segmentMeta.path}
@@ -117,10 +110,6 @@ export function PublicLayout() {
             </Link>
             <Link to="/privacidade" className="transition-colors hover:text-brass">
               Privacidade
-            </Link>
-            <Link to="/novidades" className="inline-flex items-center gap-1.5 transition-colors hover:text-brass">
-              <AppIcon name="sparkles" size={14} />
-              Novidades
             </Link>
           </p>
         </footer>
