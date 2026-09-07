@@ -66,7 +66,10 @@ export async function loadPublicShopClosures(shopId: string): Promise<ShopClosur
     .order('starts_on')
 
   if (error) {
-    throw new Error('Não foi possível carregar os feriados e fechamentos. Atualize a página e tente novamente.')
+    // O banco continua impedindo reservas em dias fechados. Na página pública,
+    // uma falha isolada desta consulta não deve expor um erro técnico nem
+    // interromper as outras etapas do agendamento.
+    return []
   }
   return (data as ShopClosure[]) || []
 }
