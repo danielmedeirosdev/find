@@ -10,9 +10,7 @@ import {
   loadOccupiedSlots,
   loadPublicTimeOff,
   loadPublicShopClosures,
-  isShopClosedOnDate,
   getShopClosureForDate,
-  localDateIso,
 } from '../../lib/booking'
 import { getPetServicesDuration, getPetServicesPrice, petSizeLabel } from '../../lib/pet'
 import { applyWeekdayDiscount, customAnswersExtra, petTransportFee } from '../../lib/servicePricing'
@@ -24,7 +22,7 @@ import {
   rememberBookingPhone,
   upsertPetCustomer,
 } from '../../lib/secureBooking'
-import { formatDate, formatDuration, formatPhone, formatPrice } from '../../lib/format'
+import { formatDuration, formatPhone, formatPrice } from '../../lib/format'
 import { DefaultAvatar } from '../../components/MediaUI'
 import { BrandAccent } from '../../components/BrandAccent'
 import { BookingStepper } from '../../components/public/BookingStepper'
@@ -543,10 +541,6 @@ export function PetBooking() {
   if (loading) return <PageLoader label="Carregando agendamento" />
   if (!shop) return <p className="text-center text-ink-muted">Pet shop não encontrado.</p>
 
-  const today = localDateIso()
-  const todayClosure = getShopClosureForDate(shopClosures, today)
-  const closedToday = isShopClosedOnDate(schedules, timeOff, barbers.map((item) => item.id), today, shopClosures)
-
   const steps: { n: Step; label: string }[] = [
     { n: 1, label: 'Telefone' },
     { n: 2, label: 'Pet' },
@@ -569,17 +563,6 @@ export function PetBooking() {
           <BrandAccent className="mt-3 max-w-xs" height="h-1.5" segment="pet" />
         </div>
       </div>
-
-      {closedToday && (
-        <div role="status" className="mb-6 rounded-2xl border border-brass/35 bg-brass/10 px-5 py-4 text-center">
-          <p className="text-base font-semibold text-ink">Estamos fechados hoje.</p>
-          <p className="mt-1 text-sm text-ink-muted">
-            {todayClosure
-              ? `${todayClosure.label}. Fechado até ${formatDate(todayClosure.ends_on)}. Consulte os próximos dias disponíveis.`
-              : 'Volte amanhã! Você ainda pode consultar os próximos dias disponíveis.'}
-          </p>
-        </div>
-      )}
 
       <BookingStepper steps={steps} current={step} />
 

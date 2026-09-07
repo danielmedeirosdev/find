@@ -12,11 +12,9 @@ import {
   loadOccupiedSlots,
   loadPublicTimeOff,
   loadPublicShopClosures,
-  isShopClosedOnDate,
   getShopClosureForDate,
-  localDateIso,
 } from '../../lib/booking'
-import { formatPrice, formatDuration, formatPhone, formatDate } from '../../lib/format'
+import { formatPrice, formatDuration, formatPhone } from '../../lib/format'
 import {
   createPublicBooking,
   finalizePublicBooking,
@@ -393,10 +391,6 @@ export function ShopBooking() {
   if (loading) return <PageLoader label="Carregando agendamento" />
   if (!shop) return <p className="text-center text-ink-muted">Estabelecimento não encontrado.</p>
 
-  const today = localDateIso()
-  const todayClosure = getShopClosureForDate(shopClosures, today)
-  const closedToday = isShopClosedOnDate(schedules, timeOff, barbers.map((item) => item.id), today, shopClosures)
-
   const steps: { n: Step; label: string }[] = [
     { n: 1, label: 'Serviços' },
     { n: 2, label: 'Profissional' },
@@ -445,16 +439,6 @@ export function ShopBooking() {
           </div>
         )}
         <BrandAccent className="mt-2 max-w-md" segment="barbershop" />
-        {closedToday && (
-          <div role="status" className="mt-5 rounded-2xl border border-brass/35 bg-brass/10 px-5 py-4 text-center">
-            <p className="text-base font-semibold text-ink">Estamos fechados hoje.</p>
-            <p className="mt-1 text-sm text-ink-muted">
-              {todayClosure
-                ? `${todayClosure.label}. Fechado até ${formatDate(todayClosure.ends_on)}. Consulte os próximos dias disponíveis.`
-                : 'Volte amanhã! Você ainda pode consultar os próximos dias disponíveis.'}
-            </p>
-          </div>
-        )}
       </div>
 
       <BookingStepper steps={steps} current={step} />
