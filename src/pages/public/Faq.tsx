@@ -62,14 +62,11 @@ const GROUPS: FaqGroup[] = [
     items: [
       {
         q: 'Como marco um horário?',
-        text: 'Na página inicial escolha FIND BARBEARIA ou FIND PET, abra o estabelecimento, selecione serviço, profissional e um horário livre. Informe nome e WhatsApp para confirmar. O horário fica reservado na hora.',
+        text: 'Abra o link de agendamento divulgado pela sua barbearia ou pet shop no Instagram, WhatsApp ou Google. Selecione serviço, profissional e um horário livre. Informe nome e WhatsApp para confirmar. O horário fica reservado na hora.',
         a: (
           <p>
-            Na{' '}
-            <Link to="/" className="text-brass underline-offset-2 hover:underline">
-              página inicial
-            </Link>{' '}
-            escolha FIND BARBEARIA ou FIND PET, abra o estabelecimento, selecione serviço,
+            Abra o link de agendamento divulgado pela sua barbearia ou pet shop no Instagram,
+            WhatsApp ou Google. Selecione serviço,
             profissional e um horário livre. Informe nome e WhatsApp para confirmar. O horário fica
             reservado na hora.
           </p>

@@ -2,9 +2,11 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { formatDate, formatDuration, formatPrice, formatTime } from '../../lib/format'
 import { BrandAccent } from '../BrandAccent'
+import { publicBookingPathForSegment } from '../../lib/segments'
 
 export type ReceiptView = {
   isPet: boolean
+  shopId?: string
   shopName: string
   shopAddress?: string | null
   barberName?: string | null
@@ -51,7 +53,9 @@ export function ConfirmReceipt({
 }) {
   const total = view.quotedAmount ?? view.services.reduce((sum, service) => sum + Number(service.price), 0)
   const transportPricePending = Boolean(view.petTransportRequested) && Number(view.petTransportFee || 0) === 0
-  const listPath = view.isPet ? '/pet' : '/barbearia'
+  const shopPath = view.shopId
+    ? publicBookingPathForSegment(view.shopId, view.isPet ? 'pet' : 'barbershop')
+    : null
 
   return (
     <div className="mx-auto max-w-md">
@@ -144,9 +148,11 @@ export function ConfirmReceipt({
             Ver minhas reservas
           </Link>
         )}
-        <Link to={listPath} className="text-ink-muted hover:text-brass">
-          {view.isPet ? 'Voltar aos pet shops' : 'Voltar às barbearias'}
-        </Link>
+        {shopPath && (
+          <Link to={shopPath} className="text-ink-muted hover:text-brass">
+            Agendar novamente em {view.shopName}
+          </Link>
+        )}
       </div>
     </div>
   )

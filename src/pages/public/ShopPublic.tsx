@@ -12,7 +12,6 @@ import { getSegment, publicBookingPathForSegment } from '../../lib/segments'
 import { SegmentProvider } from '../../contexts/SegmentContext'
 import { DefaultAvatar, Skeleton } from '../../components/MediaUI'
 import { BrandAccent } from '../../components/BrandAccent'
-import { BackArrow } from '../../components/SegmentMark'
 import { RatingBadge } from '../../components/reviews/StarRating'
 import { ReviewsSection } from '../../components/reviews/ReviewsSection'
 import type {
@@ -97,13 +96,6 @@ export function ShopPublic() {
   return (
     <SegmentProvider segment={shop.segment}>
     <div className={`${isPet ? 'pet-hero-glow -mx-4 px-4 py-6 rounded-2xl' : ''} pb-24 sm:pb-0`}>
-      <Link
-        to={seg.path}
-        className="mb-5 inline-flex items-center text-xs font-semibold uppercase tracking-widest text-brass hover:underline"
-      >
-        <BackArrow className="h-2.5 w-2.5" />
-        {isPet ? 'Pet shops' : 'Barbearias'}
-      </Link>
       <header className="mb-8">
         <div className="flex flex-wrap items-start gap-4">
           {shop.logo_url ? (

@@ -503,6 +503,7 @@ export function PetBooking() {
     const petNames = selectedPets.map((p) => p.name).join(' · ')
 
     const confirmationState: BookingConfirmationState = {
+      shopId: shop.id,
       shopName: shop.name,
       shopAddress: shop.address,
       shopPhone: shop.phone,

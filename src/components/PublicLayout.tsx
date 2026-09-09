@@ -49,14 +49,6 @@ export function PublicLayout() {
                 Início
               </Link>
             )}
-            {segmentMeta && !isShopList && (
-              <Link
-                to={segmentMeta.path}
-                className="hidden text-ink-muted transition-colors hover:text-brass sm:inline"
-              >
-                {isPet ? 'Pet shops' : 'Barbearias'}
-              </Link>
-            )}
             {user ? (
               <Link
                 to="/minhas-reservas"

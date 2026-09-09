@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { formatPrice, formatDate, formatTime, bookingStatusLabel, paymentMethodLabel } from '../../lib/format'
 import { petSizeLabel } from '../../lib/pet'
@@ -123,16 +123,9 @@ export function MyBookings() {
         <div className="mx-auto max-w-lg rounded-2xl border border-ink/10 bg-white px-6 py-10 text-center">
           <p className="font-display text-2xl text-ink">Nenhuma reserva ainda</p>
           <p className="mt-2 text-sm text-ink-muted">
-            Escolha um estabelecimento e marque o horário em poucos passos.
+            Para marcar um horário, abra o link de agendamento enviado pela sua barbearia ou pet shop.
+            Você também pode encontrá-lo no perfil do estabelecimento.
           </p>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <Link to="/barbearia" className="btn-primary">
-              Barbearias
-            </Link>
-            <Link to="/pet" className="btn-secondary">
-              Pet shops
-            </Link>
-          </div>
         </div>
       ) : (
         <div className="space-y-8">

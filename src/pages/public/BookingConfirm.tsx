@@ -12,6 +12,7 @@ function viewFromState(state: BookingConfirmationState): ReceiptView {
   const isPet = Boolean(state.petName)
   return {
     isPet,
+    shopId: state.shopId,
     shopName: state.shopName,
     shopAddress: state.shopAddress,
     barberName: state.barberName,
@@ -42,6 +43,7 @@ function viewFromBooking(booking: BookingWithDetails): ReceiptView {
   const isPet = booking.shops?.segment === 'pet' || Boolean(booking.pets?.name)
   return {
     isPet,
+    shopId: booking.shop_id,
     shopName: booking.shops?.name || 'Estabelecimento',
     shopAddress: booking.shops?.address,
     barberName: booking.barbers?.name,
