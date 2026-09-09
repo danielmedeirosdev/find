@@ -3,9 +3,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { ReferralCapture } from './components/ReferralCapture'
 import { PublicLayout } from './components/PublicLayout'
 import { DashboardLayout } from './components/DashboardLayout'
-import { PlatformHome } from './pages/public/PlatformHome'
 import { MarketingLanding } from './pages/public/MarketingLanding'
-import { ShopList } from './pages/public/ShopList'
 import { ShopBooking } from './pages/public/ShopBooking'
 import { ShopPublic } from './pages/public/ShopPublic'
 import { PetBooking } from './pages/public/PetBooking'
@@ -26,14 +24,14 @@ export default function App() {
       <BrowserRouter>
         <ReferralCapture />
         <Routes>
+          <Route index element={<MarketingLanding />} />
           <Route path="apresentacao" element={<MarketingLanding />} />
+          <Route path="barbearia" element={<MarketingLanding segment="barbershop" />} />
+          <Route path="pet" element={<MarketingLanding segment="pet" />} />
           <Route path="solucoes" element={<Navigate to="/" replace />} />
 
           <Route element={<PublicLayout />}>
-            <Route index element={<PlatformHome />} />
-            <Route path="barbearia" element={<ShopList segment="barbershop" />} />
             <Route path="barbearia/:shopId" element={<ShopBooking />} />
-            <Route path="pet" element={<ShopList segment="pet" />} />
             <Route path="pet/:shopId" element={<PetBooking />} />
             <Route path="b/:slug" element={<ShopPublic />} />
             <Route path="confirmacao/:bookingId" element={<BookingConfirm />} />

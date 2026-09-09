@@ -321,6 +321,7 @@ export interface PublicBookingSlot {
 }
 
 export interface BookingConfirmationState {
+  shopId?: string
   shopName: string
   shopAddress: string | null
   shopPhone: string | null

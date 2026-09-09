@@ -370,6 +370,7 @@ export function ShopBooking() {
     }
 
     const confirmationState: BookingConfirmationState = {
+      shopId: shop.id,
       shopName: shop.name,
       shopAddress: shop.address,
       shopPhone: shop.phone,
