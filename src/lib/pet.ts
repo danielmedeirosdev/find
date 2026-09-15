@@ -1,3 +1,4 @@
+import { PET_SIZES } from './types'
 import type { PetSize, Service, ServiceSizeRule } from './types'
 import { getTotalDuration, getTotalPrice } from './booking'
 
@@ -40,27 +41,24 @@ export function getPetServicesPrice(
   }, 0)
 }
 
-export function defaultSizeRules(serviceId: string, baseMinutes: number, basePrice: number): Omit<ServiceSizeRule, 'id'>[] {
-  return [
-    {
-      service_id: serviceId,
-      size: 'pequeno',
-      duration_minutes: Math.max(30, Math.round(baseMinutes * 0.75)),
-      price: basePrice,
-    },
-    {
-      service_id: serviceId,
-      size: 'medio',
-      duration_minutes: baseMinutes,
-      price: basePrice,
-    },
-    {
-      service_id: serviceId,
-      size: 'grande',
-      duration_minutes: Math.round(baseMinutes * 1.5),
-      price: Math.round(basePrice * 1.25 * 100) / 100,
-    },
-  ]
+export { getTotalDuration, getTotalPrice }
+
+export interface PetDurationDraft {
+  mode: 'single' | 'size'
+  minutes: string
+  sizes: Partial<Record<PetSize, string>>
 }
 
-export { getTotalDuration, getTotalPrice }
+export function durationPayload(draft: PetDurationDraft) {
+  const valid = (value: string | undefined) => Boolean(value?.trim()) && Number.isInteger(Number(value)) && Number(value) >= 15 && Number(value) <= 720
+  if (draft.mode === 'single') {
+    if (!valid(draft.minutes)) throw new Error('Informe uma duração entre 15 e 720 minutos.')
+    return { p_duration_minutes: Number(draft.minutes), p_size_durations: null }
+  }
+  if (PET_SIZES.some(({ value }) => !valid(draft.sizes[value]))) throw new Error('Preencha o tempo de cada porte, entre 15 e 720 minutos.')
+  return {
+    // Complete rules override this compatibility value for every supported size.
+    p_duration_minutes: Number(draft.sizes[PET_SIZES[0].value]),
+    p_size_durations: Object.fromEntries(PET_SIZES.map(({ value }) => [value, Number(draft.sizes[value])])),
+  }
+}
