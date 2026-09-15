@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../../../lib/supabase'
 import { formatPrice, formatDuration } from '../../../../lib/format'
-import { defaultSizeRules } from '../../../../lib/pet'
+import { PetDurationFields } from '../../../../components/PetDurationFields'
+import { durationPayload, type PetDurationDraft } from '../../../../lib/pet'
 import { FieldHint, FieldLabel } from '../../../../components/FormHints'
 import { ServiceProfessionalPicker } from '../../../../components/ServiceProfessionalPicker'
 import { ServiceAdvancedSettings } from '../../../../components/ServiceAdvancedSettings'
@@ -25,7 +26,10 @@ export function PetServices({ shopId }: Props) {
   const [transportNotice, setTransportNotice] = useState('')
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
-  const [duration, setDuration] = useState('60')
+  const [durationDraft, setDurationDraft] = useState<PetDurationDraft>({ mode: 'single', minutes: '', sizes: {} })
+  const [editDuration, setEditDuration] = useState<PetDurationDraft>({ mode: 'single', minutes: '', sizes: {} })
+  const [serviceError, setServiceError] = useState('')
+  const [serviceSaving, setServiceSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
 
@@ -61,23 +65,24 @@ export function PetServices({ shopId }: Props) {
   }, [load])
 
   const addService = async () => {
-    if (!name.trim() || !price) return
-    const basePrice = parseFloat(price.replace(',', '.'))
-    const baseDuration = parseInt(duration, 10) || 60
-    const { data, error } = await supabase
-      .from('services')
-      .insert({
-        shop_id: shopId,
-        name: name.trim(),
-        price: basePrice,
-        duration_minutes: baseDuration,
-      })
-      .select('*')
-      .single()
-
-    if (error || !data) return
-
-    await supabase.from('service_size_rules').insert(defaultSizeRules(data.id, baseDuration, basePrice))
+    setServiceError('')
+    if (serviceSaving) return
+    const basePrice = Number(price.replace(',', '.'))
+    if (!name.trim() || !price.trim() || !Number.isFinite(basePrice) || basePrice < 0) {
+      setServiceError('Informe o nome e o preço do serviço.')
+      return
+    }
+    let payload
+    try { payload = durationPayload(durationDraft) } catch (error) {
+      setServiceError((error as Error).message); return
+    }
+    setServiceSaving(true)
+    const { data: id, error } = await supabase.rpc('save_pet_service_duration', {
+      p_shop_id: shopId, p_service_id: null, p_name: name.trim(), p_price: basePrice, ...payload,
+    })
+    setServiceSaving(false)
+    if (error || !id) { setServiceError(userFacingError(error, 'Não foi possível salvar o serviço.')); return }
+    const data = { id }
 
     const enabledTransport = transportSettings.filter((item) => item.enabled)
     if (enabledTransport.length) {
@@ -92,7 +97,7 @@ export function PetServices({ shopId }: Props) {
 
     setName('')
     setPrice('')
-    setDuration('60')
+    setDurationDraft({ mode: 'single', minutes: '', sizes: {} })
     load()
   }
 
@@ -102,29 +107,42 @@ export function PetServices({ shopId }: Props) {
     load()
   }
 
-  const updateRule = async (
-    serviceId: string,
-    size: PetSize,
-    field: 'duration_minutes' | 'price',
-    value: string
-  ) => {
-    const num = parseFloat(value.replace(',', '.'))
-    if (isNaN(num) || num <= 0) return
-    const existing = rules.find((r) => r.service_id === serviceId && r.size === size)
-    if (existing) {
-      await supabase
-        .from('service_size_rules')
-        .update({ [field]: num })
-        .eq('id', existing.id)
-    } else {
-      await supabase.from('service_size_rules').insert({
-        service_id: serviceId,
-        size,
-        duration_minutes: field === 'duration_minutes' ? num : 60,
-        price: field === 'price' ? num : null,
-      })
+  const saveDuration = async (serviceId: string) => {
+    setServiceError('')
+    let payload
+    try { payload = durationPayload(editDuration) } catch (error) {
+      setServiceError((error as Error).message); return
     }
-    load()
+    setServiceSaving(true)
+    const { error } = await supabase.rpc('save_pet_service_duration', {
+      p_shop_id: shopId, p_service_id: serviceId, p_name: null, p_price: null, ...payload,
+    })
+    setServiceSaving(false)
+    if (error) { setServiceError(userFacingError(error, 'Não foi possível salvar a duração.')); return }
+    await load()
+    setEditingId(null)
+  }
+
+  const editService = (service: Service) => {
+    const ownRules = rules.filter((rule) => rule.service_id === service.id)
+    setServiceError('')
+    setEditDuration({
+      mode: ownRules.some((rule) => rule.duration_minutes !== service.duration_minutes) ? 'size' : 'single',
+      minutes: String(service.duration_minutes),
+      sizes: Object.fromEntries(ownRules.map((rule) => [rule.size, String(rule.duration_minutes)])),
+    })
+    setEditingId(editingId === service.id ? null : service.id)
+  }
+
+  const updatePrice = async (service: Service, size: PetSize, value: string) => {
+    const num = value.trim() ? Number(value.replace(',', '.')) : null
+    if (num !== null && (!Number.isFinite(num) || num < 0)) { setServiceError('Informe um preço válido.'); return }
+    const existing = rules.find((r) => r.service_id === service.id && r.size === size)
+    const result = existing
+      ? await supabase.from('service_size_rules').update({ price: num }).eq('id', existing.id)
+      : await supabase.from('service_size_rules').insert({ service_id: service.id, size, duration_minutes: service.duration_minutes, price: num })
+    if (result.error) setServiceError(userFacingError(result.error, 'Não foi possível salvar o preço.'))
+    else await load()
   }
 
   const saveShopTransport = async (enabled: boolean, pricingMode = transportPricingMode) => {
@@ -261,27 +279,21 @@ export function PetServices({ shopId }: Props) {
           />
           <FieldHint>Usado como base; ajuste por porte abaixo.</FieldHint>
         </div>
-        <div>
-          <FieldLabel>Duração base (min)</FieldLabel>
-          <input
-            type="number"
-            min="15"
-            step="15"
-            value={duration}
-            onChange={(e) => setDuration(e.target.value)}
-            placeholder="Ex: 60"
-            className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 font-mono text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
-          />
+        <div className="sm:col-span-4">
+          <PetDurationFields value={durationDraft} onChange={setDurationDraft} disabled={serviceSaving} />
         </div>
         <div className="flex items-end">
           <button
             onClick={addService}
+            disabled={serviceSaving}
             className="w-full rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal"
           >
             Adicionar
           </button>
         </div>
       </div>
+
+      {serviceError && <InlineError message={serviceError} />}
 
       {services.length === 0 ? (
         <p className="text-charcoal-muted">Nenhum serviço cadastrado ainda.</p>
@@ -301,7 +313,7 @@ export function PetServices({ shopId }: Props) {
                 </div>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setEditingId(editingId === s.id ? null : s.id)}
+                    onClick={() => editService(s)}
                     className="text-sm text-brass"
                   >
                     {editingId === s.id ? 'Fechar' : 'Configurar serviço'}
@@ -318,15 +330,20 @@ export function PetServices({ shopId }: Props) {
               {editingId === s.id && (
                 <div className="mt-4 space-y-5 border-t border-charcoal-light pt-4">
                   <div>
+                    <PetDurationFields value={editDuration} onChange={setEditDuration} disabled={serviceSaving} />
+                    <button type="button" disabled={serviceSaving} onClick={() => saveDuration(s.id)} className="mt-3 min-h-11 rounded-lg bg-brass px-4 text-sm font-semibold text-charcoal">{serviceSaving ? 'Salvando...' : 'Salvar duração'}</button>
+                  </div>
+                  <div>
                     <ServiceProfessionalPicker shopId={shopId} serviceId={s.id} />
                   </div>
 
                   <div className="border-t border-charcoal-light pt-5">
+                    <p className="mb-3 text-xs text-charcoal-muted">Pré-triagem opcional: escolha abaixo o que sua equipe precisa saber, como pelagem e presença de nós. Nome do tutor, pet, raça, porte e serviço já fazem parte do agendamento; não é preciso perguntar novamente.</p>
                     <ServiceAdvancedSettings shopId={shopId} serviceId={s.id} />
                   </div>
 
                   <div>
-                    <p className="mb-3 text-sm font-semibold text-white">Preço e duração por porte</p>
+                    <p className="mb-3 text-sm font-semibold text-white">Preço por porte (opcional)</p>
                     <div className="grid gap-3 sm:grid-cols-3">
                     {PET_SIZES.map(({ value, label }) => {
                     const rule = rules.find((r) => r.service_id === s.id && r.size === value)
@@ -334,24 +351,11 @@ export function PetServices({ shopId }: Props) {
                       <div key={value} className="rounded bg-charcoal-light/30 p-3 space-y-2">
                         <p className="text-sm text-brass font-medium">{label}</p>
                         <label className="block text-xs text-charcoal-muted">
-                          Minutos
-                          <input
-                            type="number"
-                            min="15"
-                            step="15"
-                            defaultValue={rule?.duration_minutes ?? s.duration_minutes}
-                            onBlur={(e) =>
-                              updateRule(s.id, value, 'duration_minutes', e.target.value)
-                            }
-                            className="mt-1 w-full rounded border border-charcoal-light bg-charcoal px-2 py-1 font-mono text-sm text-white"
-                          />
-                        </label>
-                        <label className="block text-xs text-charcoal-muted">
                           Preço (opcional)
                           <input
                             type="text"
                             defaultValue={rule?.price ?? s.price}
-                            onBlur={(e) => updateRule(s.id, value, 'price', e.target.value)}
+                            onBlur={(e) => updatePrice(s, value, e.target.value)}
                             className="mt-1 w-full rounded border border-charcoal-light bg-charcoal px-2 py-1 font-mono text-sm text-white"
                           />
                         </label>
