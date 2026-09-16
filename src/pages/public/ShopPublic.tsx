@@ -95,7 +95,7 @@ export function ShopPublic() {
 
   return (
     <SegmentProvider segment={shop.segment}>
-    <div className={`${isPet ? 'pet-hero-glow -mx-4 px-4 py-6 rounded-2xl' : ''} pb-24 sm:pb-0`}>
+    <div className={isPet ? 'pet-hero-glow -mx-4 px-4 py-6 rounded-2xl' : ''}>
       <header className="mb-8">
         <div className="flex flex-wrap items-start gap-4">
           {shop.logo_url ? (
@@ -251,9 +251,6 @@ export function ShopPublic() {
               </div>
             ))}
           </div>
-          <Link to={bookPath} className="btn-primary mt-6 inline-flex">
-            Agendar agora
-          </Link>
         </section>
       )}
 
@@ -264,11 +261,6 @@ export function ShopPublic() {
         className="mb-10"
       />
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-paper-dark bg-paper/95 p-3 backdrop-blur sm:hidden">
-        <Link to={bookPath} className="btn-primary flex w-full justify-center">
-          Agendar horário
-        </Link>
-      </div>
     </div>
     </SegmentProvider>
   )
