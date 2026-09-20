@@ -189,6 +189,24 @@ export function PetsTab({ shopId }: Props) {
     load()
   }
 
+  const updatePetSex = async (pet: Pet, value: '' | 'macho' | 'femea') => {
+    const { error } = await supabase
+      .from('pets')
+      .update({ sex: value || null })
+      .eq('id', pet.id)
+      .eq('shop_id', shopId)
+
+    if (error) {
+      setToast(error.message)
+      return
+    }
+
+    const updated = { ...pet, sex: value || null }
+    setSelected(updated)
+    setPets((current) => current.map((item) => (item.id === pet.id ? updated : item)))
+    setToast('Sexo do pet atualizado.')
+  }
+
   const updateReturnPlan = async (pet: Pet, rawValue: string) => {
     const value = rawValue.trim() ? Number(rawValue) : null
     if (value !== null && (!Number.isInteger(value) || value < 1 || value > 730)) {
@@ -651,14 +669,28 @@ export function PetsTab({ shopId }: Props) {
                     <p className="mt-1 font-medium text-white">
                       {selected.breed || selected.species} · {petSizeLabel(selected.size)}
                     </p>
-                    <p className="mt-0.5 text-xs text-charcoal-muted">
-                      {selected.sex
-                        ? selected.sex === 'macho'
-                          ? 'Macho'
-                          : 'Fêmea'
-                        : 'Sexo não informado'}
-                      {selected.weight_kg ? ` · ${selected.weight_kg} kg` : ''}
-                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <select
+                        value={selected.sex || ''}
+                        onChange={(event) =>
+                          updatePetSex(
+                            selected,
+                            event.target.value as '' | 'macho' | 'femea',
+                          )
+                        }
+                        aria-label="Sexo do pet"
+                        className="rounded-lg border border-charcoal-light bg-charcoal px-2.5 py-1.5 text-xs text-white focus:border-brass focus:outline-none"
+                      >
+                        <option value="">Sexo</option>
+                        <option value="macho">Macho</option>
+                        <option value="femea">Fêmea</option>
+                      </select>
+                      {selected.weight_kg && (
+                        <span className="text-xs text-charcoal-muted">
+                          {selected.weight_kg} kg
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
