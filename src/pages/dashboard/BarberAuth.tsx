@@ -16,6 +16,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext'
 import type { ShopSegment } from '../../lib/types'
 import { readStoredReferralCode } from '../../lib/referral'
+import { trackSignUp } from '../../lib/analytics'
 
 export function BarberAuth() {
   const navigate = useNavigate()
@@ -76,6 +77,9 @@ export function BarberAuth() {
         shopName.trim() || defaultShopName,
         segment
       )
+      if (mode === 'signup' && result.createdBusiness) {
+        trackSignUp('google')
+      }
       navigate(result.redirectTo)
     } catch (err) {
       setError(authErrorMessage(err))
@@ -128,6 +132,8 @@ export function BarberAuth() {
           setLoading(false)
           return
         }
+
+        trackSignUp('email')
 
         try {
           await ensureAuthSession(email, password)
