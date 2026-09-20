@@ -114,14 +114,22 @@ export async function finalizeOAuthLogin(roleHint?: string | null) {
   })
 
   if (role === 'barber') {
-    await ensureBarberShop(user.id, shopName, segment)
+    const shop = await ensureBarberShop(user.id, shopName, segment)
     clearOAuthIntent()
-    return { role, redirectTo: '/painel/dashboard' as const }
+    return {
+      role,
+      redirectTo: '/painel/dashboard' as const,
+      createdBusiness: shop.created,
+    }
   }
 
   await ensureClientProfile(user.id, displayName)
   clearOAuthIntent()
-  return { role, redirectTo: '/minhas-reservas' as const }
+  return {
+    role,
+    redirectTo: '/minhas-reservas' as const,
+    createdBusiness: false,
+  }
 }
 
 /** Completa login a partir do credential (JWT) do botão oficial Google. */
