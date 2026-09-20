@@ -13,6 +13,8 @@ interface Props {
   shopId: string
 }
 
+type PetDetailTab = 'history' | 'services' | 'data'
+
 export function PetsTab({ shopId }: Props) {
   const [pets, setPets] = useState<Pet[]>([])
   const [customers, setCustomers] = useState<ShopCustomer[]>([])
@@ -40,6 +42,7 @@ export function PetsTab({ shopId }: Props) {
   const [specialNeeds, setSpecialNeeds] = useState('')
   const [recommendedFrequencyDays, setRecommendedFrequencyDays] = useState('')
   const [history, setHistory] = useState<BookingWithDetails[]>([])
+  const [detailTab, setDetailTab] = useState<PetDetailTab>('history')
 
   const load = useCallback(async () => {
     const [{ data: p }, { data: c }] = await Promise.all([
@@ -425,7 +428,10 @@ export function PetsTab({ shopId }: Props) {
               <button
                 key={pet.id}
                 type="button"
-                onClick={() => setSelected(pet)}
+                onClick={() => {
+                  setSelected(pet)
+                  setDetailTab('history')
+                }}
                 className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
                   selected?.id === pet.id
                     ? 'border-brass bg-brass/10'
@@ -484,84 +490,226 @@ export function PetsTab({ shopId }: Props) {
                 </div>
               )}
             </div>
-            <div className="space-y-2 text-sm text-left">
-              <p className="text-charcoal-muted">Responsável</p>
-              <p className="text-white">
-                {selected.shop_customers?.name}
-                <br />
-                <span className="text-charcoal-muted">{selected.shop_customers?.phone}</span>
-              </p>
-              {(selected.behavior || selected.notes) && (
-                <>
-                  <p className="text-charcoal-muted pt-2">Observações</p>
-                  <p className="text-white">{selected.behavior || selected.notes}</p>
-                </>
-              )}
-              {selected.allergies && (
-                <>
-                  <p className="text-charcoal-muted pt-2">Alergias</p>
-                  <p className="text-white">{selected.allergies}</p>
-                </>
-              )}
-              {(selected.weight_kg || selected.birth_date || selected.special_needs) && (
-                <>
-                  <p className="text-charcoal-muted pt-2">Dados</p>
-                  <p className="text-white text-sm">
-                    {selected.weight_kg ? `${selected.weight_kg} kg` : null}
-                    {selected.weight_kg && selected.birth_date ? ' · ' : ''}
-                    {selected.birth_date ? `Nasc. ${formatDate(selected.birth_date)}` : null}
-                    {selected.special_needs && (
-                      <span className="block mt-1">{selected.special_needs}</span>
-                    )}
+            <div className="mb-4 grid grid-cols-3 rounded-xl border border-charcoal-light bg-charcoal-light/20 p-1">
+              {([
+                ['history', 'Histórico'],
+                ['services', 'Serviços'],
+                ['data', 'Dados'],
+              ] as const).map(([tab, label]) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setDetailTab(tab)}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    detailTab === tab
+                      ? 'bg-brass text-charcoal'
+                      : 'text-charcoal-muted hover:text-white'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {detailTab === 'history' && (
+              <div className="space-y-3 text-left">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-[0.16em] text-charcoal-muted">
+                    Histórico do pet
                   </p>
-                </>
-              )}
-              <div className="pt-3">
-                <FieldLabel>Plano de retorno</FieldLabel>
-                <input
-                  key={`${selected.id}-${selected.recommended_frequency_days || ''}`}
-                  type="number"
-                  min="1"
-                  max="730"
-                  defaultValue={selected.recommended_frequency_days || ''}
-                  onBlur={(event) => updateReturnPlan(selected, event.target.value)}
-                  placeholder="Frequência em dias"
-                  className="w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2 text-white focus:border-brass focus:outline-none"
-                />
-                <p className="mt-2 text-xs text-charcoal-muted">
-                  {selected.last_visit
-                    ? `Última visita: ${formatDate(selected.last_visit)}`
-                    : 'A última visita será registrada ao concluir um atendimento.'}
-                  {selected.next_recommended_visit
-                    ? ` · Próximo retorno: ${formatDate(selected.next_recommended_visit)}`
-                    : ''}
-                </p>
+                  <p className="mt-1 text-sm text-charcoal-muted">
+                    Atendimentos registrados para {selected.name}.
+                  </p>
+                </div>
+                {history.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-charcoal-light p-4">
+                    <p className="text-sm text-charcoal-muted">Sem atendimentos registrados.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {history.map((b) => {
+                      const services = (b.booking_services || []).map((bs) => bs.services.name)
+                      const isNext =
+                        (b.status === 'scheduled' || b.status === 'confirmed') &&
+                        b.date >= new Date().toISOString().slice(0, 10)
+                      return (
+                        <div
+                          key={b.id}
+                          className="rounded-xl border border-charcoal-light bg-charcoal-light/20 p-3"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="font-medium text-white">
+                                {formatDate(b.date)} · {formatTime(b.time)}
+                              </p>
+                              <p className="mt-1 text-sm text-charcoal-muted">
+                                {services.join(' · ') || 'Serviço não informado'}
+                              </p>
+                            </div>
+                            <span className="shrink-0 rounded-full border border-charcoal-light px-2 py-1 text-[11px] text-charcoal-muted">
+                              {isNext ? 'Próximo' : b.status || 'scheduled'}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
-              <p className="text-charcoal-muted pt-3">Histórico</p>
-              {history.length === 0 ? (
-                <p className="text-sm text-charcoal-muted">Sem atendimentos registrados.</p>
-              ) : (
-                <div className="space-y-2">
-                  {history.map((b) => {
-                    const services = (b.booking_services || []).map((bs) => bs.services.name)
-                    const isNext =
-                      (b.status === 'scheduled' || b.status === 'confirmed') &&
-                      b.date >= new Date().toISOString().slice(0, 10)
+            )}
+
+            {detailTab === 'services' && (
+              <div className="space-y-3 text-left">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-[0.16em] text-charcoal-muted">
+                    Serviços do pet
+                  </p>
+                  <p className="mt-1 text-sm text-charcoal-muted">
+                    Uma visão rápida do que já foi registrado nos atendimentos.
+                  </p>
+                </div>
+                {(() => {
+                  const serviceStats = new Map<string, { count: number; lastDate: string }>()
+                  history.forEach((booking) => {
+                    ;(booking.booking_services || []).forEach((item) => {
+                      const serviceName = item.services.name
+                      const current = serviceStats.get(serviceName)
+                      serviceStats.set(serviceName, {
+                        count: (current?.count || 0) + 1,
+                        lastDate:
+                          !current || booking.date > current.lastDate
+                            ? booking.date
+                            : current.lastDate,
+                      })
+                    })
+                  })
+                  const services = Array.from(serviceStats.entries()).sort(
+                    (a, b) => b[1].count - a[1].count,
+                  )
+
+                  if (services.length === 0) {
                     return (
-                      <div key={b.id} className="rounded-lg bg-charcoal-light/30 p-2 text-sm">
-                        <p className="text-white">
-                          {formatDate(b.date)} · {formatTime(b.time)}
-                          {isNext ? ' · próximo' : ''}
-                        </p>
-                        <p className="text-charcoal-muted">
-                          {services.join(' · ') || 'Serviço'} · {b.status || 'scheduled'}
+                      <div className="rounded-xl border border-dashed border-charcoal-light p-4">
+                        <p className="text-sm text-charcoal-muted">
+                          Nenhum serviço registrado para este pet ainda.
                         </p>
                       </div>
                     )
-                  })}
+                  }
+
+                  return (
+                    <div className="space-y-2">
+                      {services.map(([serviceName, stat]) => (
+                        <div
+                          key={serviceName}
+                          className="flex items-center justify-between gap-3 rounded-xl border border-charcoal-light bg-charcoal-light/20 p-3"
+                        >
+                          <div>
+                            <p className="font-medium text-white">{serviceName}</p>
+                            <p className="mt-1 text-xs text-charcoal-muted">
+                              Último registro: {formatDate(stat.lastDate)}
+                            </p>
+                          </div>
+                          <span className="rounded-full bg-brass/10 px-2.5 py-1 text-xs font-medium text-brass">
+                            {stat.count}x
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
+
+            {detailTab === 'data' && (
+              <div className="space-y-4 text-sm text-left">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl border border-charcoal-light bg-charcoal-light/20 p-3">
+                    <p className="text-xs text-charcoal-muted">Responsável</p>
+                    <p className="mt-1 font-medium text-white">
+                      {selected.shop_customers?.name || 'Não informado'}
+                    </p>
+                    {selected.shop_customers?.phone && (
+                      <p className="mt-0.5 text-xs text-charcoal-muted">
+                        {selected.shop_customers.phone}
+                      </p>
+                    )}
+                  </div>
+                  <div className="rounded-xl border border-charcoal-light bg-charcoal-light/20 p-3">
+                    <p className="text-xs text-charcoal-muted">Perfil</p>
+                    <p className="mt-1 font-medium text-white">
+                      {selected.breed || selected.species} · {petSizeLabel(selected.size)}
+                    </p>
+                    <p className="mt-0.5 text-xs text-charcoal-muted">
+                      {selected.sex
+                        ? selected.sex === 'macho'
+                          ? 'Macho'
+                          : 'Fêmea'
+                        : 'Sexo não informado'}
+                      {selected.weight_kg ? ` · ${selected.weight_kg} kg` : ''}
+                    </p>
+                  </div>
                 </div>
-              )}
-            </div>
+
+                {(selected.behavior || selected.notes || selected.allergies || selected.preferences || selected.special_needs) && (
+                  <div className="space-y-3 rounded-xl border border-charcoal-light p-4">
+                    {(selected.behavior || selected.notes) && (
+                      <div>
+                        <p className="text-xs text-charcoal-muted">Comportamento / observações</p>
+                        <p className="mt-1 text-white">{selected.behavior || selected.notes}</p>
+                      </div>
+                    )}
+                    {selected.allergies && (
+                      <div>
+                        <p className="text-xs text-charcoal-muted">Alergias</p>
+                        <p className="mt-1 text-white">{selected.allergies}</p>
+                      </div>
+                    )}
+                    {selected.preferences && (
+                      <div>
+                        <p className="text-xs text-charcoal-muted">Preferências de banho/tosa</p>
+                        <p className="mt-1 text-white">{selected.preferences}</p>
+                      </div>
+                    )}
+                    {selected.special_needs && (
+                      <div>
+                        <p className="text-xs text-charcoal-muted">Necessidades especiais</p>
+                        <p className="mt-1 text-white">{selected.special_needs}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {selected.birth_date && (
+                  <div className="rounded-xl border border-charcoal-light bg-charcoal-light/20 p-3">
+                    <p className="text-xs text-charcoal-muted">Nascimento</p>
+                    <p className="mt-1 text-white">{formatDate(selected.birth_date)}</p>
+                  </div>
+                )}
+
+                <div className="rounded-xl border border-charcoal-light p-4">
+                  <FieldLabel>Plano de retorno</FieldLabel>
+                  <input
+                    key={`${selected.id}-${selected.recommended_frequency_days || ''}`}
+                    type="number"
+                    min="1"
+                    max="730"
+                    defaultValue={selected.recommended_frequency_days || ''}
+                    onBlur={(event) => updateReturnPlan(selected, event.target.value)}
+                    placeholder="Frequência em dias"
+                    className="w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2 text-white focus:border-brass focus:outline-none"
+                  />
+                  <p className="mt-2 text-xs text-charcoal-muted">
+                    {selected.last_visit
+                      ? `Última visita: ${formatDate(selected.last_visit)}`
+                      : 'A última visita será registrada ao concluir um atendimento.'}
+                    {selected.next_recommended_visit
+                      ? ` · Próximo retorno: ${formatDate(selected.next_recommended_visit)}`
+                      : ''}
+                  </p>
+                </div>
+              </div>
+            )}
             <button
               onClick={() => removePet(selected)}
               className="mt-6 text-sm text-red-400 hover:text-red-300"
