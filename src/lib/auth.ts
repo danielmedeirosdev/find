@@ -30,7 +30,7 @@ export async function ensureBarberShop(
     // O segmento salvo é a identidade do negócio. Login por outra vitrine
     // jamais pode reclassificar uma conta existente.
     await attachStoredReferral()
-    return { id: existing.id }
+    return { id: existing.id, created: false }
   }
 
   const trialEndsAt = new Date()
@@ -53,5 +53,5 @@ export async function ensureBarberShop(
 
   if (error) throw error
   await attachStoredReferral()
-  return created
+  return { id: created.id, created: true }
 }
