@@ -4,6 +4,7 @@ import { deleteShopMedia, uploadShopMedia } from '../../../lib/media'
 import { ImageDropzone, ProgressBar, Toast } from '../../../components/MediaUI'
 import { DeleteShopControl } from '../../../components/DeleteShopControl'
 import { FieldHint, FieldLabel } from '../../../components/FormHints'
+import { formatPhone, phoneDigits } from '../../../lib/format'
 import type { Shop, ShopPhoto } from '../../../lib/types'
 
 interface Props {
@@ -15,7 +16,7 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
   const [name, setName] = useState(shop.name)
   const [slogan, setSlogan] = useState(shop.slogan || '')
   const [address, setAddress] = useState(shop.address || '')
-  const [phone, setPhone] = useState(shop.phone || '')
+  const [phone, setPhone] = useState(formatPhone(shop.phone))
   const [logoUrl, setLogoUrl] = useState(shop.logo_url || '')
   const [photos, setPhotos] = useState<ShopPhoto[]>([])
   const [saving, setSaving] = useState(false)
@@ -42,7 +43,7 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
     setName(shop.name)
     setSlogan(shop.slogan || '')
     setAddress(shop.address || '')
-    setPhone(shop.phone || '')
+    setPhone(formatPhone(shop.phone))
     setLogoUrl(shop.logo_url || '')
   }, [shop])
 
@@ -57,7 +58,7 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
         name: name.trim(),
         slogan: slogan.trim() || null,
         address: address.trim() || null,
-        phone: phone.trim() || null,
+        phone: phoneDigits(phone) || null,
       })
       .eq('id', shop.id)
 
@@ -152,13 +153,18 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
       <Toast message={toast} onClose={() => setToast(null)} />
 
       <form onSubmit={handleSave} className="space-y-4">
-        <h2 className="font-display text-2xl text-white">Informações da Barbearia</h2>
-        <p className="text-sm text-charcoal-muted -mt-2 mb-2">
-          Esses dados aparecem na página pública e no fluxo de agendamento.
-        </p>
+        <div className="rounded-2xl border border-charcoal-light bg-gradient-to-br from-charcoal-dark to-brass/5 p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brass">
+            Perfil do estabelecimento
+          </p>
+          <h2 className="mt-1 font-display text-2xl text-white">Informações da loja</h2>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-charcoal-muted">
+            Nome, contato e endereço exibidos para seus clientes. Dados organizados e fáceis de conferir.
+          </p>
+        </div>
 
         <div className="rounded-lg border border-charcoal-light p-5">
-          <h3 className="font-medium text-white mb-1">Logo da Barbearia</h3>
+          <h3 className="font-medium text-white mb-1">Logo do estabelecimento</h3>
           <FieldHint>
             Será exibida no site público, agendamentos e futuras notificações.
           </FieldHint>
@@ -196,7 +202,7 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
         </div>
 
         <div className="rounded-lg border border-charcoal-light p-5">
-          <h3 className="font-medium text-white mb-1">Fotos da Barbearia</h3>
+          <h3 className="font-medium text-white mb-1">Fotos do estabelecimento</h3>
           <FieldHint>
             Adicione fotos da fachada, ambiente e estrutura para transmitir mais confiança aos
             clientes.
@@ -236,7 +242,11 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
           </p>
         </div>
 
-        <div>
+        <div className="grid gap-4 rounded-2xl border border-charcoal-light p-5 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-charcoal-muted">Dados principais</p>
+          </div>
+          <div>
           <FieldLabel>Nome</FieldLabel>
           <input
             value={name}
@@ -245,9 +255,9 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
             placeholder="Ex: Barbearia Black Crown"
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
-        </div>
+          </div>
 
-        <div>
+          <div>
           <FieldLabel>Slogan</FieldLabel>
           <input
             value={slogan}
@@ -256,9 +266,9 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
           <FieldHint>Frase curta que aparece sob o nome na página pública.</FieldHint>
-        </div>
+          </div>
 
-        <div>
+          <div className="sm:col-span-2">
           <FieldLabel>Endereço</FieldLabel>
           <input
             value={address}
@@ -266,19 +276,18 @@ export function ShopInfoTab({ shop, onUpdate }: Props) {
             placeholder="Ex: Rua das Palmeiras, 482 - Centro"
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
-        </div>
+          </div>
 
-        <div>
+          <div className="sm:col-span-2">
           <FieldLabel>Telefone</FieldLabel>
           <input
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => setPhone(formatPhone(e.target.value))}
             placeholder="Ex: (11) 99999-9999"
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
-          <FieldHint>
-            Utilizado para contato dos clientes.
-          </FieldHint>
+          <FieldHint>Sempre exibido no padrão brasileiro, como (19) 97428-0798.</FieldHint>
+          </div>
         </div>
 
         {message && (

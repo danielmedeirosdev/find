@@ -106,7 +106,7 @@ export function OverviewTab({ shopId, onNavigate }: Props) {
         <Stat label="Hoje" value={String(activeToday.length)} hint="atendimentos" />
         <Stat label="Faturamento (mês)" value={formatPrice(revenue)} />
         <Stat label="Clientes" value={String(customers)} />
-        <Stat label="No-shows (mês)" value={String(noShows)} />
+        <Stat label="Faltas (mês)" value={String(noShows)} />
         <Stat label="Notificações" value={String(unread)} hint="não lidas" />
       </div>
 

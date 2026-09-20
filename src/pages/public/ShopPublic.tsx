@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { formatPrice, formatDuration } from '../../lib/format'
+import { formatPrice, formatDuration, formatPhone, whatsappUrl } from '../../lib/format'
 import {
   emptyRatingStats,
   fetchBarberRatingStatsMap,
@@ -135,7 +135,7 @@ export function ShopPublic() {
           </Link>
           {shop.phone && (
             <a
-              href={`https://wa.me/55${shop.phone.replace(/\D/g, '')}`}
+              href={whatsappUrl(shop.phone) || '#'}
               target="_blank"
               rel="noreferrer"
               className="btn-secondary"
@@ -169,7 +169,7 @@ export function ShopPublic() {
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
                 Telefone
               </p>
-              <p className="mt-1 text-ink">{shop.phone}</p>
+              <p className="mt-1 tabular-nums text-ink">{formatPhone(shop.phone)}</p>
             </div>
           )}
         </div>
