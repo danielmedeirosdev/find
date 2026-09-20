@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../../../lib/supabase'
-import { formatDate, formatTime } from '../../../../lib/format'
+import { formatDate, formatTime, formatPhone, whatsappUrl } from '../../../../lib/format'
 import { EmptyState, InlineError, LoadingBlock } from '../../../../components/EmptyState'
 import { userFacingError } from '../../../../lib/userFacingError'
 import type { BookingWithDetails } from '../../../../lib/types'
@@ -82,19 +82,37 @@ export function StaffClientsTab({ shopId, barberId }: Props) {
         />
       ) : (
         <ul className="space-y-3">
-          {clients.map((c) => (
-            <li
-              key={`${c.phone}-${c.name}`}
-              className="rounded-xl border border-charcoal-light px-4 py-3"
-            >
-              <p className="font-medium text-white">{c.name}</p>
-              <p className="text-sm text-charcoal-muted">{c.phone || 'Sem telefone'}</p>
-              <p className="mt-1 text-xs text-charcoal-muted">
-                Último: {formatDate(c.lastDate)} · {formatTime(c.lastTime)} · {c.count}{' '}
-                {c.count === 1 ? 'atendimento' : 'atendimentos'}
-              </p>
-            </li>
-          ))}
+          {clients.map((c) => {
+            const whatsapp = whatsappUrl(c.phone)
+            return (
+              <li
+                key={`${c.phone}-${c.name}`}
+                className="flex items-center justify-between gap-3 rounded-xl border border-charcoal-light px-4 py-3"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-white">{c.name}</p>
+                  <p className="mt-0.5 text-sm tabular-nums text-charcoal-muted">
+                    {formatPhone(c.phone) || 'Sem telefone'}
+                  </p>
+                  <p className="mt-1 text-xs text-charcoal-muted">
+                    Último: {formatDate(c.lastDate)} · {formatTime(c.lastTime)} · {c.count}{' '}
+                    {c.count === 1 ? 'atendimento' : 'atendimentos'}
+                  </p>
+                </div>
+                {whatsapp && (
+                  <a
+                    href={whatsapp}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`Abrir WhatsApp de ${c.name}`}
+                    className="shrink-0 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300"
+                  >
+                    WhatsApp
+                  </a>
+                )}
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>
