@@ -123,6 +123,8 @@ export async function finalizeOAuthLogin(
       role,
       redirectTo: '/painel/dashboard' as const,
       createdBusiness: shop.created || Boolean(options.newUserHint),
+      // Meta conversions require an actual insert, not the recent-user hint.
+      createdShopId: shop.created ? shop.id : null,
     }
   }
 
@@ -132,6 +134,7 @@ export async function finalizeOAuthLogin(
     role,
     redirectTo: '/minhas-reservas' as const,
     createdBusiness: false,
+    createdShopId: null,
   }
 }
 
