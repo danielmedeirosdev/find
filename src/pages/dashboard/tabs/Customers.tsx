@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
-import { formatPhone, formatDate, formatTime, formatPrice } from '../../../lib/format'
+import { formatPhone, formatDate, formatTime, formatPrice, whatsappUrl, packageStatusLabel } from '../../../lib/format'
 import { petSizeLabel } from '../../../lib/pet'
 import { packageRemaining } from '../../../lib/notifications'
 import { FieldHint, FieldLabel } from '../../../components/FormHints'
@@ -175,31 +175,68 @@ export function CustomersTab({ shopId }: Props) {
           {customers.length === 0 ? (
             <p className="text-charcoal-muted">Nenhum cliente ainda.</p>
           ) : (
-            customers.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setSelectedId(c.id)}
-                className={`w-full rounded-lg border p-4 text-left ${
-                  selectedId === c.id ? 'border-brass bg-brass/10' : 'border-charcoal-light'
-                }`}
-              >
-                <p className="font-medium text-white">{c.name}</p>
-                <p className="text-sm text-charcoal-muted">{c.phone}</p>
-                <p className="text-xs text-brass mt-1">
-                  {(petsByCustomer[c.id] || []).length} pet
-                  {(petsByCustomer[c.id] || []).length === 1 ? '' : 's'}
-                </p>
-              </button>
-            ))
+            customers.map((c) => {
+              const whatsapp = whatsappUrl(c.phone)
+              return (
+                <div
+                  key={c.id}
+                  className={`flex items-center gap-2 rounded-xl border p-2 transition ${
+                    selectedId === c.id ? 'border-brass bg-brass/10' : 'border-charcoal-light'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(c.id)}
+                    className="min-w-0 flex-1 rounded-lg px-2 py-2 text-left"
+                  >
+                    <p className="truncate font-medium text-white">{c.name}</p>
+                    <p className="mt-0.5 text-sm tabular-nums text-charcoal-muted">
+                      {formatPhone(c.phone) || 'Sem telefone'}
+                    </p>
+                    <p className="mt-1 text-xs text-brass">
+                      {(petsByCustomer[c.id] || []).length} pet
+                      {(petsByCustomer[c.id] || []).length === 1 ? '' : 's'}
+                    </p>
+                  </button>
+                  {whatsapp && (
+                    <a
+                      href={whatsapp}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Abrir WhatsApp de ${c.name}`}
+                      title={`Conversar com ${c.name} no WhatsApp`}
+                      className="shrink-0 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/20"
+                    >
+                      WhatsApp
+                    </a>
+                  )}
+                </div>
+              )
+            })
           )}
         </div>
 
         {selected && (
           <div className="rounded-lg border border-charcoal-light p-5 space-y-5">
             <div>
-              <h3 className="font-display text-xl text-brass">{selected.name}</h3>
-              <p className="text-sm text-charcoal-muted">{selected.phone}</p>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-display text-xl text-brass">{selected.name}</h3>
+                  <p className="mt-1 text-sm tabular-nums text-charcoal-muted">
+                    {formatPhone(selected.phone) || 'Sem telefone'}
+                  </p>
+                </div>
+                {whatsappUrl(selected.phone) && (
+                  <a
+                    href={whatsappUrl(selected.phone) || '#'}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/20"
+                  >
+                    WhatsApp
+                  </a>
+                )}
+              </div>
             </div>
 
             <div>
@@ -238,7 +275,7 @@ export function CustomersTab({ shopId }: Props) {
                       </p>
                       <p className="text-charcoal-muted">
                         Restantes {packageRemaining(pkg.total_sessions, pkg.used_sessions)} de{' '}
-                        {pkg.total_sessions} · {pkg.status}
+                        {pkg.total_sessions} · {packageStatusLabel(pkg.status)}
                       </p>
                     </div>
                   ))}
