@@ -82,8 +82,17 @@ export function trackPageView(navigationKey: string) {
   window.__onefindMetaPixelLastPageViewKey = navigationKey
 }
 
-export function trackCompleteRegistration(method: 'email' | 'google') {
-  if (typeof window === 'undefined') return
-  initializeMetaPixel()
-  window.fbq?.('track', 'CompleteRegistration', { method })
+const trackedRegistrations = new Set<string>()
+
+/** Called only after a new business registration has been confirmed. */
+export function trackCompleteRegistration(method: 'email' | 'google', shopId: string) {
+  if (typeof window === 'undefined' || !shopId || trackedRegistrations.has(shopId)) return
+  try {
+    initializeMetaPixel()
+    if (typeof window.fbq !== 'function') return
+    window.fbq('track', 'CompleteRegistration', { method })
+    trackedRegistrations.add(shopId)
+  } catch {
+    // Tracking must never turn a successful registration into an error.
+  }
 }

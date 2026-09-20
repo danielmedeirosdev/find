@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase, authErrorMessage, isSupabaseConfigured } from '../../lib/supabase'
-import { ensureAuthSession, ensureBarberShop, isLikelyNewAuthUser } from '../../lib/auth'
+import { ensureAuthSession, ensureBarberShop } from '../../lib/auth'
 import { completeGoogleCredentialLogin } from '../../lib/oauth'
 import { getSegment, parseSegmentParam, ACTIVE_SEGMENTS, SEGMENTS } from '../../lib/segments'
 import { BrandAccent } from '../../components/BrandAccent'
@@ -79,7 +79,9 @@ export function BarberAuth() {
       )
       if (mode === 'signup' && result.createdBusiness) {
         trackSignUp('google')
-        trackCompleteRegistration('google')
+      }
+      if (mode === 'signup' && result.createdShopId) {
+        trackCompleteRegistration('google', result.createdShopId)
       }
       navigate(result.redirectTo)
     } catch (err) {
@@ -136,8 +138,10 @@ export function BarberAuth() {
 
         trackSignUp('email')
 
+        let hasMatchingSession = false
         try {
-          await ensureAuthSession(email, password)
+          const session = await ensureAuthSession(email, password)
+          hasMatchingSession = session?.user.id === data.user.id
         } catch {
           setError(
             'Conta criada! Confirme seu e-mail e faça login. (Ou desative "Confirm email" no Supabase → Authentication → Email)'
@@ -148,8 +152,10 @@ export function BarberAuth() {
 
         try {
           const shop = await ensureBarberShop(data.user.id, shopNameValue, segment)
-          if (shop.created || isLikelyNewAuthUser(data.user)) {
-            trackCompleteRegistration('email')
+          // A signup-issued session proves this is not an obfuscated duplicate.
+          // The shop can already exist because the signup trigger created it.
+          if (hasMatchingSession && data.session?.user.id === data.user.id && shop.id) {
+            trackCompleteRegistration('email', shop.id)
           }
         } catch (shopError) {
           setError(
