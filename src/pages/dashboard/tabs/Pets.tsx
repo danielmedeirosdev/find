@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase'
 import { deleteShopMedia, uploadShopMedia } from '../../../lib/media'
 import { petSizeLabel } from '../../../lib/pet'
-import { formatPhone } from '../../../lib/format'
+import { formatPhone, whatsappUrl, bookingStatusLabel } from '../../../lib/format'
 import { DefaultAvatar, ImageDropzone, ProgressBar, Toast } from '../../../components/MediaUI'
 import { FieldLabel } from '../../../components/FormHints'
 import { PET_SIZES, type BookingWithDetails, type Pet, type PetSize, type ShopCustomer } from '../../../lib/types'
@@ -453,7 +453,8 @@ export function PetsTab({ shopId }: Props) {
                     {pet.breed || 'Sem raça'} · {petSizeLabel(pet.size)}
                   </p>
                   <p className="text-xs text-charcoal-muted">
-                    {pet.shop_customers?.name} · {pet.shop_customers?.phone}
+                    {pet.shop_customers?.name}
+                    {pet.shop_customers?.phone ? ` · ${formatPhone(pet.shop_customers.phone)}` : ''}
                   </p>
                 </div>
               </button>
@@ -547,7 +548,7 @@ export function PetsTab({ shopId }: Props) {
                               </p>
                             </div>
                             <span className="shrink-0 rounded-full border border-charcoal-light px-2 py-1 text-[11px] text-charcoal-muted">
-                              {isNext ? 'Próximo' : b.status || 'scheduled'}
+                              {isNext ? 'Próximo' : bookingStatusLabel(b.status || 'scheduled')}
                             </span>
                           </div>
                         </div>
@@ -631,10 +632,20 @@ export function PetsTab({ shopId }: Props) {
                     </p>
                     {selected.shop_customers?.phone && (
                       <p className="mt-0.5 text-xs text-charcoal-muted">
-                        {selected.shop_customers.phone}
+                        {formatPhone(selected.shop_customers.phone)}
                       </p>
                     )}
                   </div>
+                  {whatsappUrl(selected.shop_customers?.phone) && (
+                    <a
+                      href={whatsappUrl(selected.shop_customers?.phone) || '#'}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm font-semibold text-emerald-300"
+                    >
+                      WhatsApp do responsável
+                    </a>
+                  )}
                   <div className="rounded-xl border border-charcoal-light bg-charcoal-light/20 p-3">
                     <p className="text-xs text-charcoal-muted">Perfil</p>
                     <p className="mt-1 font-medium text-white">
