@@ -5,6 +5,7 @@ import { ImageDropzone, ProgressBar, Toast } from '../../../../components/MediaU
 import { DeleteShopControl } from '../../../../components/DeleteShopControl'
 import { FieldHint, FieldLabel } from '../../../../components/FormHints'
 import { PET_BUSINESS_TYPES } from '../../../../lib/onboarding'
+import { formatPhone, phoneDigits } from '../../../../lib/format'
 import type { PetBusinessType, Shop, ShopPhoto } from '../../../../lib/types'
 
 interface Props {
@@ -17,7 +18,7 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
   const [slogan, setSlogan] = useState(shop.slogan || '')
   const [description, setDescription] = useState(shop.description || '')
   const [address, setAddress] = useState(shop.address || '')
-  const [phone, setPhone] = useState(shop.phone || '')
+  const [phone, setPhone] = useState(formatPhone(shop.phone))
   const [businessType, setBusinessType] = useState<PetBusinessType | ''>(
     shop.pet_business_type || ''
   )
@@ -48,7 +49,7 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
     setSlogan(shop.slogan || '')
     setDescription(shop.description || '')
     setAddress(shop.address || '')
-    setPhone(shop.phone || '')
+    setPhone(formatPhone(shop.phone))
     setBusinessType(shop.pet_business_type || '')
     setLogoUrl(shop.logo_url || '')
   }, [shop])
@@ -62,7 +63,7 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
       name: name.trim(),
       slogan: slogan.trim() || null,
       address: address.trim() || null,
-      phone: phone.trim() || null,
+      phone: phoneDigits(phone) || null,
       pet_business_type: businessType || null,
     }
 
@@ -166,10 +167,15 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
       <Toast message={toast} onClose={() => setToast(null)} />
 
       <form onSubmit={handleSave} className="space-y-4">
-        <h2 className="font-display text-2xl text-white">Informações do Pet Shop</h2>
-        <p className="text-sm text-charcoal-muted -mt-2 mb-2">
-          Esses dados aparecem na página pública e no fluxo de agendamento.
-        </p>
+        <div className="rounded-2xl border border-charcoal-light bg-gradient-to-br from-charcoal-dark to-brass/5 p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brass">
+            Perfil do estabelecimento
+          </p>
+          <h2 className="mt-1 font-display text-2xl text-white">Informações da loja</h2>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-charcoal-muted">
+            Dados principais, contato e apresentação do seu negócio em uma visão mais clara.
+          </p>
+        </div>
 
         <div className="rounded-lg border border-charcoal-light p-5">
           <h3 className="font-medium text-white mb-1">Logo do Pet Shop</h3>
@@ -250,7 +256,13 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
           </p>
         </div>
 
-        <div>
+        <div className="grid gap-4 rounded-2xl border border-charcoal-light p-5 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-charcoal-muted">
+              Dados principais
+            </p>
+          </div>
+          <div className="sm:col-span-2">
           <FieldLabel>Ramo principal</FieldLabel>
           <select
             value={businessType}
@@ -267,9 +279,9 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
           <FieldHint>
             Organiza recursos e indicadores sem criar outro dashboard.
           </FieldHint>
-        </div>
+          </div>
 
-        <div>
+          <div>
           <FieldLabel>Nome do Pet Shop</FieldLabel>
           <input
             value={name}
@@ -278,9 +290,9 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
             placeholder="Ex: Banho & Tosa da Maria"
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
-        </div>
+          </div>
 
-        <div>
+          <div>
           <FieldLabel>Slogan</FieldLabel>
           <input
             value={slogan}
@@ -289,9 +301,9 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
           <FieldHint>Frase curta que aparece sob o nome na página pública.</FieldHint>
-        </div>
+          </div>
 
-        <div>
+          <div className="sm:col-span-2">
           <FieldLabel>Descrição</FieldLabel>
           <textarea
             value={description}
@@ -300,9 +312,9 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
             placeholder="Conte um pouco sobre o pet shop, serviços e diferenciais."
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
-        </div>
+          </div>
 
-        <div>
+          <div className="sm:col-span-2">
           <FieldLabel>Endereço</FieldLabel>
           <input
             value={address}
@@ -310,19 +322,18 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
             placeholder="Ex: Rua das Palmeiras, 482 - Centro"
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
-        </div>
+          </div>
 
-        <div>
+          <div className="sm:col-span-2">
           <FieldLabel>Telefone / WhatsApp</FieldLabel>
           <input
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => setPhone(formatPhone(e.target.value))}
             placeholder="Ex: (11) 99999-9999"
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
-          <FieldHint>
-            Utilizado para contato dos clientes.
-          </FieldHint>
+          <FieldHint>Sempre exibido no padrão brasileiro, como (19) 97428-0798.</FieldHint>
+          </div>
         </div>
 
         {message && (
