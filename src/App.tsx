@@ -17,11 +17,13 @@ import { NotFound } from './pages/public/NotFound'
 import { AuthCallback } from './pages/AuthCallback'
 import { BarberAuth } from './pages/dashboard/BarberAuth'
 import { Dashboard } from './pages/dashboard/Dashboard'
+import { MetaPixelTracker } from './components/MetaPixelTracker'
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <MetaPixelTracker />
         <ReferralCapture />
         <Routes>
           <Route index element={<MarketingLanding />} />

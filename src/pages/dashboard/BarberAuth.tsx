@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase, authErrorMessage, isSupabaseConfigured } from '../../lib/supabase'
-import { ensureAuthSession, ensureBarberShop } from '../../lib/auth'
+import { ensureAuthSession, ensureBarberShop, isLikelyNewAuthUser } from '../../lib/auth'
 import { completeGoogleCredentialLogin } from '../../lib/oauth'
 import { getSegment, parseSegmentParam, ACTIVE_SEGMENTS, SEGMENTS } from '../../lib/segments'
 import { BrandAccent } from '../../components/BrandAccent'
@@ -16,7 +16,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext'
 import type { ShopSegment } from '../../lib/types'
 import { readStoredReferralCode } from '../../lib/referral'
-import { trackSignUp } from '../../lib/analytics'
+import { trackCompleteRegistration, trackSignUp } from '../../lib/analytics'
 
 export function BarberAuth() {
   const navigate = useNavigate()
@@ -79,6 +79,7 @@ export function BarberAuth() {
       )
       if (mode === 'signup' && result.createdBusiness) {
         trackSignUp('google')
+        trackCompleteRegistration('google')
       }
       navigate(result.redirectTo)
     } catch (err) {
@@ -146,7 +147,10 @@ export function BarberAuth() {
         }
 
         try {
-          await ensureBarberShop(data.user.id, shopNameValue, segment)
+          const shop = await ensureBarberShop(data.user.id, shopNameValue, segment)
+          if (shop.created || isLikelyNewAuthUser(data.user)) {
+            trackCompleteRegistration('email')
+          }
         } catch (shopError) {
           setError(
             shopError instanceof Error

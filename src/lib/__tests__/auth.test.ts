@@ -41,7 +41,7 @@ describe('criação do estabelecimento', () => {
 
     await expect(
       ensureBarberShop('user-1', 'Loja', 'barbershop')
-    ).resolves.toEqual({ id: 'shop-1' })
+    ).resolves.toEqual({ id: 'shop-1', created: false })
 
     expect(mocks.from).toHaveBeenCalledTimes(1)
   })
@@ -57,7 +57,7 @@ describe('criação do estabelecimento', () => {
 
     await expect(
       ensureBarberShop('user-1', 'Barbearia L', 'pet')
-    ).resolves.toEqual({ id: 'shop-1' })
+    ).resolves.toEqual({ id: 'shop-1', created: false })
 
     expect(update).not.toHaveBeenCalled()
     expect(mocks.from).toHaveBeenCalledTimes(1)
@@ -85,7 +85,7 @@ describe('criação do estabelecimento', () => {
 
     await expect(
       ensureBarberShop('user-2', 'Nova loja', 'pet')
-    ).resolves.toEqual({ id: 'shop-2' })
+    ).resolves.toEqual({ id: 'shop-2', created: true })
 
     expect(mocks.from).toHaveBeenCalledTimes(2)
     expect(insert).toHaveBeenCalledWith(expect.objectContaining({ segment: 'pet' }))

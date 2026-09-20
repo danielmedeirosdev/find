@@ -55,3 +55,21 @@ export async function ensureBarberShop(
   await attachStoredReferral()
   return { id: created.id, created: true }
 }
+
+/**
+ * The signup trigger can create the shop before the browser reaches
+ * ensureBarberShop. Use the auth timestamp to recognize that first signup
+ * without treating an ordinary login as a registration.
+ */
+export function isLikelyNewAuthUser(
+  user: { created_at?: string | null; identities?: unknown[] | null } | null | undefined,
+  now = Date.now()
+) {
+  if (!user?.created_at) return false
+  // Supabase returns an empty identities array for an already-registered
+  // email when email enumeration protection is enabled.
+  if (Array.isArray(user.identities) && user.identities.length === 0) return false
+  const createdAt = Date.parse(user.created_at)
+  if (!Number.isFinite(createdAt)) return false
+  return Math.abs(now - createdAt) <= 5 * 60 * 1000
+}

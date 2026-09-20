@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from './supabase'
-import { ensureBarberShop } from './auth'
+import { ensureBarberShop, isLikelyNewAuthUser } from './auth'
 import { getSegment } from './segments'
 import { readStoredReferralCode } from './referral'
 import type { GoogleCredentialResponse } from './google'
@@ -85,7 +85,10 @@ export async function ensureClientProfile(
   if (error) throw error
 }
 
-export async function finalizeOAuthLogin(roleHint?: string | null) {
+export async function finalizeOAuthLogin(
+  roleHint?: string | null,
+  options: { newUserHint?: boolean } = {}
+) {
   const {
     data: { session },
     error: sessionError,
@@ -119,7 +122,7 @@ export async function finalizeOAuthLogin(roleHint?: string | null) {
     return {
       role,
       redirectTo: '/painel/dashboard' as const,
-      createdBusiness: shop.created,
+      createdBusiness: shop.created || Boolean(options.newUserHint),
     }
   }
 
@@ -149,7 +152,7 @@ export async function completeGoogleCredentialLogin(
 
   rememberOAuthIntent(role, shopName, segment)
 
-  const { error } = await supabase.auth.signInWithIdToken({
+  const { data, error } = await supabase.auth.signInWithIdToken({
     provider: 'google',
     token: response.credential,
     nonce,
@@ -163,5 +166,7 @@ export async function completeGoogleCredentialLogin(
     throw error
   }
 
-  return finalizeOAuthLogin(role)
+  return finalizeOAuthLogin(role, {
+    newUserHint: isLikelyNewAuthUser(data.user),
+  })
 }
