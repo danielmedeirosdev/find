@@ -34,11 +34,29 @@ export function minutesToTime(minutes: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
-export function formatPhone(value: string): string {
-  const digits = value.replace(/\D/g, '')
+export function phoneDigits(value: string | null | undefined): string {
+  let digits = (value || '').replace(/\D/g, '')
+  if ((digits.length === 12 || digits.length === 13) && digits.startsWith('55')) {
+    digits = digits.slice(2)
+  }
+  return digits.slice(0, 11)
+}
+
+export function formatPhone(value: string | null | undefined): string {
+  const digits = phoneDigits(value)
+  if (!digits) return ''
   if (digits.length <= 2) return digits
-  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+  if (digits.length <= 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6, 10)}`
+  }
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`
+}
+
+export function whatsappUrl(value: string | null | undefined): string | null {
+  const digits = phoneDigits(value)
+  if (digits.length < 10) return null
+  return `https://wa.me/55${digits}`
 }
 
 export function subscriptionLabel(status: string): string {
@@ -113,4 +131,24 @@ export function formatRelativeTime(iso: string): string {
   if (diffMonth < 12) return diffMonth === 1 ? 'há 1 mês' : `há ${diffMonth} meses`
   const diffYear = Math.round(diffMonth / 12)
   return diffYear === 1 ? 'há 1 ano' : `há ${diffYear} anos`
+}
+
+
+export function packageStatusLabel(status: string): string {
+  switch (status) {
+    case 'active':
+      return 'Ativo'
+    case 'used':
+      return 'Utilizado'
+    case 'completed':
+      return 'Concluído'
+    case 'expired':
+      return 'Expirado'
+    case 'cancelled':
+      return 'Cancelado'
+    case 'exhausted':
+      return 'Esgotado'
+    default:
+      return status
+  }
 }
