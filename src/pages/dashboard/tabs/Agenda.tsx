@@ -7,6 +7,8 @@ import {
   formatDuration,
   bookingStatusLabel,
   paymentMethodLabel,
+  formatPhone,
+  whatsappUrl,
 } from '../../../lib/format'
 import { CompleteBookingModal } from '../../../components/CompleteBookingModal'
 import { BookingActions, type BookingActionStatus } from '../../../components/BookingActions'
@@ -347,7 +349,22 @@ export function AgendaTab({ shopId, barberId }: Props) {
                       {bookingStatusLabel(status)}
                     </span>
                     <p className="font-medium text-white break-words">{b.client_name}</p>
-                    <p className="text-sm text-charcoal-muted">{b.client_phone}</p>
+                    <div className="mt-1 flex items-center gap-2 sm:justify-end">
+                      <p className="text-sm tabular-nums text-charcoal-muted">
+                        {formatPhone(b.client_phone) || 'Sem telefone'}
+                      </p>
+                      {whatsappUrl(b.client_phone) && (
+                        <a
+                          href={whatsappUrl(b.client_phone) || '#'}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={`Abrir WhatsApp de ${b.client_name}`}
+                          className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[11px] font-semibold text-emerald-300"
+                        >
+                          WhatsApp
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="mt-3 flex flex-wrap justify-between gap-2 border-t border-charcoal-light pt-3">
