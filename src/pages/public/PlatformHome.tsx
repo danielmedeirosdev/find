@@ -13,14 +13,13 @@ const TRUST = [
 ]
 
 const STEPS = [
-  { n: '01', title: 'Escolha o lugar', text: 'Barbearias ou pet shops próximos de você.' },
+  { n: '01', title: 'Escolha o lugar', text: 'Pet shops e negócios pet próximos de você.' },
   { n: '02', title: 'Serviço e horário', text: 'Veja a agenda livre e escolha o que combina.' },
   { n: '03', title: 'Confirme', text: 'Informe seus dados e pronto: horário marcado.' },
 ]
 
 const FOOTER_LINKS: { to: string; label: string; icon: AppIconName }[] = [
-  { to: '/barbearia', label: 'Barbearias', icon: 'scissors' },
-  { to: '/pet', label: 'Pet shops', icon: 'paw' },
+    { to: '/pet', label: 'Pet shops', icon: 'paw' },
   { to: '/minhas-reservas', label: 'Minhas reservas', icon: 'agenda' },
   { to: '/entrar', label: 'Entrar', icon: 'users' },
   { to: '/faq', label: 'Perguntas frequentes', icon: 'help' },
@@ -45,7 +44,7 @@ export function PlatformHome() {
           segment="platform"
         />
         <p className="platform-fade platform-fade-delay-2 mt-6 max-w-lg text-lg leading-relaxed text-ink sm:text-xl">
-          Marque horário em barbearias e pet shops. Simples, rápido e sem ligar.
+          Organize atendimentos e informações do seu pet em um só lugar.
         </p>
         <p className="platform-fade platform-fade-delay-2 mt-2 max-w-md text-sm text-ink-muted">
           Escolha o estabelecimento, o serviço e o horário. A confirmação chega na hora.
