@@ -1,5 +1,5 @@
 export type SubscriptionStatus = 'trial' | 'active' | 'blocked'
-export type ShopSegment = 'barbershop' | 'pet'
+export type ShopSegment = 'pet'
 export type PetBusinessType =
   | 'grooming'
   | 'veterinary_clinic'
