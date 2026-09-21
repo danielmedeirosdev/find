@@ -2,7 +2,7 @@ import { AppIcon } from './AppIcon'
 
 /** Marca da vertical pet. */
 export function SegmentMark({
-  segment,
+  segment: _segment,
   className = 'h-8 w-8',
 }: {
   segment?: 'pet' | string
