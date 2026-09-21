@@ -1,14 +1,14 @@
 import { AppIcon } from './AppIcon'
 
-/** Marcas de vertical: tesoura (barbearia) e pata (pet). */
+/** Marca da vertical pet. */
 export function SegmentMark({
-  segment,
+  segment: _segment,
   className = 'h-8 w-8',
 }: {
-  segment: 'barbershop' | 'pet' | string
+  segment?: 'pet' | string
   className?: string
 }) {
-  return <AppIcon name={segment === 'pet' ? 'paw' : 'scissors'} className={className} />
+  return <AppIcon name="paw" className={className} />
 }
 
 export function ListMark({ className = '' }: { className?: string }) {

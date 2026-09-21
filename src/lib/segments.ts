@@ -5,14 +5,13 @@ export interface SegmentDefinition {
   path: string
   brandName: string
   shortName: string
-  /** Nome genérico do negócio (Barbearia / Pet Shop) */
   businessLabel: string
   professionalLabel: string
   professionalPlural: string
   teamLabel: string
   customerLabel: string
   petLabel?: string
-  mark: 'barbershop' | 'pet'
+  mark: 'pet'
   ctaLabel: string
   headline: string
   description: string
@@ -34,71 +33,30 @@ export interface SegmentDefinition {
   bookingNotFound: string
   publicEnvTitle: string
   bookingPath: (shopId: string) => string
-  /** Classe CSS no root da experiência */
   themeClass: string
 }
 
-/**
- * Configuração central de verticais do FIND.
- * Labels compartilhados vêm daqui — não espalhar "Barbearia" hardcoded.
- */
-export const SEGMENTS: Record<ShopSegment, SegmentDefinition> = {
-  barbershop: {
-    id: 'barbershop',
-    path: '/barbearia',
-    brandName: 'FIND BARBEARIA',
-    shortName: 'Barbearia',
-    businessLabel: 'Barbearia',
-    professionalLabel: 'Barbeiro',
-    professionalPlural: 'Barbeiros',
-    teamLabel: 'Equipe',
-    customerLabel: 'Cliente',
-    mark: 'barbershop',
-    ctaLabel: 'Agendar barbearia',
-    headline: 'Corte, barba e visual. Escolha o horário e confirme em minutos.',
-    description: 'Serviços, equipe, horários e agendamento online no mesmo FIND.',
-    listTitle: 'Encontre sua barbearia',
-    listSubtitle: 'Escolha o salão, o profissional e o horário. Confirmação na hora.',
-    defaultShopName: 'Minha Barbearia',
-    panelEyebrow: 'FIND BARBEARIA',
-    panelSubtitle: 'Painel de gestão',
-    infoTitle: 'Informações da Barbearia',
-    logoTitle: 'Logo da Barbearia',
-    photosTitle: 'Fotos da Barbearia',
-    linkTabLabel: 'Link da Barbearia',
-    linkPageTitle: 'Link da Barbearia',
-    hoursHint:
-      'Informe os horários gerais da barbearia. Os horários individuais ficam em Equipe e horários.',
-    namePlaceholder: 'Ex: Barbearia Black Crown',
-    deleteConfirmVerb: 'barbearia',
-    deleteArticle: 'a',
-    blockedBody: 'A barbearia',
-    bookingNotFound: 'Barbearia não encontrada.',
-    publicEnvTitle: 'Ambiente',
-    bookingPath: (shopId) => `/barbearia/${shopId}`,
-    themeClass: 'segment-barbershop',
-  },
-  pet: {
+const PET_SEGMENT: SegmentDefinition = {
     id: 'pet',
     path: '/pet',
-    brandName: 'FIND PET',
+    brandName: 'onefind',
     shortName: 'Pet',
     businessLabel: 'Pet Shop',
     professionalLabel: 'Profissional',
     professionalPlural: 'Profissionais',
     teamLabel: 'Equipe',
-    customerLabel: 'Dono',
+    customerLabel: 'Tutor',
     petLabel: 'Pet',
     mark: 'pet',
-    ctaLabel: 'Agendar pet shop',
-    headline: 'Banho, tosa e cuidados. Agende sem ligar, no horário certo para o seu pet.',
+    ctaLabel: 'Conhecer o onefind',
+    headline: 'Clientes, pets, serviços e atendimentos organizados em um só lugar.',
     description:
-      'Porte, duração inteligente, histórico do pet e pacotes. Feitos para banho e tosa.',
+      'Gestão para banho e tosa e negócios pet, com histórico do pet, equipe e rotina do estabelecimento.',
     listTitle: 'Encontre o pet shop ideal para o seu pet',
-    listSubtitle: 'Escolha o pet shop, o serviço e o horário. Confirmação na hora.',
+    listSubtitle: 'Escolha o pet shop e siga o fluxo definido pelo estabelecimento.',
     defaultShopName: 'Meu Pet Shop',
-    panelEyebrow: 'FIND PET',
-    panelSubtitle: 'Banho, tosa e cuidados',
+    panelEyebrow: 'onefind',
+    panelSubtitle: 'Gestão para negócios pet',
     infoTitle: 'Meu pet shop',
     logoTitle: 'Logo do pet shop',
     photosTitle: 'Fotos do estabelecimento',
@@ -114,49 +72,45 @@ export const SEGMENTS: Record<ShopSegment, SegmentDefinition> = {
     publicEnvTitle: 'Espaço',
     bookingPath: (shopId) => `/pet/${shopId}`,
     themeClass: 'segment-pet',
-  },
 }
 
-export const ACTIVE_SEGMENTS: ShopSegment[] = ['barbershop', 'pet']
-
-/** Normaliza qualquer valor vindo do banco/metadata/URL para o segmento canônico. */
-export function normalizeSegment(id: ShopSegment | string | null | undefined): ShopSegment {
-  const raw = String(id ?? '')
-    .trim()
-    .toLowerCase()
-    .replace(/[\s_-]+/g, '')
-  if (raw === 'pet' || raw === 'pets' || raw === 'petshop' || raw === 'banhoetosa') {
-    return 'pet'
-  }
-  return 'barbershop'
+export const SEGMENTS: Record<ShopSegment, SegmentDefinition> = {
+  pet: PET_SEGMENT,
+  // Legacy internal alias only. It is not exposed in routes, signup or marketing.
+  barbershop: PET_SEGMENT,
 }
 
-export function getSegment(id: ShopSegment | string | null | undefined): SegmentDefinition {
-  return SEGMENTS[normalizeSegment(id)]
+export const ACTIVE_SEGMENTS: ShopSegment[] = ['pet']
+
+export function normalizeSegment(_id: ShopSegment | string | null | undefined): ShopSegment {
+  return 'pet'
+}
+
+export function getSegment(_id?: ShopSegment | string | null): SegmentDefinition {
+  return SEGMENTS.pet
 }
 
 export function getSegmentFromPath(pathname: string): SegmentDefinition | null {
   if (pathname === '/pet' || pathname.startsWith('/pet/')) return SEGMENTS.pet
-  if (pathname === '/barbearia' || pathname.startsWith('/barbearia/')) return SEGMENTS.barbershop
   return null
 }
 
 export function parseSegmentParam(value: string | null): ShopSegment | null {
   if (!value) return null
   const v = value.trim().toLowerCase()
-  if (v === 'pet' || v === 'pets' || v === 'petshop' || v === 'pet-shop') return 'pet'
-  if (v === 'barbershop' || v === 'barbearia') return 'barbershop'
+  if (v === 'pet' || v === 'pets' || v === 'petshop' || v === 'pet-shop' || v === 'banhoetosa') {
+    return 'pet'
+  }
   return null
 }
 
 export function publicBookingPathForSegment(
   shopId: string,
-  segment?: ShopSegment | string | null
+  _segment?: ShopSegment | string | null
 ): string {
-  return getSegment(segment).bookingPath(shopId)
+  return SEGMENTS.pet.bookingPath(shopId)
 }
 
-/** Compat: rótulo curto do negócio. */
-export function businessLabel(segment?: ShopSegment | string | null): string {
-  return getSegment(segment).businessLabel
+export function businessLabel(_segment?: ShopSegment | string | null): string {
+  return SEGMENTS.pet.businessLabel
 }

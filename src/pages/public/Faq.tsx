@@ -25,33 +25,15 @@ const GROUPS: FaqGroup[] = [
     items: [
       {
         q: 'O que é o ONEFIND?',
-        text: `ONEFIND é a plataforma de agendamento online e gestão para barbearias e pet shops, em ${SITE_HOST}. Clientes marcam horário pelo site. Profissionais gerenciam agenda, clientes, serviços e o negócio em um só painel.`,
+        text: `ONEFIND é a plataforma de agendamento online e gestão para pet shops e negócios pet, em ${SITE_HOST}. Clientes marcam horário pelo site. Profissionais gerenciam agenda, clientes, serviços e o negócio em um só painel.`,
         a: (
           <p>
-            O ONEFIND é a plataforma de agendamento online e gestão para barbearias e pet shops, em{' '}
+            O ONEFIND é a plataforma de agendamento online e gestão para pet shops e negócios pet, em{' '}
             <a href={PUBLIC_SITE_ORIGIN} className="text-brass underline-offset-2 hover:underline">
               {SITE_HOST}
             </a>
             . Clientes marcam horário pelo site. Profissionais gerenciam agenda, clientes, serviços
             e o negócio em um só painel.
-          </p>
-        ),
-      },
-      {
-        q: 'Qual a diferença entre FIND BARBEARIA e FIND PET?',
-        text: 'São duas soluções na mesma plataforma. FIND BARBEARIA é para cortes, barba e visual. FIND PET é para banho, tosa e cuidados com o pet, com cadastro de tutores, pets e porte. Cada módulo tem o fluxo certo para o tipo de negócio.',
-        a: (
-          <p>
-            São duas soluções na mesma plataforma.{' '}
-            <Link to="/barbearia" className="text-brass underline-offset-2 hover:underline">
-              FIND BARBEARIA
-            </Link>{' '}
-            é para cortes, barba e visual.{' '}
-            <Link to="/pet" className="text-brass underline-offset-2 hover:underline">
-              FIND PET
-            </Link>{' '}
-            é para banho, tosa e cuidados com o pet, com cadastro de tutores, pets e porte. Cada
-            módulo tem o fluxo certo para o tipo de negócio.
           </p>
         ),
       },
@@ -62,10 +44,10 @@ const GROUPS: FaqGroup[] = [
     items: [
       {
         q: 'Como marco um horário?',
-        text: 'Abra o link de agendamento divulgado pela sua barbearia ou pet shop no Instagram, WhatsApp ou Google. Selecione serviço, profissional e um horário livre. Informe nome e WhatsApp para confirmar. O horário fica reservado na hora.',
+        text: 'Abra o link de agendamento divulgado pela sua pet shop no Instagram, WhatsApp ou Google. Selecione serviço, profissional e um horário livre. Informe nome e WhatsApp para confirmar. O horário fica reservado na hora.',
         a: (
           <p>
-            Abra o link de agendamento divulgado pela sua barbearia ou pet shop no Instagram,
+            Abra o link de agendamento divulgado pela sua pet shop no Instagram,
             WhatsApp ou Google. Selecione serviço,
             profissional e um horário livre. Informe nome e WhatsApp para confirmar. O horário fica
             reservado na hora.
@@ -109,11 +91,11 @@ const GROUPS: FaqGroup[] = [
         ),
       },
       {
-        q: 'Como funciona o FIND PET?',
-        text: 'No FIND PET o agendamento é para o pet. Informe o WhatsApp para localizar tutores e pets já cadastrados, escolha o serviço e o horário. O porte do animal entra no cadastro para o pet shop preparar o atendimento.',
+        q: 'Como funciona o onefind?',
+        text: 'No onefind o agendamento é para o pet. Informe o WhatsApp para localizar tutores e pets já cadastrados, escolha o serviço e o horário. O porte do animal entra no cadastro para o pet shop preparar o atendimento.',
         a: (
           <p>
-            No FIND PET o agendamento é para o pet. Informe o WhatsApp para localizar tutores e
+            No onefind o agendamento é para o pet. Informe o WhatsApp para localizar tutores e
             pets já cadastrados, escolha o serviço e o horário. O porte do animal entra no cadastro
             para o pet shop preparar o atendimento.
           </p>
@@ -136,14 +118,14 @@ const GROUPS: FaqGroup[] = [
     items: [
       {
         q: 'Como começo a usar o painel?',
-        text: 'Abra a área profissional, crie o estabelecimento (barbearia ou pet shop) e complete o cadastro. Você ganha 30 dias de teste grátis, sem cartão de crédito.',
+        text: 'Abra a área profissional, crie o estabelecimento (pet shop) e complete o cadastro. Você ganha 30 dias de teste grátis, sem cartão de crédito.',
         a: (
           <p>
             Abra a{' '}
             <Link to="/painel?modo=cadastro" className="text-brass underline-offset-2 hover:underline">
               área profissional
             </Link>
-            , crie o estabelecimento (barbearia ou pet shop) e complete o cadastro. Você ganha 30
+            , crie o estabelecimento (pet shop) e complete o cadastro. Você ganha 30
             dias de teste grátis, sem cartão de crédito.
           </p>
         ),
@@ -189,10 +171,10 @@ const GROUPS: FaqGroup[] = [
       },
       {
         q: 'Como os clientes encontram meu negócio?',
-        text: 'O estabelecimento aparece na lista pública de FIND BARBEARIA ou FIND PET. Você também pode compartilhar o link da página pública (endereço curto /b/seu-nome) e o WhatsApp do negócio.',
+        text: 'O estabelecimento aparece na lista pública de onefind ou onefind. Você também pode compartilhar o link da página pública (endereço curto /b/seu-nome) e o WhatsApp do negócio.',
         a: (
           <p>
-            O estabelecimento aparece na lista pública de FIND BARBEARIA ou FIND PET. Você também
+            O estabelecimento aparece na lista pública de onefind ou onefind. Você também
             pode compartilhar o link da página pública (endereço curto <span className="text-ink">/b/seu-nome</span>) e o
             WhatsApp do negócio.
           </p>

@@ -17,9 +17,9 @@ const COPY: Record<
   },
   barbershop: {
     eyebrow: 'Indique e ganhe',
-    title: 'Indique o ONEFIND para outra barbearia.',
-    lead: 'Seu barbeiro parceiro também merece uma agenda organizada. Quando ele assinar, você ganha meses grátis.',
-    example: 'Compartilhe com outra barbearia. Cada assinatura confirmada vale 1 mês grátis.',
+    title: 'Indique o onefind para outro negócio pet.',
+    lead: 'Ajude outros negócios pet a organizar seus atendimentos. Quando a empresa assinar, você recebe a recompensa.',
+    example: 'Compartilhe com outro negócio pet. Cada assinatura confirmada vale 1 mês grátis.',
     ctaLogged: 'Ver meu link de indicação',
   },
   pet: {

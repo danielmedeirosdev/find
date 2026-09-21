@@ -3,10 +3,10 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase, authErrorMessage, isSupabaseConfigured } from '../../lib/supabase'
 import { ensureAuthSession, ensureBarberShop, isLikelyNewAuthUser } from '../../lib/auth'
 import { completeGoogleCredentialLogin } from '../../lib/oauth'
-import { getSegment, parseSegmentParam, ACTIVE_SEGMENTS, SEGMENTS } from '../../lib/segments'
+import { getSegment } from '../../lib/segments'
 import { BrandAccent } from '../../components/BrandAccent'
 import { AuthDivider, GoogleSignInButton } from '../../components/GoogleSignInButton'
-import { SegmentMark, BackArrow } from '../../components/SegmentMark'
+import { BackArrow } from '../../components/SegmentMark'
 import {
   FieldHint,
   FieldLabel,
@@ -18,15 +18,15 @@ import type { ShopSegment } from '../../lib/types'
 import { readStoredReferralCode } from '../../lib/referral'
 import { trackCompleteRegistration, trackSignUp } from '../../lib/analytics'
 
-export function BarberAuth() {
+export function BusinessAuth() {
   const navigate = useNavigate()
   const { user, loading: authLoading } = useAuth()
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchParams] = useSearchParams()
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [shopName, setShopName] = useState('')
-  const [segment, setSegment] = useState<ShopSegment>('barbershop')
+  const [segment] = useState<ShopSegment>('pet')
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
   const [loading, setLoading] = useState(false)
@@ -39,18 +39,8 @@ export function BarberAuth() {
   }, [authLoading, user, navigate])
 
   useEffect(() => {
-    const fromUrl = parseSegmentParam(searchParams.get('segment'))
-    if (fromUrl) setSegment(fromUrl)
     if (searchParams.get('modo') === 'cadastro') setMode('signup')
   }, [searchParams])
-
-  const selectSegment = (id: ShopSegment) => {
-    setSegment(id)
-    const next = new URLSearchParams(searchParams)
-    next.set('segment', id)
-    if (mode === 'signup') next.set('modo', 'cadastro')
-    setSearchParams(next, { replace: true })
-  }
 
   const meta = getSegment(segment)
   const defaultShopName = meta.defaultShopName
@@ -208,7 +198,7 @@ export function BarberAuth() {
   return (
     <div className="mx-auto max-w-md">
       <div className="text-center mb-8">
-        <p className="text-xs uppercase tracking-[0.3em] text-brass mb-2">FIND</p>
+        <p className="text-xs uppercase tracking-[0.3em] text-brass mb-2">onefind</p>
         <h1 className="font-display text-4xl text-brass">
           {mode === 'login' ? 'Entrar no painel' : 'Cadastrar negócio'}
         </h1>
@@ -222,35 +212,6 @@ export function BarberAuth() {
       >
         {mode === 'signup' && (
           <>
-            <div>
-              <FieldLabel>Qual é o seu negócio?</FieldLabel>
-              <div className="grid grid-cols-2 gap-2">
-                {ACTIVE_SEGMENTS.map((id) => {
-                  const s = SEGMENTS[id]
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => selectSegment(id)}
-                      className={`rounded-lg px-3 py-3 text-sm font-medium transition-colors ${
-                        segment === id
-                          ? 'bg-brass text-charcoal'
-                          : 'border border-charcoal-light text-charcoal-muted hover:text-white'
-                      }`}
-                    >
-                      <span className="mb-1 flex justify-center" aria-hidden>
-                        <SegmentMark segment={s.mark} className="h-6 w-6" />
-                      </span>
-                      {s.shortName}
-                    </button>
-                  )
-                })}
-              </div>
-              <FieldHint>
-                O FIND configura automaticamente dashboard, serviços iniciais e regras do segmento.
-              </FieldHint>
-            </div>
-
             <div>
               <FieldLabel>Nome do estabelecimento</FieldLabel>
               <input
@@ -358,7 +319,7 @@ export function BarberAuth() {
       <p className="mt-4 text-center">
         <Link to="/" className="inline-flex items-center text-sm text-charcoal-muted hover:text-brass">
           <BackArrow />
-          Voltar ao FIND
+          Voltar ao onefind
         </Link>
       </p>
     </div>
