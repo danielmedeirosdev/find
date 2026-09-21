@@ -1,8 +1,8 @@
 # ONEFIND
 
-Plataforma SaaS multi-tenant para agendamento e gestão de negócios de serviços.
+Plataforma SaaS multi-tenant para gestão de pet shops, banho e tosa e outros negócios pet.
 
-O projeto nasceu como **FIND**, focado em barbearias, e evoluiu para o **ONEFIND**, uma base mais ampla para segmentos como barbearias e pet shops. O produto reúne a experiência pública de reserva e as ferramentas operacionais do estabelecimento.
+O onefind é focado exclusivamente no segmento pet. O produto reúne a experiência pública do cliente e as ferramentas operacionais do estabelecimento, com clientes, pets, serviços, equipe, atendimentos, histórico e gestão.
 
 ## Visão do produto
 
@@ -93,7 +93,7 @@ O frontend é publicado na Vercel. As variáveis `VITE_SUPABASE_URL` e `VITE_SUP
 
 ## Status
 
-Produto em evolução contínua, com foco em confiabilidade operacional, segurança multi-tenant e expansão para novos segmentos de serviços.
+Produto em evolução contínua, com foco em confiabilidade operacional, segurança multi-tenant e profundidade no segmento pet.
 
 ---
 
