@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { CtaArrow, ListMark } from '../../components/SegmentMark'
 import { ReferralLandingSection } from '../../components/ReferralLandingSection'
 
@@ -10,7 +11,38 @@ const steps = [
 ]
 
 export function MarketingLanding() {
+  const location = useLocation()
   const signupPath = '/painel?segment=pet&modo=cadastro'
+
+  useEffect(() => {
+    const isPetPage = location.pathname === '/pet'
+    const canonicalUrl = isPetPage ? 'https://www.onefind.com.br/pet' : 'https://www.onefind.com.br/'
+    const title = isPetPage
+      ? 'onefind para Pet Shops e Banho e Tosa | Gestão PET'
+      : 'onefind · Gestão para pet shops e banho e tosa'
+    const description = isPetPage
+      ? 'Gestão para pet shops e banho e tosa. Organize clientes, pets, serviços, atendimentos e histórico em um só lugar. Teste grátis por 30 dias.'
+      : 'onefind é a plataforma de gestão para pet shops, banho e tosa e outros negócios pet. Organize clientes, pets, serviços, atendimentos e a rotina do estabelecimento em um só lugar.'
+
+    document.title = title
+
+    const setMeta = (selector: string, attr: string, value: string) => {
+      const el = document.querySelector<HTMLMetaElement>(selector)
+      if (el) el.setAttribute(attr, value)
+    }
+
+    setMeta('meta[name="description"]', 'content', description)
+    setMeta('meta[property="og:title"]', 'content', title)
+    setMeta('meta[property="og:description"]', 'content', description)
+    setMeta('meta[property="og:url"]', 'content', canonicalUrl)
+
+    const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+    if (canonical) canonical.href = canonicalUrl
+
+    return () => {
+      document.title = 'onefind · Gestão para pet shops e banho e tosa'
+    }
+  }, [location.pathname])
 
   return (
     <div className="min-h-screen overflow-hidden bg-paper text-ink">
