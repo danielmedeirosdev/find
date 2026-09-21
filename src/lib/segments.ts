@@ -28,7 +28,7 @@ export interface SegmentDefinition {
   hoursHint: string
   namePlaceholder: string
   deleteConfirmVerb: string
-  deleteArticle: 'o'
+  deleteArticle: 'a' | 'o'
   blockedBody: string
   bookingNotFound: string
   publicEnvTitle: string
