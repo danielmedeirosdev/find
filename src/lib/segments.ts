@@ -80,7 +80,7 @@ export const SEGMENTS: Record<ShopSegment, SegmentDefinition> = {
   barbershop: PET_SEGMENT,
 }
 
-export const ACTIVE_SEGMENTS/: ShopSegment[] = ['pet']
+export const ACTIVE_SEGMENTS: ShopSegment[] = ['pet']
 
 export function normalizeSegment(_id: ShopSegment | string | null | undefined): ShopSegment {
   return 'pet'
