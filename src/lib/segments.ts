@@ -36,8 +36,7 @@ export interface SegmentDefinition {
   themeClass: string
 }
 
-export const SEGMENTS: Record<ShopSegment, SegmentDefinition> = {
-  pet: {
+const PET_SEGMENT: SegmentDefinition = {
     id: 'pet',
     path: '/pet',
     brandName: 'onefind',
@@ -73,10 +72,15 @@ export const SEGMENTS: Record<ShopSegment, SegmentDefinition> = {
     publicEnvTitle: 'Espaço',
     bookingPath: (shopId) => `/pet/${shopId}`,
     themeClass: 'segment-pet',
-  },
 }
 
-export const ACTIVE_SEGMENTS: ShopSegment[] = ['pet']
+export const SEGMENTS: Record<ShopSegment, SegmentDefinition> = {
+  pet: PET_SEGMENT,
+  // Legacy internal alias only. It is not exposed in routes, signup or marketing.
+  barbershop: PET_SEGMENT,
+}
+
+export const ACTIVE_SEGMENTS/: ShopSegment[] = ['pet']
 
 export function normalizeSegment(_id: ShopSegment | string | null | undefined): ShopSegment {
   return 'pet'
