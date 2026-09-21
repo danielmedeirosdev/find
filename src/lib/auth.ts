@@ -18,7 +18,7 @@ export async function ensureAuthSession(email: string, password: string) {
 export async function ensureBarberShop(
   userId: string,
   shopName: string,
-  segment: ShopSegment = 'barbershop'
+  segment: ShopSegment = 'pet'
 ) {
   const { data: existing } = await supabase
     .from('shops')
@@ -27,9 +27,7 @@ export async function ensureBarberShop(
     .maybeSingle()
 
   if (existing) {
-    // O segmento salvo é a identidade do negócio. Login por outra vitrine
-    // jamais pode reclassificar uma conta existente.
-    await attachStoredReferral()
+        await attachStoredReferral()
     return { id: existing.id, created: false }
   }
 
