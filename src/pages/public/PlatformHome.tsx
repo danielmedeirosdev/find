@@ -33,7 +33,7 @@ export function PlatformHome() {
         <DotField className="-z-10 [mask-image:linear-gradient(to_bottom,black_0%,black_68%,transparent_100%)]" />
         <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-[radial-gradient(ellipse_at_top,rgba(201,162,39,0.14),transparent_70%)]" aria-hidden="true" />
         <p className="platform-fade text-xs font-semibold uppercase tracking-[0.35em] text-brass">
-          Agendamento online
+          Gestão para negócios pet
         </p>
         <h1 className="platform-fade platform-fade-delay-1 mt-3 font-display text-6xl tracking-[0.12em] text-ink sm:text-7xl md:text-8xl">
           ONEFIND
@@ -47,7 +47,7 @@ export function PlatformHome() {
           Organize atendimentos e informações do seu pet em um só lugar.
         </p>
         <p className="platform-fade platform-fade-delay-2 mt-2 max-w-md text-sm text-ink-muted">
-          Escolha o estabelecimento, o serviço e o horário. A confirmação chega na hora.
+          Clientes, pets, serviços e histórico organizados para a rotina do estabelecimento.
         </p>
 
         <div className="mt-12 grid w-full gap-5 sm:grid-cols-2 sm:gap-6">
@@ -113,7 +113,7 @@ export function PlatformHome() {
         <div className="platform-fade platform-fade-delay-4 mt-10 w-full max-w-lg rounded-xl border border-ink/10 bg-white/70 px-5 py-6">
           <p className="font-display text-xl tracking-wide text-ink">Tem um negócio?</p>
           <p className="mt-1 text-sm text-ink-muted">
-            Cadastre sua barbearia ou pet shop e receba agendamentos pelo site.
+            Cadastre seu negócio pet e organize atendimentos pelo onefind.
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <Link to="/painel?modo=cadastro" className="btn-primary inline-flex items-center justify-center">
