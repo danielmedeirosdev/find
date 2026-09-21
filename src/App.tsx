@@ -4,7 +4,6 @@ import { ReferralCapture } from './components/ReferralCapture'
 import { PublicLayout } from './components/PublicLayout'
 import { DashboardLayout } from './components/DashboardLayout'
 import { MarketingLanding } from './pages/public/MarketingLanding'
-import { ShopBooking } from './pages/public/ShopBooking'
 import { ShopPublic } from './pages/public/ShopPublic'
 import { PetBooking } from './pages/public/PetBooking'
 import { GuestReview } from './pages/public/GuestReview'
@@ -15,7 +14,7 @@ import { PrivacyPolicy } from './pages/public/PrivacyPolicy'
 import { Faq } from './pages/public/Faq'
 import { NotFound } from './pages/public/NotFound'
 import { AuthCallback } from './pages/AuthCallback'
-import { BarberAuth } from './pages/dashboard/BarberAuth'
+import { BusinessAuth } from './pages/dashboard/BusinessAuth'
 import { Dashboard } from './pages/dashboard/Dashboard'
 import { MetaPixelTracker } from './components/MetaPixelTracker'
 
@@ -28,12 +27,10 @@ export default function App() {
         <Routes>
           <Route index element={<MarketingLanding />} />
           <Route path="apresentacao" element={<MarketingLanding />} />
-          <Route path="barbearia" element={<MarketingLanding segment="barbershop" />} />
-          <Route path="pet" element={<MarketingLanding segment="pet" />} />
+          <Route path="pet" element={<MarketingLanding />} />
           <Route path="solucoes" element={<Navigate to="/" replace />} />
 
           <Route element={<PublicLayout />}>
-            <Route path="barbearia/:shopId" element={<ShopBooking />} />
             <Route path="pet/:shopId" element={<PetBooking />} />
             <Route path="b/:slug" element={<ShopPublic />} />
             <Route path="confirmacao/:bookingId" element={<BookingConfirm />} />
@@ -49,7 +46,7 @@ export default function App() {
           </Route>
 
           <Route path="painel" element={<DashboardLayout />}>
-            <Route index element={<BarberAuth />} />
+            <Route index element={<BusinessAuth />} />
             <Route path="dashboard" element={<Dashboard />} />
           </Route>
 
