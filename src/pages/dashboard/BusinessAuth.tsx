@@ -1,3 +1,4 @@
+import { BrandLogo } from '../../components/BrandLogo'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase, authErrorMessage, isSupabaseConfigured } from '../../lib/supabase'
@@ -198,7 +199,7 @@ export function BusinessAuth() {
   return (
     <div className="mx-auto max-w-md">
       <div className="text-center mb-8">
-        <p className="text-xs uppercase tracking-[0.3em] text-brass mb-2">onefind</p>
+        <BrandLogo inverse />
         <h1 className="font-display text-4xl text-brass">
           {mode === 'login' ? 'Entrar no painel' : 'Cadastrar negócio'}
         </h1>

@@ -23,14 +23,13 @@ vi.mock('../../contexts/AuthContext', () => ({
 
 describe('public entry and direct booking', () => {
   it.each([
-    ['/', '/painel?modo=cadastro'],
-    ['/apresentacao', '/painel?modo=cadastro'],
+    ['/', '/painel?segment=pet&amp;modo=cadastro'],
+    ['/apresentacao', '/painel?segment=pet&amp;modo=cadastro'],
     ['/pet', '/painel?segment=pet&amp;modo=cadastro'],
-    ['/barbearia', '/painel?segment=barbershop&amp;modo=cadastro'],
   ])('presents the system and business registration at %s', (path, signup) => {
     route.path = path
     const html = renderToStaticMarkup(createElement(App))
-    expect(html).toContain('Começar teste grátis')
+    expect(html).toContain('Começar agora')
     expect(html).toContain(`href="${signup}"`)
     expect(html).toContain('href="/entrar"')
     expect(html).toContain('href="/painel"')
@@ -39,16 +38,21 @@ describe('public entry and direct booking', () => {
     expect(html).not.toContain('Buscar pet shop')
   })
 
-  it.each(['/pet/shop-id', '/barbearia/shop-id', '/b/shop-slug'])(
+  it.each(['/pet/shop-id', '/b/shop-slug'])(
     'keeps the direct store route at %s outside the marketing page', (path) => {
       route.path = path
       const html = renderToStaticMarkup(createElement(App))
-      expect(html).not.toContain('Começar teste grátis')
+      expect(html).not.toContain('Começar agora')
       expect(html).not.toContain('Página não encontrada')
       expect(html).not.toContain('href="/pet"')
       expect(html).not.toContain('href="/barbearia"')
     },
   )
+
+  it('does not expose the removed barbershop route', () => {
+    route.path = '/barbearia/shop-id'
+    expect(renderToStaticMarkup(createElement(App))).toContain('Página não encontrada')
+  })
 
   it.each([true, false])('returns the receipt to the same store (pet=%s)', (isPet) => {
     const view: ReceiptView = {
@@ -59,7 +63,7 @@ describe('public entry and direct booking', () => {
     const html = renderToStaticMarkup(createElement(MemoryRouter, null,
       createElement(ConfirmReceipt, { view, signedIn: true }),
     ))
-    expect(html).toContain(`href="/${isPet ? 'pet' : 'barbearia'}/same-shop"`)
+    expect(html).toContain('href="/pet/same-shop"')
     expect(html).not.toContain('href="/pet"')
     expect(html).not.toContain('href="/barbearia"')
   })

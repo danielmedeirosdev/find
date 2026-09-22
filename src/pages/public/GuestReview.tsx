@@ -1,3 +1,4 @@
+import { BrandLogo } from '../../components/BrandLogo'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { formatPhone } from '../../lib/format'
@@ -88,7 +89,7 @@ export function GuestReview() {
   return (
     <div className="mx-auto max-w-md">
       <div className="rounded-lg border border-paper-dark bg-white p-6">
-        <p className="text-xs uppercase tracking-widest text-brass mb-1">FIND</p>
+        <BrandLogo />
         <h1 className="font-display text-3xl text-ink">Como foi o atendimento?</h1>
         <BrandAccent
           className="my-3 max-w-[10rem]"

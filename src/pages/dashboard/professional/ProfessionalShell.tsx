@@ -1,3 +1,4 @@
+import { BusinessAccount } from '../../../components/BusinessAccount'
 import type { ReactNode } from 'react'
 import { SegmentProvider } from '../../../contexts/SegmentContext'
 import { BrandAccent } from '../../../components/BrandAccent'
@@ -67,7 +68,7 @@ export function ProfessionalShell({
               {subtitle || meta.panelSubtitle}
             </p>
           </div>
-          <UpdatesButton className="sm:ml-auto" />
+          <div className="flex items-center gap-3 sm:ml-auto"><UpdatesButton /><BusinessAccount shop={shop} /></div>
         </div>
 
         <BrandAccent className="mb-6 max-w-sm" height="h-1" segment={segment} />

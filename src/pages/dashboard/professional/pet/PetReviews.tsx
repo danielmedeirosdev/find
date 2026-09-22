@@ -55,7 +55,7 @@ export function PetReviews({ shopId }: Props) {
         <h2 className="font-display text-2xl text-white mb-1">Avaliações do Pet Shop</h2>
         <p className="text-sm text-charcoal-muted">
           Reputação do pet shop com base em atendimentos de banho, tosa e cuidados concluídos no
-          FIND PET.
+          onefind.
         </p>
       </div>
 

@@ -59,7 +59,7 @@ export function PrivacyPolicy() {
             <li>
               <span className="text-ink">Localização aproximada:</span> se você permitir no
               navegador, usamos sua posição só para mostrar estabelecimentos próximos nas listas
-              de FIND BARBEARIA e FIND PET. Não fazemos rastreamento contínuo e não gravamos essa
+              do onefind. Não fazemos rastreamento contínuo e não gravamos essa
               posição em nossos servidores.
             </li>
             <li>

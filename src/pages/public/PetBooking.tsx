@@ -1,3 +1,4 @@
+import { BrandLogo } from '../../components/BrandLogo'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
@@ -558,7 +559,7 @@ export function PetBooking() {
           <img src={shop.logo_url} alt="" className="h-14 w-14 rounded-xl object-cover" />
         )}
         <div>
-          <p className="text-xs uppercase tracking-widest text-brass font-medium">FIND PET</p>
+          <BrandLogo />
           <h1 className="font-display text-3xl text-ink">{shop.name}</h1>
           {shop.slogan && <p className="text-ink-muted italic text-sm">{shop.slogan}</p>}
           <BrandAccent className="mt-3 max-w-xs" height="h-1.5" segment="pet" />
