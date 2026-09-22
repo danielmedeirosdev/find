@@ -1,3 +1,4 @@
+import { BrandLogo } from './BrandLogo'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { SegmentProvider } from '../contexts/SegmentContext'
@@ -36,14 +37,14 @@ export function PublicLayout() {
           }`}
         >
           <Link to="/" className="min-w-0">
-            <span className="font-display text-3xl tracking-[0.12em] text-ink">ONEFIND</span>
+            <BrandLogo />
             {segmentMeta && (
               <span className="ml-2 hidden align-middle text-[11px] font-semibold uppercase tracking-[0.22em] text-brass sm:inline">
                 {segmentMeta.shortName}
               </span>
             )}
           </Link>
-          <nav className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 text-sm">
+          <nav className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 text-sm"><Link to="/faq">Ajuda</Link>
             {!isHome && (
               <Link to="/" className="hidden text-ink-muted transition-colors hover:text-brass sm:inline">
                 Início
@@ -86,13 +87,13 @@ export function PublicLayout() {
       </main>
       {!isHome && (
         <footer className="mt-16 border-t border-paper-dark/80 py-8 text-center text-sm text-ink-muted">
-          <p className="font-display text-lg tracking-[0.18em] text-ink">ONEFIND</p>
+          <BrandLogo />
           <p className="mx-auto mt-2 max-w-md">
             {isPet
               ? 'Agendamento online para banho, tosa e cuidados.'
               : segmentMeta
-                ? 'Agendamento online para barbearias, sem fila e sem aplicativo.'
-                : 'Agendamento online para barbearias e pet shops.'}
+                ? 'Gestão para pet shops e banho e tosa.'
+                : 'Clientes, pets e atendimentos em um só lugar.'}
           </p>
           <p className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
             <Link to="/faq" className="transition-colors hover:text-brass">

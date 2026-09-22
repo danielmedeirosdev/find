@@ -1,3 +1,6 @@
+import { SetupChoice } from '../../../components/SetupChoice'
+import { BrandLogo } from '../../../components/BrandLogo'
+import { trackFunnel } from '../../../lib/analytics'
 import { useEffect, useState, type FormEvent } from 'react'
 import { FieldHint, FieldLabel } from '../../../components/FormHints'
 import {
@@ -70,6 +73,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
+  const [setupSelected, setSetupSelected] = useState(false)
   const [step, setStep] = useState(0)
   const [petBusinessType, setPetBusinessType] = useState<PetBusinessType | ''>(
     shop.pet_business_type || ''
@@ -249,6 +253,7 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
         p_end_time: endTime,
       })
       if (rpcError) throw rpcError
+      trackFunnel('setup_complete', { method: 'manual' })
       await onComplete()
     } catch (err) {
       setError(
@@ -259,6 +264,8 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
     }
   }
 
+  if (!setupSelected) return <SetupChoice onManual={() => setSetupSelected(true)} />
+
   if (loading) {
     return (
       <div className="flex min-h-[70vh] items-center justify-center text-charcoal-muted">
@@ -268,10 +275,10 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
   }
 
   return (
-    <main className="min-h-screen bg-charcoal px-4 py-8 text-white sm:py-12">
+    <main className="premium-onboarding min-h-screen bg-charcoal px-4 py-8 text-white sm:py-12">
       <div className="mx-auto max-w-3xl">
         <div className="mb-8 text-center">
-          <p className="font-mono text-xs uppercase tracking-[0.28em] text-brass">ONEFIND</p>
+          <BrandLogo inverse />
           <h1 className="mt-3 font-display text-3xl sm:text-4xl">
             Vamos deixar {businessWithArticle} {businessReady}?
           </h1>

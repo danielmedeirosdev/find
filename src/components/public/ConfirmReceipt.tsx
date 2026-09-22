@@ -1,3 +1,4 @@
+import { BrandLogo } from '../BrandLogo'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { formatDate, formatDuration, formatPrice, formatTime } from '../../lib/format'
@@ -67,7 +68,7 @@ export function ConfirmReceipt({
             </svg>
           </span>
           <p className="mt-4 text-xs font-semibold uppercase tracking-[0.28em] text-brass">
-            {view.isPet ? 'FIND PET' : 'FIND BARBEARIA'}
+            <BrandLogo />
           </p>
           <h1 className="mt-2 font-display text-3xl text-ink">Horário confirmado</h1>
           <p className="mt-2 text-sm text-ink-muted">

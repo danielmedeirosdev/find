@@ -87,3 +87,11 @@ export function trackCompleteRegistration(method: 'email' | 'google') {
   initializeMetaPixel()
   window.fbq?.('track', 'CompleteRegistration', { method })
 }
+
+/** Conversion steps only; never send shop names, phone numbers or message contents. */
+export function trackFunnel(event: 'landing_cta' | 'setup_choice' | 'setup_whatsapp_open' | 'setup_manual_start' | 'setup_complete', params: Record<string, string> = {}) {
+  try {
+    getGtag()?.('event', event, params)
+    if (typeof window !== 'undefined') window.fbq?.('trackCustom', event, params)
+  } catch { /* Analytics must never block the product flow. */ }
+}

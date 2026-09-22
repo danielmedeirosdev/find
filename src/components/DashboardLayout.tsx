@@ -1,3 +1,4 @@
+import { BrandLogo } from './BrandLogo'
 import { useEffect, useState } from 'react'
 import { Link, Outlet, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -59,19 +60,17 @@ export function DashboardLayout() {
 
   return (
     <div
-      className={`min-h-screen bg-charcoal text-white ${themeClass}`}
+      className={`premium-dashboard min-h-screen bg-charcoal text-white ${themeClass}`}
       data-segment={segmentId === 'platform' ? undefined : segmentId}
     >
       <SetupBanner />
-      <header className="border-b border-charcoal-light bg-charcoal">
+      <header className="dashboard-glass-header border-b border-charcoal-light">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <Link to="/painel" className="flex items-baseline gap-2">
-            <span className="font-display text-3xl tracking-wider text-brass">FIND</span>
-            {showSegmentMark && (
-              <span className="text-xs uppercase tracking-widest text-brass/70">{meta.shortName}</span>
-            )}
+            <BrandLogo inverse />
+
           </Link>
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-4 text-sm"><Link to="/faq" className="text-charcoal-muted hover:text-white">Ajuda</Link>
             <Link
               to={showSegmentMark ? meta.path : '/'}
               className="text-charcoal-muted hover:text-brass transition-colors"
