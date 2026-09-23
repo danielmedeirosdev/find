@@ -6,7 +6,7 @@ import { trackFunnel } from "../../lib/analytics";
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { CtaArrow } from "../../components/SegmentMark";
-import { ReferralLandingSection } from "../../components/ReferralLandingSection";
+
 
 const steps = [
   [
@@ -78,7 +78,7 @@ export function MarketingLanding() {
   }, [location.hash])
 
   return (
-    <div className="premium-landing">
+    <div className="premium-landing editorial-home">
       <MarketingHeader />
       <main>
         <section className="premium-hero" id="inicio">
@@ -89,13 +89,10 @@ export function MarketingLanding() {
             </p>
             <HeroTitle />
             <p className="hero-description">
-              Mais cuidado com os pets.
-              <br />
-              Mais controle da sua rotina.
+              Gestão para pet shops<br />e banho e tosa.
             </p>
             <p className="hero-detail">
-              Clientes, pets, serviços e atendimentos em um só lugar. Do seu
-              jeito, no ritmo do seu negócio.
+              Cadastros, atendimentos e financeiro reunidos para acompanhar o seu estabelecimento.
             </p>
             <Link
               to={signupPath}
@@ -109,83 +106,32 @@ export function MarketingLanding() {
             </p>
             <p className="hero-assistance">Configuração assistida disponível</p>
           </div>
-          <div
-            className="product-overview"
-            aria-label="O que você organiza no onefind"
-          >
-            <div className="product-overview-top">
-              <BrandLogo />
-              <span>Seu negócio, organizado.</span>
-            </div>
-            <div className="product-overview-body">
-              <p className="premium-eyebrow">Tudo conectado ao cuidado</p>
-              <h2>
-                Uma rotina
-                <br />
-                mais tranquila.
-              </h2>
-              <div className="product-capability">
-                <span className="capability-icon">
-                  <AppIcon name="paw" size={24} />
-                </span>
-                <div>
-                  <strong>Clientes e pets</strong>
-                  <p>Informações e histórico sempre à mão</p>
-                </div>
-              </div>
-              <div className="product-capability">
-                <span className="capability-icon">
-                  <AppIcon name="agenda" size={24} />
-                </span>
-                <div>
-                  <strong>Atendimentos</strong>
-                  <p>Você define como e quando atender</p>
-                </div>
-              </div>
-              <div className="product-capability">
-                <span className="capability-icon">
-                  <AppIcon name="wallet" size={24} />
-                </span>
-                <div>
-                  <strong>Seu negócio</strong>
-                  <p>Serviços, equipe e financeiro juntos</p>
-                </div>
-              </div>
-              <div className="product-footnote">
-                <AppIcon name="check" size={17} /> Organização que acompanha o
-                seu cuidado.
-              </div>
-            </div>
-          </div>
         </section>
         <section className="premium-section" id="negocio">
           <div className="section-heading">
             <p className="premium-eyebrow">Para seu negócio</p>
             <h2>
-              Você cuida dos pets.
-              <br />
-              <span>A rotina fica organizada.</span>
+              O atendimento começa<br /><span>com as informações certas.</span>
             </h2>
             <p>
-              Do banho e tosa aos cuidados do dia a dia, mantenha as informações
-              do estabelecimento conectadas.
+              Cada pet exige um cuidado diferente. Você define os serviços, os horários e os ajustes necessários após a avaliação.
             </p>
           </div>
           <div className="premium-features" id="recursos">
             {[
               [
                 "paw",
-                "Cada pet tem sua história.",
+                "Clientes e pets",
                 "Consulte tutores, observações e histórico de atendimentos quando precisar.",
               ],
               [
                 "agenda",
-                "A sua operação define o ritmo.",
+                "Agenda de atendimentos",
                 "Organize atendimentos respeitando avaliação, duração e a rotina do seu pet shop.",
               ],
               [
                 "wallet",
-                "Tudo perto de você.",
+                "Equipe e financeiro",
                 "Acompanhe serviços, equipe e financeiro no mesmo ambiente.",
               ],
             ].map(([icon, title, detail]) => (
@@ -201,9 +147,7 @@ export function MarketingLanding() {
           <div className="section-heading">
             <p className="premium-eyebrow">Um começo simples</p>
             <h2>
-              Do primeiro acesso
-              <br />
-              <span>à sua rotina.</span>
+              Como começar
             </h2>
           </div>
           <div className="premium-steps">
@@ -223,13 +167,11 @@ export function MarketingLanding() {
         <section className="premium-section" id="planos">
           <div className="premium-pricing">
             <div>
-              <p className="premium-eyebrow">Simples desde o começo</p>
+              <p className="premium-eyebrow">Plano mensal</p>
               <h2>
-                Conheça na prática.
-                <br />
-                30 dias por nossa conta.
+                Teste antes de assinar.
               </h2>
-              <p>Experimente o onefind na rotina do seu estabelecimento.</p>
+              <p>30 dias de acesso grátis. Sem cartão para iniciar.</p>
               <p className="price">
                 <strong>R$ 60</strong> / mês após o teste
               </p>
@@ -249,15 +191,12 @@ export function MarketingLanding() {
             </div>
           </div>
         </section>
-        <section className="premium-section referral-section">
-          <ReferralLandingSection variant="pet" />
-        </section>
+        <section className="premium-section referral-compact" aria-label="Indicações"><h2>Já usa o onefind?</h2><p>Uma indicação que se torna assinante vale um mês grátis.</p><Link to="/painel/dashboard?aba=referral">Ver programa de indicação</Link></section>
       </main>
       <footer className="premium-footer">
-        <Link to="/">
+        <Link to="/#inicio">
           <BrandLogo />
         </Link>
-        <p>Negócios que cuidam, sempre encontram.</p>
         <nav aria-label="Rodapé">
           <Link to="/faq">Ajuda</Link>
           <Link to="/privacidade">Privacidade</Link>
