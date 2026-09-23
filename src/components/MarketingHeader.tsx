@@ -1,13 +1,21 @@
 import { SessionAccount } from './SessionAccount'
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { BrandLogo } from "./BrandLogo";
 export function MarketingHeader() {
   const [open, setOpen] = useState(false);
+  const location = useLocation()
+
+  const handleHomeClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (location.pathname !== '/') return
+    event.preventDefault()
+    document.getElementById('inicio')?.scrollIntoView({ behavior: 'smooth' })
+  }
+
   return (
     <header className="premium-header" onKeyDown={event => { if (event.key === "Escape") setOpen(false) }}>
       <div className="premium-nav">
-        <Link to="/" aria-label="onefind — início">
+        <Link to="/#inicio" aria-label="onefind — início" onClick={handleHomeClick}>
           <BrandLogo />
         </Link>
         <nav className="desktop-nav" aria-label="Navegação principal">

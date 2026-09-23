@@ -69,6 +69,14 @@ export function MarketingLanding() {
     };
   }, [location.pathname]);
 
+  useEffect(() => {
+    if (location.hash === '#inicio') {
+      requestAnimationFrame(() => {
+        document.getElementById('inicio')?.scrollIntoView({ behavior: 'instant' })
+      })
+    }
+  }, [location.hash])
+
   return (
     <div className="premium-landing">
       <MarketingHeader />
