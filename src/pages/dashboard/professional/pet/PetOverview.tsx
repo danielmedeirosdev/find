@@ -30,6 +30,7 @@ function customerKey(booking: BookingWithDetails) {
 
 export function PetOverview({ shopId, businessType, onNavigate }: Props) {
   const [todayBookings, setTodayBookings] = useState<BookingWithDetails[]>([])
+  const [completedToday, setCompletedToday] = useState(0)
   const [monthBookings, setMonthBookings] = useState<BookingWithDetails[]>([])
   const [historyBookings, setHistoryBookings] = useState<BookingWithDetails[]>([])
   const [upcoming, setUpcoming] = useState<BookingWithDetails[]>([])
@@ -48,6 +49,9 @@ export function PetOverview({ shopId, businessType, onNavigate }: Props) {
     async function load() {
       const now = new Date()
       const today = localDate(now)
+      const startOfToday = new Date(now)
+      startOfToday.setHours(0, 0, 0, 0)
+      const startOfTomorrow = addDays(startOfToday, 1)
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
       const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1)
       const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -60,6 +64,7 @@ export function PetOverview({ shopId, businessType, onNavigate }: Props) {
       `
       const results = await Promise.all([
         supabase.from('bookings').select(select).eq('shop_id', shopId).eq('date', today).order('time'),
+        supabase.from('bookings').select('id', { count: 'exact', head: true }).eq('shop_id', shopId).eq('status', 'completed').gte('completed_at', startOfToday.toISOString()).lt('completed_at', startOfTomorrow.toISOString()),
         supabase.from('bookings').select(select).eq('shop_id', shopId).gte('date', localDate(monthStart)).lt('date', localDate(nextMonthStart)).order('date').order('time'),
         supabase.from('bookings').select(select).eq('shop_id', shopId).eq('status', 'completed').gte('date', localDate(historyStart)).order('date', { ascending: false }).limit(2000),
         supabase.from('bookings').select(select).eq('shop_id', shopId).gte('date', today).in('status', ['scheduled', 'confirmed', 'in_progress']).order('date').order('time').limit(8),
@@ -78,16 +83,17 @@ export function PetOverview({ shopId, businessType, onNavigate }: Props) {
         setLoadError('Alguns indicadores não puderam ser carregados. Tente novamente.')
       }
       setTodayBookings((results[0].data as BookingWithDetails[]) || [])
-      setMonthBookings((results[1].data as BookingWithDetails[]) || [])
-      setHistoryBookings((results[2].data as BookingWithDetails[]) || [])
-      setUpcoming((results[3].data as BookingWithDetails[]) || [])
-      setTransactions((results[4].data as FinancialTransaction[]) || [])
-      setTeam((results[5].data as Pick<Barber, 'id' | 'name'>[]) || [])
-      setPetRows((results[6].data as Pet[]) || [])
-      setCustomers(results[7].count || 0)
-      setNewCustomers(results[8].count || 0)
-      setLowStockCount(((results[9].data as { quantity: number; minimum_stock: number }[]) || []).filter((row) => Number(row.quantity) <= Number(row.minimum_stock)).length)
-      setVaccinesDueCount(results[10].count || 0)
+      setCompletedToday(results[1].count || 0)
+      setMonthBookings((results[2].data as BookingWithDetails[]) || [])
+      setHistoryBookings((results[3].data as BookingWithDetails[]) || [])
+      setUpcoming((results[4].data as BookingWithDetails[]) || [])
+      setTransactions((results[5].data as FinancialTransaction[]) || [])
+      setTeam((results[6].data as Pick<Barber, 'id' | 'name'>[]) || [])
+      setPetRows((results[7].data as Pet[]) || [])
+      setCustomers(results[8].count || 0)
+      setNewCustomers(results[9].count || 0)
+      setLowStockCount(((results[10].data as { quantity: number; minimum_stock: number }[]) || []).filter((row) => Number(row.quantity) <= Number(row.minimum_stock)).length)
+      setVaccinesDueCount(results[11].count || 0)
       setLoading(false)
     }
     load()
@@ -174,7 +180,7 @@ export function PetOverview({ shopId, businessType, onNavigate }: Props) {
           <Stat label="Atendimentos" value={String(metrics.activeToday.length)} hint="ativos hoje" />
           <Stat label="Receita prevista" value={formatPrice(metrics.expectedToday)} hint="pelos serviços agendados" />
           <Stat label="Próximos" value={String(upcoming.length)} hint="na fila da agenda" />
-          <Stat label="Concluídos" value={String(todayBookings.filter((booking) => booking.status === 'completed').length)} hint="hoje" />
+          <Stat label="Concluídos" value={String(completedToday)} hint="finalizados hoje" />
         </div>
       </DashboardSection>
 
