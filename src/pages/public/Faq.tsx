@@ -44,10 +44,10 @@ export function Faq() {
   return <div className="premium-landing premium-faq">
     <MarketingHeader />
     <main className="faq-page">
-      <header className="faq-intro"><p className="premium-eyebrow">Central de ajuda</p><h1>Como podemos<br /><span>te ajudar?</span></h1><p>Encontre respostas sobre o seu negócio, a configuração e o dia a dia no onefind.</p></header>
-      <div className="faq-layout"><aside className="faq-support"><h2>Precisa de uma mão?</h2><p>Converse com a gente sobre a configuração ou o uso da plataforma.</p><a href="https://wa.me/5519974280798?text=Ol%C3%A1!%20Preciso%20de%20ajuda%20com%20o%20onefind." target="_blank" rel="noopener noreferrer">Falar pelo WhatsApp ↗</a><span>(19) 97428-0798</span></aside>
+      <header className="faq-intro"><p className="premium-eyebrow">Ajuda</p><h1>Perguntas frequentes</h1><p>Configuração, assinatura e uso da plataforma.</p></header>
+      <div className="faq-layout">
       <div className="faq-groups">{GROUPS.map(group => <section key={group.title}><h2>{group.title}</h2><div className="faq-questions">{group.items.map(([question, answer]) => <details key={question}><summary>{question}<span aria-hidden="true">+</span></summary><p>{answer}</p></details>)}</div></section>)}<section><h2>Privacidade</h2><div className="faq-questions"><details><summary>Onde consulto as informações sobre meus dados?<span aria-hidden="true">+</span></summary><p>Veja como os dados são tratados e quais são os canais de contato na <Link to="/privacidade">Política de Privacidade</Link>.</p></details></div></section></div></div>
     </main>
-    <footer className="premium-footer"><Link to="/"><BrandLogo /></Link><p>Negócios que cuidam, sempre encontram.</p><nav aria-label="Rodapé"><Link to="/">Início</Link><Link to="/privacidade">Privacidade</Link><Link to="/minhas-reservas">Minhas reservas</Link></nav></footer>
+    <footer className="premium-footer"><Link to="/#inicio"><BrandLogo /></Link><nav aria-label="Rodapé"><Link to="/">Início</Link><Link to="/privacidade">Privacidade</Link><Link to="/minhas-reservas">Minhas reservas</Link></nav></footer>
   </div>
 }
