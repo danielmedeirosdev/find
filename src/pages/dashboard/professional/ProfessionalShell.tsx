@@ -1,5 +1,6 @@
 import { BusinessAccount } from '../../../components/BusinessAccount'
-import type { ReactNode } from 'react'
+import { useLayoutEffect, useRef, type ReactNode } from 'react'
+import { useLocation } from 'react-router-dom'
 import { SegmentProvider } from '../../../contexts/SegmentContext'
 import { BrandAccent } from '../../../components/BrandAccent'
 import type { Shop, ShopSegment } from '../../../lib/types'
@@ -47,6 +48,23 @@ export function ProfessionalShell({
   children,
 }: Props) {
   const meta = getSegment(segment)
+  const location = useLocation()
+  const contentRef = useRef<HTMLDivElement>(null)
+  const previousTab = useRef(activeTab)
+  useLayoutEffect(() => {
+    const explicitDestination = new URLSearchParams(location.search).has('aba')
+    const changed = previousTab.current !== activeTab
+    previousTab.current = activeTab
+    if (!explicitDestination && !changed) return
+    const frame = requestAnimationFrame(() => {
+      const content = contentRef.current
+      if (!content) return
+      const headerHeight = document.querySelector('.dashboard-glass-header')?.getBoundingClientRect().height || 80
+      content.focus({ preventScroll: true })
+      window.scrollTo({ top: window.scrollY + content.getBoundingClientRect().top - headerHeight - 20, behavior: 'instant' })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [activeTab, location.key, location.search])
 
   return (
     <SegmentProvider segment={segment}>
@@ -126,8 +144,8 @@ export function ProfessionalShell({
           </nav>
         )}
 
-        <div key={activeTab} className="panel-enter">
-          {children}
+        <div key={activeTab} ref={contentRef} tabIndex={-1} role="region" aria-label={tabs.find(tab => tab.id === activeTab)?.label || title} className="dashboard-tab-content">
+          <div className="panel-enter">{children}</div>
         </div>
       </div>
     </SegmentProvider>

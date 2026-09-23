@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom'
 import { DashboardHeaderContext } from '../contexts/DashboardHeaderContext'
 import { useContext, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import type { Shop } from "../lib/types";
 export function BusinessAccount({
@@ -14,6 +14,7 @@ export function BusinessAccount({
   access?: "owner" | "staff" | "account";
 }) {
   const { signOut } = useAuth();
+  const { pathname } = useLocation();
   const headerTarget = useContext(DashboardHeaderContext);
   const [open, setOpen] = useState(false);
   const [failedImage, setFailedImage] = useState<string | null>(null);
@@ -81,7 +82,7 @@ export function BusinessAccount({
           <Link to="/painel/dashboard">Abrir painel</Link>
           {access === "owner" && <><Link to="/painel/dashboard?aba=info">Dados e foto do negócio</Link><Link to="/painel/dashboard?aba=subscription">Assinatura</Link></>}
           {access === "account" && <Link to="/minhas-reservas">Minhas reservas</Link>}
-          <Link to="/">Ver site público</Link>
+          {pathname.startsWith("/painel") && <Link to="/">Ver site público</Link>}
           <Link to="/faq">Ajuda</Link>
           <button type="button" onClick={() => void signOut()}>
             Sair da conta

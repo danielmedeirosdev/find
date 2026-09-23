@@ -1,271 +1,53 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { PUBLIC_SITE_ORIGIN } from '../../lib/site'
+import { MarketingHeader } from '../../components/MarketingHeader'
+import { BrandLogo } from '../../components/BrandLogo'
 import { SUBSCRIPTION_PRICE } from '../../lib/types'
 import { formatPrice } from '../../lib/format'
 
-const CONTACT_EMAIL = 'danielmedeiros.web@gmail.com.br'
-const PRICE_LABEL = `${formatPrice(SUBSCRIPTION_PRICE)} por mês`
-const SITE_HOST = PUBLIC_SITE_ORIGIN.replace(/^https?:\/\//, '')
-
-type FaqItem = {
-  q: string
-  text: string
-  a: ReactNode
-}
-
-type FaqGroup = {
-  title: string
-  items: FaqItem[]
-}
-
-const GROUPS: FaqGroup[] = [
-  {
-    title: 'Sobre o ONEFIND',
-    items: [
-      {
-        q: 'O que é o ONEFIND?',
-        text: `ONEFIND é a plataforma de agendamento online e gestão para pet shops e negócios pet, em ${SITE_HOST}. Clientes marcam horário pelo site. Profissionais gerenciam agenda, clientes, serviços e o negócio em um só painel.`,
-        a: (
-          <p>
-            O ONEFIND é a plataforma de agendamento online e gestão para pet shops e negócios pet, em{' '}
-            <a href={PUBLIC_SITE_ORIGIN} className="text-brass underline-offset-2 hover:underline">
-              {SITE_HOST}
-            </a>
-            . Clientes marcam horário pelo site. Profissionais gerenciam agenda, clientes, serviços
-            e o negócio em um só painel.
-          </p>
-        ),
-      },
-    ],
-  },
-  {
-    title: 'Para clientes',
-    items: [
-      {
-        q: 'Como marco um horário?',
-        text: 'Abra o link de agendamento divulgado pela sua pet shop no Instagram, WhatsApp ou Google. Selecione serviço, profissional e um horário livre. Informe nome e WhatsApp para confirmar. O horário fica reservado na hora.',
-        a: (
-          <p>
-            Abra o link de agendamento divulgado pela sua pet shop no Instagram,
-            WhatsApp ou Google. Selecione serviço,
-            profissional e um horário livre. Informe nome e WhatsApp para confirmar. O horário fica
-            reservado na hora.
-          </p>
-        ),
-      },
-      {
-        q: 'Preciso criar uma conta para agendar?',
-        text: 'Não. Basta nome e WhatsApp. Se quiser, crie uma conta ou entre com Google para acompanhar tudo em Minhas Reservas.',
-        a: (
-          <p>
-            Não. Basta nome e WhatsApp. Se quiser,{' '}
-            <Link to="/entrar" className="text-brass underline-offset-2 hover:underline">
-              crie uma conta
-            </Link>{' '}
-            ou entre com Google para acompanhar tudo em Minhas Reservas.
-          </p>
-        ),
-      },
-      {
-        q: 'Como acesso minhas reservas?',
-        text: 'Entre em Minhas Reservas com e-mail, WhatsApp ou Google. Agendamentos feitos sem conta também podem ser recuperados pelo WhatsApp usado na reserva.',
-        a: (
-          <p>
-            Entre em{' '}
-            <Link to="/minhas-reservas" className="text-brass underline-offset-2 hover:underline">
-              Minhas Reservas
-            </Link>{' '}
-            com e-mail, WhatsApp ou Google. Agendamentos feitos sem conta também podem ser
-            recuperados pelo WhatsApp usado na reserva.
-          </p>
-        ),
-      },
-      {
-        q: 'Posso entrar com Google?',
-        text: 'Sim. Clientes e profissionais podem entrar com Google, além de e-mail e senha.',
-        a: (
-          <p>
-            Sim. Clientes e profissionais podem entrar com Google, além de e-mail e senha.
-          </p>
-        ),
-      },
-      {
-        q: 'Como funciona o onefind?',
-        text: 'No onefind o agendamento é para o pet. Informe o WhatsApp para localizar tutores e pets já cadastrados, escolha o serviço e o horário. O porte do animal entra no cadastro para o pet shop preparar o atendimento.',
-        a: (
-          <p>
-            No onefind o agendamento é para o pet. Informe o WhatsApp para localizar tutores e
-            pets já cadastrados, escolha o serviço e o horário. O porte do animal entra no cadastro
-            para o pet shop preparar o atendimento.
-          </p>
-        ),
-      },
-      {
-        q: 'Como deixo uma avaliação?',
-        text: 'Depois do atendimento concluído, o estabelecimento pode enviar um link para você avaliar o serviço. A nota aparece na página pública do negócio.',
-        a: (
-          <p>
-            Depois do atendimento concluído, o estabelecimento pode enviar um link para você
-            avaliar o serviço. A nota aparece na página pública do negócio.
-          </p>
-        ),
-      },
-    ],
-  },
-  {
-    title: 'Para profissionais',
-    items: [
-      {
-        q: 'Como começo a usar o painel?',
-        text: 'Abra a área profissional, crie o estabelecimento (pet shop) e complete o cadastro. Você ganha 30 dias de teste grátis, sem cartão de crédito.',
-        a: (
-          <p>
-            Abra a{' '}
-            <Link to="/painel?modo=cadastro" className="text-brass underline-offset-2 hover:underline">
-              área profissional
-            </Link>
-            , crie o estabelecimento (pet shop) e complete o cadastro. Você ganha 30
-            dias de teste grátis, sem cartão de crédito.
-          </p>
-        ),
-      },
-      {
-        q: 'O teste grátis pede cartão?',
-        text: 'Não. São 30 dias para configurar serviços, equipe, horários e receber agendamentos. O cartão ou o Pix só entram se você assinar depois do teste.',
-        a: (
-          <p>
-            Não. São 30 dias para configurar serviços, equipe, horários e receber agendamentos. O
-            cartão ou o Pix só entram se você assinar depois do teste.
-          </p>
-        ),
-      },
-      {
-        q: 'Quanto custa depois do teste?',
-        text: `A assinatura custa ${PRICE_LABEL}, por estabelecimento.`,
-        a: (
-          <p>
-            A assinatura custa <span className="text-ink">{PRICE_LABEL}</span>, por estabelecimento.
-          </p>
-        ),
-      },
-      {
-        q: 'Como pago a assinatura?',
-        text: 'No painel, em Assinatura, escolha Pix ou cartão. O pagamento é processado pelo Asaas. Não armazenamos o número completo do cartão na plataforma.',
-        a: (
-          <p>
-            No painel, em Assinatura, escolha Pix ou cartão. O pagamento é processado pelo Asaas.
-            Não armazenamos o número completo do cartão na plataforma.
-          </p>
-        ),
-      },
-      {
-        q: 'O que acontece quando o teste acaba?',
-        text: 'Sem assinatura ativa o painel fica bloqueado até a regularização. Os dados do estabelecimento permanecem. Depois de assinar, o acesso volta ao normal.',
-        a: (
-          <p>
-            Sem assinatura ativa o painel fica bloqueado até a regularização. Os dados do
-            estabelecimento permanecem. Depois de assinar, o acesso volta ao normal.
-          </p>
-        ),
-      },
-      {
-        q: 'Como os clientes encontram meu negócio?',
-        text: 'O estabelecimento aparece na lista pública de onefind ou onefind. Você também pode compartilhar o link da página pública (endereço curto /b/seu-nome) e o WhatsApp do negócio.',
-        a: (
-          <p>
-            O estabelecimento aparece na lista pública de onefind ou onefind. Você também
-            pode compartilhar o link da página pública (endereço curto <span className="text-ink">/b/seu-nome</span>) e o
-            WhatsApp do negócio.
-          </p>
-        ),
-      },
-    ],
-  },
-  {
-    title: 'Privacidade e contato',
-    items: [
-      {
-        q: 'Como o ONEFIND trata meus dados?',
-        text: 'Coletamos só o necessário para conta, agendamento e gestão do negócio, em conformidade com a LGPD. Detalhes estão na Política de Privacidade.',
-        a: (
-          <p>
-            Coletamos só o necessário para conta, agendamento e gestão do negócio, em conformidade
-            com a LGPD. Detalhes estão na{' '}
-            <Link to="/privacidade" className="text-brass underline-offset-2 hover:underline">
-              Política de Privacidade
-            </Link>
-            .
-          </p>
-        ),
-      },
-      {
-        q: 'Como falo com o suporte?',
-        text: `Escreva para ${CONTACT_EMAIL}. Respondemos dúvidas de clientes e de profissionais.`,
-        a: (
-          <p>
-            Escreva para{' '}
-            <a
-              href={`mailto:${CONTACT_EMAIL}`}
-              className="text-brass underline-offset-2 hover:underline"
-            >
-              {CONTACT_EMAIL}
-            </a>
-            . Respondemos dúvidas de clientes e de profissionais.
-          </p>
-        ),
-      },
-    ],
-  },
+const GROUPS = [
+  { title: 'Primeiros passos', items: [
+    ['O que é o onefind?', 'Uma plataforma de gestão para pet shops e banho e tosa. Reúne clientes, pets, serviços, equipe, atendimentos e financeiro em um só lugar.'],
+    ['Como começo?', 'Crie sua conta e cadastre seu estabelecimento. Depois, escolha configurar sozinho pelo passo a passo ou receber ajuda humana pelo WhatsApp.'],
+    ['O que significa “Comece em 1 minuto”?', 'É o convite para dar o primeiro passo e iniciar seu cadastro. A configuração completa depende das informações do seu negócio, como serviços, equipe e horários.'],
+    ['Preciso cadastrar um cartão para testar?', 'Não. Você tem 30 dias grátis para conhecer a plataforma, sem cadastrar cartão para começar.'],
+  ]},
+  { title: 'Configuração e rotina', items: [
+    ['Como funciona a configuração assistida?', 'Na configuração inicial, escolha “Configuração com assistente”. Você poderá editar a mensagem e abrir uma conversa no WhatsApp para receber orientação humana. A conclusão depende das informações do negócio e da disponibilidade do atendimento.'],
+    ['Posso configurar por conta própria?', 'Sim. O passo a passo permite informar os dados do estabelecimento, cadastrar serviços e equipe e definir os horários. As informações podem ser ajustadas depois no painel.'],
+    ['Quem define a duração e os horários dos atendimentos?', 'O estabelecimento define os serviços, a duração e a disponibilidade. Se o atendimento depende de avaliação do pet ou de um encaixe, combine os detalhes com o tutor antes de registrar ou confirmar o atendimento.'],
+    ['O onefind responde mensagens do WhatsApp automaticamente?', 'Não. O atendimento pelo WhatsApp continua sendo feito por você ou pela sua equipe. O onefind centraliza as informações e a gestão dos atendimentos.'],
+    ['Como divulgo meu estabelecimento?', 'No painel, acesse “Link público” e compartilhe o endereço da página do seu negócio no WhatsApp, Instagram e Google.'],
+    ['Onde altero o nome e a foto do negócio?', 'Abra o menu da conta, no canto superior direito, e selecione “Dados e foto do negócio”. Você também pode acessar “Meu pet shop” no painel.'],
+  ]},
+  { title: 'Plano e assinatura', items: [
+    ['Quanto custa depois do teste?', `A assinatura custa ${formatPrice(SUBSCRIPTION_PRICE)} por mês, por estabelecimento.`],
+    ['Onde vejo minha assinatura?', 'No menu da conta, selecione “Assinatura”, ou acesse “Plano” no painel. Ali você consulta a situação da assinatura e as opções de pagamento.'],
+    ['Quais são as formas de pagamento?', 'A área de assinatura oferece Pix e cartão, com pagamento processado pelo Asaas. Confira as opções e os dados antes de confirmar o pagamento.'],
+    ['O que acontece quando o teste termina?', 'Para continuar utilizando o painel após o período grátis, é necessário ativar a assinatura. Consulte a situação do seu plano na área de assinatura.'],
+  ]},
+  { title: 'Para tutores', items: [
+    ['Como solicito um atendimento para meu pet?', 'Abra o link compartilhado pelo estabelecimento e siga as opções apresentadas. Informe os dados solicitados do tutor e do pet. Para serviços que precisam de avaliação ou combinação de horário, fale diretamente com o pet shop.'],
+    ['Como acompanho minhas reservas?', 'Acesse “Minhas reservas” com sua conta. Se não encontrar um atendimento, entre em contato com o estabelecimento para conferir os dados usados no cadastro.'],
+    ['Posso entrar com Google?', 'Sim. A tela de acesso oferece Google, além de e-mail e senha.'],
+    ['Como deixo uma avaliação?', 'Depois de concluir o atendimento, o estabelecimento pode compartilhar um link para você avaliar o serviço.'],
+  ]},
 ]
 
 export function Faq() {
   useEffect(() => {
-    const previousTitle = document.title
-    document.title = 'Perguntas frequentes · ONEFIND'
-
-    return () => {
-      document.title = previousTitle
-    }
+    const previous = document.title
+    document.title = 'Ajuda e perguntas frequentes · onefind'
+    window.scrollTo({ top: 0, behavior: 'instant' })
+    return () => { document.title = previous }
   }, [])
-
-  return (
-    <article className="mx-auto max-w-2xl">
-      <p className="text-xs uppercase tracking-[0.3em] text-brass font-medium">Ajuda</p>
-      <h1 className="mt-3 font-display text-4xl tracking-wide text-ink sm:text-5xl">
-        Perguntas frequentes
-      </h1>
-      <p className="mt-3 text-sm text-ink-muted">
-        Respostas objetivas sobre agendamento, painel profissional e a plataforma ONEFIND.
-      </p>
-
-      <div className="mt-10 space-y-10">
-        {GROUPS.map((group) => (
-          <section key={group.title}>
-            <h2 className="font-display text-xl tracking-wide text-ink">{group.title}</h2>
-            <div className="mt-3 divide-y divide-ink/10 border-y border-ink/10">
-              {group.items.map((item) => (
-                <details key={item.q} className="faq-item group">
-                  <summary className="faq-summary">
-                    <span>{item.q}</span>
-                  </summary>
-                  <div className="pb-4 pr-8 text-[15px] leading-relaxed text-ink-muted">{item.a}</div>
-                </details>
-              ))}
-            </div>
-          </section>
-        ))}
-      </div>
-
-      <p className="mt-12 text-sm text-ink-muted">
-        <Link to="/" className="text-brass underline-offset-2 hover:underline">
-          Voltar ao início
-        </Link>
-        {' · '}
-        <Link to="/privacidade" className="text-brass underline-offset-2 hover:underline">
-          Política de Privacidade
-        </Link>
-      </p>
-    </article>
-  )
+  return <div className="premium-landing premium-faq">
+    <MarketingHeader />
+    <main className="faq-page">
+      <header className="faq-intro"><p className="premium-eyebrow">Central de ajuda</p><h1>Como podemos<br /><span>te ajudar?</span></h1><p>Encontre respostas sobre o seu negócio, a configuração e o dia a dia no onefind.</p></header>
+      <div className="faq-layout"><aside className="faq-support"><h2>Precisa de uma mão?</h2><p>Converse com a gente sobre a configuração ou o uso da plataforma.</p><a href="https://wa.me/5519974280798?text=Ol%C3%A1!%20Preciso%20de%20ajuda%20com%20o%20onefind." target="_blank" rel="noopener noreferrer">Falar pelo WhatsApp ↗</a><span>(19) 97428-0798</span></aside>
+      <div className="faq-groups">{GROUPS.map(group => <section key={group.title}><h2>{group.title}</h2><div className="faq-questions">{group.items.map(([question, answer]) => <details key={question}><summary>{question}<span aria-hidden="true">+</span></summary><p>{answer}</p></details>)}</div></section>)}<section><h2>Privacidade</h2><div className="faq-questions"><details><summary>Onde consulto as informações sobre meus dados?<span aria-hidden="true">+</span></summary><p>Veja como os dados são tratados e quais são os canais de contato na <Link to="/privacidade">Política de Privacidade</Link>.</p></details></div></section></div></div>
+    </main>
+    <footer className="premium-footer"><Link to="/"><BrandLogo /></Link><p>Negócios que cuidam, sempre encontram.</p><nav aria-label="Rodapé"><Link to="/">Início</Link><Link to="/privacidade">Privacidade</Link><Link to="/minhas-reservas">Minhas reservas</Link></nav></footer>
+  </div>
 }

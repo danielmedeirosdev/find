@@ -28,6 +28,7 @@ export default function App() {
           <Route index element={<MarketingLanding />} />
           <Route path="apresentacao" element={<MarketingLanding />} />
           <Route path="pet" element={<MarketingLanding />} />
+          <Route path="faq" element={<Faq />} />
           <Route path="solucoes" element={<Navigate to="/" replace />} />
 
           <Route element={<PublicLayout />}>
@@ -40,7 +41,7 @@ export default function App() {
             <Route path="auth/callback" element={<AuthCallback />} />
             <Route path="minhas-reservas" element={<MyBookings />} />
             <Route path="privacidade" element={<PrivacyPolicy />} />
-            <Route path="faq" element={<Faq />} />
+
             <Route path="novidades" element={<Navigate to="/" replace />} />
             <Route path="*" element={<NotFound />} />
           </Route>
