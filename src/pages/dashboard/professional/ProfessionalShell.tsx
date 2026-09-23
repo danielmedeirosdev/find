@@ -68,7 +68,8 @@ export function ProfessionalShell({
               {subtitle || meta.panelSubtitle}
             </p>
           </div>
-          <div className="flex items-center gap-3 sm:ml-auto"><UpdatesButton /><BusinessAccount shop={shop} /></div>
+          <UpdatesButton className="sm:ml-auto" />
+          <BusinessAccount shop={shop} />
         </div>
 
         <BrandAccent className="mb-6 max-w-sm" height="h-1" segment={segment} />

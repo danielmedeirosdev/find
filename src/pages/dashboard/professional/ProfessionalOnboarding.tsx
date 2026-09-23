@@ -1,3 +1,5 @@
+import { BusinessAccount } from '../../../components/BusinessAccount'
+import { formatPhone } from '../../../lib/format'
 import { SetupChoice } from '../../../components/SetupChoice'
 import { BrandLogo } from '../../../components/BrandLogo'
 import { trackFunnel } from '../../../lib/analytics'
@@ -83,7 +85,7 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
   )
   const [slogan, setSlogan] = useState(shop.slogan || '')
   const [address, setAddress] = useState(shop.address || '')
-  const [phone, setPhone] = useState(shop.phone || '')
+  const [phone, setPhone] = useState(formatPhone(shop.phone))
   const [services, setServices] = useState<OnboardingServiceInput[]>([{ ...EMPTY_SERVICE }])
   const [staff, setStaff] = useState<OnboardingStaffInput[]>([{ ...EMPTY_STAFF }])
   const [existingServices, setExistingServices] = useState<string[]>([])
@@ -264,7 +266,7 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
     }
   }
 
-  if (!setupSelected) return <SetupChoice onManual={() => setSetupSelected(true)} />
+  if (!setupSelected) return <><BusinessAccount shop={shop} /><SetupChoice onManual={() => setSetupSelected(true)} /></>
 
   if (loading) {
     return (
@@ -276,6 +278,7 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
 
   return (
     <main className="premium-onboarding min-h-screen bg-charcoal px-4 py-8 text-white sm:py-12">
+      <BusinessAccount shop={shop} />
       <div className="mx-auto max-w-3xl">
         <div className="mb-8 text-center">
           <BrandLogo inverse />
@@ -481,7 +484,7 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
                   <input
                     type="tel"
                     value={phone}
-                    onChange={(event) => setPhone(event.target.value)}
+                    onChange={(event) => { setPhone(formatPhone(event.target.value)); setError('') }}
                     required
                     maxLength={20}
                     autoComplete="tel"
