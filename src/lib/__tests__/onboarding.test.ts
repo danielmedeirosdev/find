@@ -22,6 +22,10 @@ describe('configuração inicial profissional', () => {
     })
   })
 
+  it.each(['19974280798', '(19) 97428-0798', '+55 (19) 97428-0798'])('aceita e formata o WhatsApp %s', (phone) => {
+    expect(parseOnboardingProfile({ slogan: 'Cuidados com pets', address: 'Rua Exemplo, 114', phone }).phone).toBe('(19) 97428-0798')
+  })
+
   it('exige endereço e telefone válidos', () => {
     expect(() =>
       parseOnboardingProfile({ slogan: 'Meu negócio', address: '', phone: '123' })

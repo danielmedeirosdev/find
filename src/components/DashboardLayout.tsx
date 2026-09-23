@@ -1,3 +1,5 @@
+import { DashboardHeaderContext } from '../contexts/DashboardHeaderContext'
+import { AppIcon } from './AppIcon'
 import { BrandLogo } from './BrandLogo'
 import { useEffect, useState } from 'react'
 import { Link, Outlet, useNavigate, useSearchParams } from 'react-router-dom'
@@ -9,6 +11,7 @@ import { supabase } from '../lib/supabase'
 import type { ShopSegment } from '../lib/types'
 
 export function DashboardLayout() {
+  const [accountTarget, setAccountTarget] = useState<HTMLDivElement | null>(null)
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
@@ -65,30 +68,24 @@ export function DashboardLayout() {
     >
       <SetupBanner />
       <header className="dashboard-glass-header border-b border-charcoal-light">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+        <div className="dashboard-header-inner mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <Link to="/painel" className="flex items-baseline gap-2">
             <BrandLogo inverse />
 
           </Link>
-          <div className="flex items-center gap-4 text-sm"><Link to="/faq" className="text-charcoal-muted hover:text-white">Ajuda</Link>
-            <Link
-              to={showSegmentMark ? meta.path : '/'}
-              className="text-charcoal-muted hover:text-brass transition-colors"
-            >
-              Ver site público
-            </Link>
-            <button
-              onClick={handleSignOut}
-              className="text-charcoal-muted hover:text-white transition-colors"
-            >
-              Sair
-            </button>
+          <div className="dashboard-header-actions">
+            <Link to="/faq" className="dashboard-help" aria-label="Ajuda"><AppIcon name="help" size={21} /><span>Ajuda</span></Link>
+            <div className="dashboard-account-slot" ref={setAccountTarget} />
+            <div className="dashboard-account-fallback">
+              <Link to={showSegmentMark ? meta.path : '/'}>Ver site público</Link>
+              {user && <button onClick={handleSignOut}>Sair</button>}
+            </div>
           </div>
         </div>
         <BrandAccent height="h-1.5" segment={segmentId} />
       </header>
       <main className="mx-auto max-w-6xl px-4 py-8">
-        <Outlet />
+        <DashboardHeaderContext.Provider value={accountTarget}><Outlet /></DashboardHeaderContext.Provider>
       </main>
     </div>
   )

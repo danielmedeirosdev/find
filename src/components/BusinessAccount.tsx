@@ -1,13 +1,20 @@
-import { useEffect, useRef, useState } from "react";
+import { createPortal } from 'react-dom'
+import { DashboardHeaderContext } from '../contexts/DashboardHeaderContext'
+import { useContext, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import type { Shop } from "../lib/types";
 export function BusinessAccount({
   shop,
+  inHeader = true,
+  access = "owner",
 }: {
   shop: Pick<Shop, "name" | "logo_url">;
+  inHeader?: boolean;
+  access?: "owner" | "staff" | "account";
 }) {
   const { signOut } = useAuth();
+  const headerTarget = useContext(DashboardHeaderContext);
   const [open, setOpen] = useState(false);
   const [failedImage, setFailedImage] = useState<string | null>(null);
   const root = useRef<HTMLDivElement>(null);
@@ -30,7 +37,8 @@ export function BusinessAccount({
       document.removeEventListener("keydown", escape);
     };
   }, [open]);
-  return (
+  if (inHeader && !headerTarget) return null;
+  const content = (
     <div
       className="business-account"
       ref={root}
@@ -42,6 +50,7 @@ export function BusinessAccount({
         ref={trigger}
         type="button"
         className="account-trigger"
+        aria-label={`Conta de ${shop.name || "Meu pet shop"}`}
         aria-expanded={open}
         aria-controls="business-account-panel"
         onClick={() => setOpen(!open)}
@@ -59,7 +68,7 @@ export function BusinessAccount({
         )}
         <span className="account-name">
           <strong>{shop.name || "Meu pet shop"}</strong>
-          <small>Seu negócio</small>
+          <small>{access === "account" ? "Sua conta" : "Seu negócio"}</small>
         </span>
         <span aria-hidden="true">⌄</span>
       </button>
@@ -69,8 +78,10 @@ export function BusinessAccount({
           className="account-dropdown"
           onClick={() => setOpen(false)}
         >
-          <Link to="/painel/dashboard?aba=info">Dados e foto do negócio</Link>
-          <Link to="/painel/dashboard?aba=subscription">Assinatura</Link>
+          <Link to="/painel/dashboard">Abrir painel</Link>
+          {access === "owner" && <><Link to="/painel/dashboard?aba=info">Dados e foto do negócio</Link><Link to="/painel/dashboard?aba=subscription">Assinatura</Link></>}
+          {access === "account" && <Link to="/minhas-reservas">Minhas reservas</Link>}
+          <Link to="/">Ver site público</Link>
           <Link to="/faq">Ajuda</Link>
           <button type="button" onClick={() => void signOut()}>
             Sair da conta
@@ -79,4 +90,5 @@ export function BusinessAccount({
       )}
     </div>
   );
+  return inHeader && headerTarget ? createPortal(content, headerTarget) : content;
 }

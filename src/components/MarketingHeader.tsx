@@ -1,10 +1,11 @@
+import { SessionAccount } from './SessionAccount'
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { BrandLogo } from "./BrandLogo";
 export function MarketingHeader() {
   const [open, setOpen] = useState(false);
   return (
-    <header className="premium-header">
+    <header className="premium-header" onKeyDown={event => { if (event.key === "Escape") setOpen(false) }}>
       <div className="premium-nav">
         <Link to="/" aria-label="onefind — início">
           <BrandLogo />
@@ -16,9 +17,7 @@ export function MarketingHeader() {
           <Link to="/faq">Ajuda</Link>
         </nav>
         <div className="nav-actions">
-          <Link className="login-link" to="/painel">
-            Entrar
-          </Link>
+          <SessionAccount />
           <button
             className="mobile-menu-toggle"
             aria-label={open ? "Fechar menu" : "Abrir menu"}
@@ -26,7 +25,7 @@ export function MarketingHeader() {
             aria-controls="mobile-navigation"
             onClick={() => setOpen(!open)}
           >
-            {open ? "Fechar" : "Menu"}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">{open ? <path d="m6 6 12 12M18 6 6 18" /> : <path d="M4 8h16M4 16h16" />}</svg>
           </button>
         </div>
       </div>

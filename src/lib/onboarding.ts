@@ -1,3 +1,4 @@
+import { formatPhone } from './format'
 export type OnboardingServiceInput = {
   name: string
   price: string
@@ -19,7 +20,8 @@ export function parseOnboardingProfile(input: OnboardingProfileInput) {
   const slogan = input.slogan.trim()
   const address = input.address.trim()
   const phone = input.phone.trim()
-  const phoneDigits = phone.replace(/\D/g, '')
+  let phoneDigits = phone.replace(/\D/g, '')
+  if ((phoneDigits.length === 12 || phoneDigits.length === 13) && phoneDigits.startsWith('55')) phoneDigits = phoneDigits.slice(2)
 
   if (slogan.length < 3 || slogan.length > 120) {
     throw new Error('Informe um slogan curto, com até 120 caracteres.')
@@ -31,7 +33,7 @@ export function parseOnboardingProfile(input: OnboardingProfileInput) {
     throw new Error('Informe um telefone válido com DDD.')
   }
 
-  return { slogan, address, phone }
+  return { slogan, address, phone: formatPhone(phoneDigits) }
 }
 
 export function shouldShowProfessionalOnboarding(
