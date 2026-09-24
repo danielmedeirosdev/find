@@ -48,7 +48,6 @@ export function MarketingHeader() {
           <a href="/#recursos">Recursos</a>
           <a href="/#planos">Planos</a>
           <Link to="/faq">Ajuda</Link>
-          <Link to="/entrar">Sou cliente</Link>
         </nav>
       )}
     </header>

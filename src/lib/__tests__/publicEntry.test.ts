@@ -29,7 +29,7 @@ describe('public entry and direct booking', () => {
   ])('presents the system and business registration at %s', (path, signup) => {
     route.path = path
     const html = renderToStaticMarkup(createElement(App))
-    expect(html).toContain('Começar agora')
+    expect(html).toContain('Testar 30 dias grátis')
     expect(html).toContain(`href="${signup}"`)
     expect(html).toContain('href="/entrar"')
     expect(html).toContain('href="/painel"')
@@ -42,7 +42,7 @@ describe('public entry and direct booking', () => {
     'keeps the direct store route at %s outside the marketing page', (path) => {
       route.path = path
       const html = renderToStaticMarkup(createElement(App))
-      expect(html).not.toContain('Começar agora')
+      expect(html).not.toContain('Testar 30 dias grátis')
       expect(html).not.toContain('Página não encontrada')
       expect(html).not.toContain('href="/pet"')
       expect(html).not.toContain('href="/barbearia"')

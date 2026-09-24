@@ -3,7 +3,7 @@ import { MarketingHeader } from "../../components/MarketingHeader";
 import { HeroTitle } from "../../components/HeroTitle";
 import { AppIcon } from "../../components/AppIcon";
 import { trackFunnel } from "../../lib/analytics";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { CtaArrow } from "../../components/SegmentMark";
 
@@ -33,6 +33,18 @@ const steps = [
 
 export function MarketingLanding() {
   const location = useLocation();
+  const heroRef = useRef<HTMLElement>(null);
+  const [showMobileCta, setShowMobileCta] = useState(false);
+
+  useEffect(() => {
+    const hero = heroRef.current;
+    if (!hero) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      setShowMobileCta(!entry.isIntersecting && entry.boundingClientRect.top < 0);
+    });
+    observer.observe(hero);
+    return () => observer.disconnect();
+  }, []);
   const signupPath = "/painel?segment=pet&modo=cadastro";
 
   useEffect(() => {
@@ -81,7 +93,7 @@ export function MarketingLanding() {
     <div className="premium-landing editorial-home">
       <MarketingHeader />
       <main>
-        <section className="premium-hero" id="inicio">
+        <section className="premium-hero" id="inicio" ref={heroRef}>
           <div className="premium-hero-copy">
             <p className="premium-eyebrow">
               <AppIcon name="paw" size={17} /> Feito para pet shops e banho e
@@ -92,14 +104,14 @@ export function MarketingLanding() {
               Gestão para pet shops<br />e banho e tosa.
             </p>
             <p className="hero-detail">
-              Cadastros, atendimentos e financeiro reunidos para acompanhar o seu estabelecimento.
+              Chega de procurar recados no WhatsApp e conferir a agenda no caderno. Reúna clientes, pets, atendimentos e financeiro em um só lugar.
             </p>
             <Link
               to={signupPath}
               className="premium-button"
               onClick={() => trackFunnel("landing_cta", { placement: "hero" })}
             >
-              Começar agora <CtaArrow />
+              Testar 30 dias grátis <CtaArrow />
             </Link>
             <p className="hero-terms">
               30 dias grátis <span>·</span> sem cartão
@@ -111,7 +123,7 @@ export function MarketingLanding() {
           <div className="section-heading">
             <p className="premium-eyebrow">Para seu negócio</p>
             <h2>
-              O atendimento começa<br /><span>com as informações certas.</span>
+              Menos recados perdidos.<br /><span>Mais controle da sua rotina.</span>
             </h2>
             <p>
               Cada pet exige um cuidado diferente. Você define os serviços, os horários e os ajustes necessários após a avaliação.
@@ -122,7 +134,7 @@ export function MarketingLanding() {
               [
                 "paw",
                 "Clientes e pets",
-                "Consulte tutores, observações e histórico de atendimentos quando precisar.",
+                "Encontre o contato do tutor e os cuidados de cada pet sem procurar em conversas antigas.",
               ],
               [
                 "agenda",
@@ -132,7 +144,7 @@ export function MarketingLanding() {
               [
                 "wallet",
                 "Equipe e financeiro",
-                "Acompanhe serviços, equipe e financeiro no mesmo ambiente.",
+                "Veja os serviços realizados, quem atendeu e os valores recebidos sem juntar anotações no fim do dia.",
               ],
             ].map(([icon, title, detail]) => (
               <article key={title}>
@@ -163,6 +175,9 @@ export function MarketingLanding() {
             Configure no seu tempo ou escolha receber ajuda humana na
             configuração inicial.
           </p>
+          <Link to={signupPath} className="premium-button getting-started-cta" onClick={() => trackFunnel("landing_cta", { placement: "getting_started" })}>
+            Testar 30 dias grátis <CtaArrow />
+          </Link>
         </section>
         <section className="premium-section" id="planos">
           <div className="premium-pricing">
@@ -175,6 +190,13 @@ export function MarketingLanding() {
               <p className="price">
                 <strong>R$ 60</strong> / mês após o teste
               </p>
+              <ul className="plan-inclusions" aria-label="O que está incluído no plano">
+                <li>Cadastro de clientes e pets, com histórico e observações</li>
+                <li>Agenda e gestão dos atendimentos</li>
+                <li>Serviços, preços e organização da equipe</li>
+                <li>Controle financeiro do estabelecimento</li>
+                <li>Página da loja, link de agendamento e QR code</li>
+              </ul>
             </div>
             <div className="pricing-action">
               <Link
@@ -184,12 +206,25 @@ export function MarketingLanding() {
                   trackFunnel("landing_cta", { placement: "pricing" })
                 }
               >
-                Começar agora <CtaArrow />
+                Testar 30 dias grátis <CtaArrow />
               </Link>
               <p>Sem cartão para começar.</p>
-              <Link to="/faq">Tire suas dúvidas</Link>
+              <a href="#duvidas">Tire suas dúvidas</a>
             </div>
           </div>
+        </section>
+        <section className="premium-section landing-faq" id="duvidas">
+          <div className="section-heading">
+            <p className="premium-eyebrow">Antes de começar</p>
+            <h2>Suas dúvidas, respondidas.</h2>
+          </div>
+          <div className="faq-questions">
+            <details><summary>Preciso de cartão para testar?<span aria-hidden="true">+</span></summary><p>Não. Você tem 30 dias grátis, sem cadastrar cartão. Depois do teste, o plano custa R$ 60 por mês, por estabelecimento.</p></details>
+            <details><summary>Como solicito o cancelamento?<span aria-hidden="true">+</span></summary><p>Durante o teste, não há assinatura paga para cancelar. Se você já assinou, <a href="https://wa.me/5519974280798" target="_blank" rel="noreferrer">fale com o atendimento</a> para solicitar o cancelamento e conferir a situação das cobranças.</p></details>
+            <details><summary>Tem ajuda para trazer meus dados e configurar?<span aria-hidden="true">+</span></summary><p>Você pode escolher a configuração com assistente e receber orientação humana pelo WhatsApp. Conte como guarda seus cadastros hoje para combinar o que pode ser transferido e como será feito.</p></details>
+            <details><summary>Posso avaliar o pet antes de confirmar o horário?<span aria-hidden="true">+</span></summary><p>Sim. Você define os serviços, a duração e a disponibilidade. Quando precisar de uma avaliação, combine os detalhes com o tutor antes de registrar ou confirmar o atendimento.</p></details>
+          </div>
+          <Link className="all-questions" to="/faq">Ver todas as perguntas</Link>
         </section>
         <section className="premium-section referral-compact" aria-label="Indicações"><h2>Já usa o onefind?</h2><p>Uma indicação que se torna assinante vale um mês grátis.</p><Link to="/painel/dashboard?aba=referral">Ver programa de indicação</Link></section>
       </main>
@@ -203,6 +238,10 @@ export function MarketingLanding() {
           <Link to="/entrar">Sou cliente</Link>
         </nav>
       </footer>
+      {showMobileCta && <div className="mobile-signup-bar">
+        <Link to={signupPath} className="premium-button" onClick={() => trackFunnel("landing_cta", { placement: "mobile_sticky" })}>Testar 30 dias grátis <CtaArrow /></Link>
+        <p>Sem cartão para começar</p>
+      </div>}
     </div>
   );
 }
