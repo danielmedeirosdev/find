@@ -1446,9 +1446,9 @@ html {
 .editorial-home .faq-questions details > p { color: #474f5b; font-size: 1.0625rem; }
 .editorial-home .section-heading h2 span { color: #545c67; }
 .editorial-home .setup-note { color: #474f5b; font-size: 1rem !important; }
-.getting-started-cta { margin-top: 24px; }
-.plan-inclusions { display: grid; gap: 12px; margin-top: 28px; padding-left: 20px; list-style: disc; color: #474f5b; font-size: 1rem; line-height: 1.65; }
-.plan-inclusions li::marker { color: #88662f; }
+.plan-inclusions { display: grid; gap: 12px; margin-top: 28px; padding: 0; list-style: none; color: #474f5b; font-size: 1rem; line-height: 1.65; }
+.plan-inclusions li { display: grid; grid-template-columns: 1.25rem 1fr; gap: 10px; align-items: start; }
+.plan-inclusions li::before { content: "✓"; color: #88662f; font-family: Arial, sans-serif; font-weight: 700; line-height: 1.65; }
 .landing-faq { padding-top: 0; }
 .landing-faq .faq-questions { max-width: 820px; margin-top: 32px; }
 .all-questions { display: inline-block; margin-top: 24px; font-size: 1rem; color: #795823; text-decoration: underline; text-underline-offset: 4px; }

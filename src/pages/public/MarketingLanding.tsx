@@ -175,9 +175,6 @@ export function MarketingLanding() {
             Configure no seu tempo ou escolha receber ajuda humana na
             configuração inicial.
           </p>
-          <Link to={signupPath} className="premium-button getting-started-cta" onClick={() => trackFunnel("landing_cta", { placement: "getting_started" })}>
-            Testar 30 dias grátis <CtaArrow />
-          </Link>
         </section>
         <section className="premium-section" id="planos">
           <div className="premium-pricing">
@@ -206,7 +203,7 @@ export function MarketingLanding() {
                   trackFunnel("landing_cta", { placement: "pricing" })
                 }
               >
-                Testar 30 dias grátis <CtaArrow />
+                Testar no meu pet shop <CtaArrow />
               </Link>
               <p>Sem cartão para começar.</p>
               <a href="#duvidas">Tire suas dúvidas</a>
@@ -239,7 +236,7 @@ export function MarketingLanding() {
         </nav>
       </footer>
       {showMobileCta && <div className="mobile-signup-bar">
-        <Link to={signupPath} className="premium-button" onClick={() => trackFunnel("landing_cta", { placement: "mobile_sticky" })}>Testar 30 dias grátis <CtaArrow /></Link>
+        <Link to={signupPath} className="premium-button" onClick={() => trackFunnel("landing_cta", { placement: "mobile_sticky" })}>Testar no meu pet shop <CtaArrow /></Link>
         <p>Sem cartão para começar</p>
       </div>}
     </div>
