@@ -288,7 +288,7 @@ export function ShopList({ segment }: Props) {
         >
           {filteredShops.map((shop) => {
             const href = shop.slug
-              ? `/b/${shop.slug}`
+              ? `/${shop.slug}`
               : publicBookingPathForSegment(shop.id, shop.segment)
             return (
               <Link

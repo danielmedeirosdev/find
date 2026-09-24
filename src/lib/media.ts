@@ -27,8 +27,15 @@ export function slugify(input: string): string {
 }
 
 export function isValidSlug(slug: string): boolean {
-  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) && !RESERVED_SHOP_SLUGS.has(slug)
 }
+
+// Root-level pages must remain reachable when store slugs live at /:slug.
+const RESERVED_SHOP_SLUGS = new Set([
+  'apresentacao', 'pet', 'faq', 'solucoes', 'b', 'confirmacao', 'avaliar',
+  'entrar', 'cadastro', 'auth', 'minhas-reservas', 'privacidade', 'novidades',
+  'painel', 'landing', 'assets', 'api', 'robots', 'sitemap', 'favicon',
+])
 
 export async function ensureUniqueSlug(
   base: string,
@@ -40,6 +47,11 @@ export async function ensureUniqueSlug(
   let candidate = root
   let n = 1
   for (;;) {
+    if (!isValidSlug(candidate)) {
+      n += 1
+      candidate = `${root}-${n}`
+      continue
+    }
     const { data: available, error } = await supabase.rpc('is_shop_slug_available', {
       p_slug: candidate,
       p_exclude_shop_id: excludeShopId || null,
@@ -194,7 +206,7 @@ export function publicBookingPath(shopId: string, segment?: 'barbershop' | 'pet'
 }
 
 export function publicShopPath(slug: string): string {
-  return `/b/${slug}`
+  return `/${slug}`
 }
 
 export function publicShopUrl(slug: string): string {

@@ -1,6 +1,11 @@
 {
   "redirects": [
     {
+      "source": "/b/:slug",
+      "destination": "/:slug",
+      "permanent": true
+    },
+    {
       "source": "/solucoes",
       "destination": "/",
       "permanent": true
