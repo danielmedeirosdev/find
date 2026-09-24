@@ -1435,3 +1435,28 @@ html {
   .editorial-home .premium-pricing { padding-block: 28px; }
   .referral-compact { display: grid; gap: 12px; }
 }
+
+/* Landing conversion refinements, retaining onefind's gold and ink palette. */
+.editorial-home .premium-button { color: #17202d; background: linear-gradient(110deg, #d3b176, #c6a05c); font-size: 1rem; }
+.editorial-home .hero-detail,
+.editorial-home .section-heading > p:last-child,
+.editorial-home .premium-features p,
+.editorial-home .premium-steps p,
+.editorial-home .premium-pricing p,
+.editorial-home .faq-questions details > p { color: #474f5b; font-size: 1.0625rem; }
+.editorial-home .section-heading h2 span { color: #545c67; }
+.editorial-home .setup-note { color: #474f5b; font-size: 1rem !important; }
+.getting-started-cta { margin-top: 24px; }
+.plan-inclusions { display: grid; gap: 12px; margin-top: 28px; padding-left: 20px; list-style: disc; color: #474f5b; font-size: 1rem; line-height: 1.65; }
+.plan-inclusions li::marker { color: #88662f; }
+.landing-faq { padding-top: 0; }
+.landing-faq .faq-questions { max-width: 820px; margin-top: 32px; }
+.all-questions { display: inline-block; margin-top: 24px; font-size: 1rem; color: #795823; text-decoration: underline; text-underline-offset: 4px; }
+.mobile-signup-bar { display: none; }
+@media (max-width: 680px) {
+  .editorial-home { padding-bottom: calc(116px + env(safe-area-inset-bottom, 0px)); }
+  .mobile-signup-bar { display: grid; gap: 6px; position: fixed; z-index: 30; inset: auto 0 0; padding: 12px 20px calc(10px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid #ded8cc; background: #fcfbf8f5; backdrop-filter: blur(16px); }
+  .mobile-signup-bar .premium-button { width: 100%; min-height: 48px; padding: 12px 16px; }
+  .mobile-signup-bar p { color: #474f5b; font-size: .875rem; text-align: center; }
+  .editorial-home .pricing-action { min-width: 0; }
+}
