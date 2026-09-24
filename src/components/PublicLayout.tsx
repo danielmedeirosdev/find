@@ -15,6 +15,7 @@ export function PublicLayout() {
   const segmentId =
     segmentMeta?.id ||
     (pathname.startsWith('/b/') ||
+    /^\/[^/]+\/?$/.test(pathname) ||
     pathname === '/' ||
     pathname.startsWith('/entrar') ||
     pathname.startsWith('/cadastro') ||

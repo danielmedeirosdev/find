@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Navigate, Routes, Route, useParams } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { ReferralCapture } from './components/ReferralCapture'
 import { PublicLayout } from './components/PublicLayout'
@@ -33,7 +33,7 @@ export default function App() {
 
           <Route element={<PublicLayout />}>
             <Route path="pet/:shopId" element={<PetBooking />} />
-            <Route path="b/:slug" element={<ShopPublic />} />
+            <Route path="b/:slug" element={<LegacyShopRedirect />} />
             <Route path="confirmacao/:bookingId" element={<BookingConfirm />} />
             <Route path="avaliar/:bookingId" element={<GuestReview />} />
             <Route path="entrar" element={<ClientAuth />} />
@@ -43,6 +43,7 @@ export default function App() {
             <Route path="privacidade" element={<PrivacyPolicy />} />
 
             <Route path="novidades" element={<Navigate to="/" replace />} />
+            <Route path=":slug" element={<ShopPublic />} />
             <Route path="*" element={<NotFound />} />
           </Route>
 
@@ -56,4 +57,9 @@ export default function App() {
       </BrowserRouter>
     </AuthProvider>
   )
+}
+
+function LegacyShopRedirect() {
+  const { slug } = useParams<{ slug: string }>()
+  return <Navigate to={`/${slug ?? ''}`} replace />
 }

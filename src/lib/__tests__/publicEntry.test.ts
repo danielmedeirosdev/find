@@ -38,7 +38,7 @@ describe('public entry and direct booking', () => {
     expect(html).not.toContain('Buscar pet shop')
   })
 
-  it.each(['/pet/shop-id', '/b/shop-slug'])(
+  it.each(['/pet/shop-id', '/shop-slug'])(
     'keeps the direct store route at %s outside the marketing page', (path) => {
       route.path = path
       const html = renderToStaticMarkup(createElement(App))
@@ -48,6 +48,12 @@ describe('public entry and direct booking', () => {
       expect(html).not.toContain('href="/barbearia"')
     },
   )
+
+  it('redirects an old store link to the short address', () => {
+    route.path = '/b/shop-slug'
+    const html = renderToStaticMarkup(createElement(App))
+    expect(html).not.toContain('Página não encontrada')
+  })
 
   it('does not expose the removed barbershop route', () => {
     route.path = '/barbearia/shop-id'

@@ -11,6 +11,7 @@ import { publicSiteHost } from '../../../lib/site'
 import { Toast } from '../../../components/MediaUI'
 import { FieldHint } from '../../../components/FormHints'
 import { CtaArrow } from '../../../components/SegmentMark'
+import { ShopQRCode } from '../../../components/ShopQRCode'
 import { getSegment } from '../../../lib/segments'
 import type { Barber, Shop, ShopPhoto } from '../../../lib/types'
 
@@ -53,7 +54,7 @@ export function ShopLinkTab({ shop, onUpdate }: Props) {
     const cleaned = slugify(slug)
     setError('')
     if (!isValidSlug(cleaned)) {
-      setError('Use apenas letras minúsculas, números e hífen.')
+      setError('Use letras minúsculas, números e hífen. Alguns endereços são reservados pelo onefind.')
       return
     }
     setSaving(true)
@@ -117,10 +118,10 @@ export function ShopLinkTab({ shop, onUpdate }: Props) {
         <FieldHint>
           Endereço que será usado no link público. Use só letras minúsculas, números e hífen.
           <br />
-          Exemplo: {displayHost}/b/{slugExample}
+          Exemplo: {displayHost}/{slugExample}
         </FieldHint>
         <div className="flex flex-wrap items-center gap-2 font-mono text-sm pt-1">
-          <span className="text-charcoal-muted">{displayHost}/b/</span>
+          <span className="text-charcoal-muted">{displayHost}/</span>
           {editing ? (
             <input
               value={slug}
@@ -183,9 +184,11 @@ export function ShopLinkTab({ shop, onUpdate }: Props) {
         </div>
 
         <p className="text-xs text-charcoal-muted">
-          Exemplo: {displayHost}/b/{shop.slug || slugExample}
+          Exemplo: {displayHost}/{shop.slug || slugExample}
         </p>
       </div>
+
+      <ShopQRCode slug={shop.slug ?? null} />
 
       <div className="rounded-lg border border-charcoal-light p-6">
         <h3 className="font-medium text-white mb-4">Preview da página pública</h3>
