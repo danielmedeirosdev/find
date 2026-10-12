@@ -111,7 +111,7 @@ export function MarketingLanding() {
               className="premium-button"
               onClick={() => trackFunnel("landing_cta", { placement: "hero" })}
             >
-              Testar 30 dias grátis <CtaArrow />
+              Testar no meu pet shop <CtaArrow />
             </Link>
             <p className="hero-terms">
               30 dias grátis <span>·</span> sem cartão

@@ -17,7 +17,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext'
 import type { ShopSegment } from '../../lib/types'
 import { readStoredReferralCode } from '../../lib/referral'
-import { trackCompleteRegistration, trackSignUp } from '../../lib/analytics'
+import { trackCompleteRegistration, trackFunnel, trackSignUp } from '../../lib/analytics'
 
 export function BusinessAuth() {
   const navigate = useNavigate()
@@ -40,7 +40,10 @@ export function BusinessAuth() {
   }, [authLoading, user, navigate])
 
   useEffect(() => {
-    if (searchParams.get('modo') === 'cadastro') setMode('signup')
+    if (searchParams.get('modo') === 'cadastro') {
+      setMode('signup')
+      trackFunnel('signup_view', { source: 'landing' })
+    }
   }, [searchParams])
 
   const meta = getSegment(segment)
@@ -69,6 +72,7 @@ export function BusinessAuth() {
         segment
       )
       if (mode === 'signup' && result.createdBusiness) {
+        trackFunnel('signup_submit', { method: 'google' })
         trackSignUp('google')
         trackCompleteRegistration('google')
       }
@@ -93,6 +97,7 @@ export function BusinessAuth() {
 
     try {
       if (mode === 'signup') {
+        trackFunnel('signup_submit', { method: 'email' })
         if (!isPasswordStrong(password)) {
           setError('A senha ainda não atende a todos os requisitos.')
           setLoading(false)
