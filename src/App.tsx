@@ -1,4 +1,5 @@
-import { BrowserRouter, Navigate, Routes, Route, useParams } from 'react-router-dom'
+import { BrowserRouter, Navigate, Routes, Route, useLocation, useParams } from 'react-router-dom'
+import { useEffect, useRef } from 'react'
 import { AuthProvider } from './contexts/AuthContext'
 import { ReferralCapture } from './components/ReferralCapture'
 import { PublicLayout } from './components/PublicLayout'
@@ -23,6 +24,7 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <MetaPixelTracker />
+        <GoogleAnalyticsRouteTracker />
         <ReferralCapture />
         <Routes>
           <Route index element={<MarketingLanding />} />
@@ -62,4 +64,32 @@ export default function App() {
 function LegacyShopRedirect() {
   const { slug } = useParams<{ slug: string }>()
   return <Navigate to={`/${slug ?? ''}`} replace />
+}
+
+/** The initial page_view is sent by gtag('config') in index.html.
+ * Subsequent SPA navigations need explicit page_view events. */
+function GoogleAnalyticsRouteTracker() {
+  const location = useLocation()
+  const previousUrl = useRef<string | null>(null)
+
+  useEffect(() => {
+    const url = location.pathname + location.search
+    if (previousUrl.current === null) {
+      previousUrl.current = url
+      return
+    }
+    if (previousUrl.current === url) return
+    previousUrl.current = url
+
+    const gtag = (window as Window & {
+      gtag?: (command: string, event: string, params?: Record<string, string>) => void
+    }).gtag
+    gtag?.('event', 'page_view', {
+      page_location: window.location.href,
+      page_path: url,
+      page_title: document.title,
+    })
+  }, [location.pathname, location.search])
+
+  return null
 }
