@@ -39,7 +39,7 @@ export function authErrorMessage(err: unknown): string {
         : ''
 
   if (/failed to fetch|fetch failed|load failed|network|network request/i.test(message)) {
-    return 'Não foi possível conectar ao servidor. Verifique sua conexão com a internet e tente novamente.'
+    return 'Não conseguimos concluir a operação agora. Tente novamente em alguns segundos.'
   }
   if (err instanceof Error) {
     const msg = message
