@@ -1,9 +1,13 @@
-type Gtag = (
-  command: 'event',
-  eventName: string,
-  params?: Record<string, string | number | boolean>
-) => void
+type AnalyticsParams = Record<string, string | number | boolean>
 
+type Gtag = {
+  (command: 'js', date: Date): void
+  (command: 'config', measurementId: string, params?: AnalyticsParams): void
+  (command: 'event', eventName: string, params?: AnalyticsParams): void
+}
+
+const GA_MEASUREMENT_ID = 'G-RQ3JNDR4M4'
+const GA_SCRIPT_ID = 'onefind-ga4-script'
 const META_PIXEL_ID = '1399351015059293'
 const META_PIXEL_SCRIPT_ID = 'onefind-meta-pixel-script'
 
@@ -17,17 +21,54 @@ type MetaPixel = ((...args: unknown[]) => void) & {
 
 declare global {
   interface Window {
+    dataLayer?: unknown[][]
+    gtag?: Gtag
     fbq?: MetaPixel
     _fbq?: MetaPixel
+    __onefindGaInitialized?: boolean
+    __onefindGaLastPageViewKey?: string
     __onefindMetaPixelInitialized?: boolean
     __onefindMetaPixelLastPageViewKey?: string
   }
 }
 
-function getGtag(): Gtag | null {
+function getOrCreateGtag(): Gtag | null {
   if (typeof window === 'undefined') return null
-  const gtag = (window as Window & { gtag?: Gtag }).gtag
-  return typeof gtag === 'function' ? gtag : null
+  if (window.gtag) return window.gtag
+
+  window.dataLayer = window.dataLayer ?? []
+  const gtag = ((...args: unknown[]) => {
+    window.dataLayer?.push(args)
+  }) as Gtag
+  window.gtag = gtag
+  return gtag
+}
+
+/** Initializes GA4 from the application bundle so CSP cannot block the bootstrap. */
+export function initializeGoogleAnalytics() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return
+
+  const gtag = getOrCreateGtag()
+  if (!gtag || window.__onefindGaInitialized) return
+
+  if (!document.getElementById(GA_SCRIPT_ID)) {
+    const script = document.createElement('script')
+    script.id = GA_SCRIPT_ID
+    script.async = true
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`
+    document.head.appendChild(script)
+  }
+
+  gtag('js', new Date())
+  gtag('config', GA_MEASUREMENT_ID, { send_page_view: false })
+  window.__onefindGaInitialized = true
+}
+
+function getGtag(): Gtag | null {
+  initializeGoogleAnalytics()
+  return typeof window !== 'undefined' && typeof window.gtag === 'function'
+    ? window.gtag
+    : null
 }
 
 export function trackSignUp(method: 'email' | 'google') {
@@ -72,14 +113,26 @@ export function initializeMetaPixel() {
   window.__onefindMetaPixelInitialized = true
 }
 
-/** Sends one PageView for each React Router navigation key. */
+/** Sends one GA4 and Meta PageView for each React Router navigation key. */
 export function trackPageView(navigationKey: string) {
   if (typeof window === 'undefined') return
-  initializeMetaPixel()
-  if (window.__onefindMetaPixelLastPageViewKey === navigationKey) return
 
-  window.fbq?.('track', 'PageView')
-  window.__onefindMetaPixelLastPageViewKey = navigationKey
+  const gtag = getGtag()
+  initializeMetaPixel()
+
+  if (window.__onefindGaLastPageViewKey !== navigationKey) {
+    gtag?.('event', 'page_view', {
+      page_location: window.location.href,
+      page_path: window.location.pathname + window.location.search,
+      page_title: document.title,
+    })
+    window.__onefindGaLastPageViewKey = navigationKey
+  }
+
+  if (window.__onefindMetaPixelLastPageViewKey !== navigationKey) {
+    window.fbq?.('track', 'PageView')
+    window.__onefindMetaPixelLastPageViewKey = navigationKey
+  }
 }
 
 export function trackCompleteRegistration(method: 'email' | 'google') {
