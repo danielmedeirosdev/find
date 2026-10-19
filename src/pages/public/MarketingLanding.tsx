@@ -146,6 +146,11 @@ export function MarketingLanding() {
                 "Equipe e financeiro",
                 "Veja os serviços realizados, quem atendeu e os valores recebidos sem juntar anotações no fim do dia.",
               ],
+              [
+                "agenda",
+                "Confirmação pelo WhatsApp",
+                "Abra uma mensagem pronta com cliente, serviço, data e horário para confirmar o atendimento em poucos segundos.",
+              ],
             ].map(([icon, title, detail]) => (
               <article key={title}>
                 <AppIcon name={icon as "paw" | "agenda" | "wallet"} size={26} />
@@ -190,6 +195,7 @@ export function MarketingLanding() {
               <ul className="plan-inclusions" aria-label="O que está incluído no plano">
                 <li>Cadastro de clientes e pets, com histórico e observações</li>
                 <li>Agenda e gestão dos atendimentos</li>
+                <li>Confirmação de horário pelo WhatsApp com mensagem pronta</li>
                 <li>Serviços, preços e organização da equipe</li>
                 <li>Controle financeiro do estabelecimento</li>
                 <li>Página da loja, link de agendamento e QR code</li>
