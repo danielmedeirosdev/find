@@ -87,7 +87,6 @@ export function AssistedSetup() {
   const [packages, setPackages] = useState<PackageRow[]>([])
   const [photos, setPhotos] = useState<PhotoRow[]>([])
   const [closures, setClosures] = useState<ClosureRow[]>([])
-  const [copyDays, setCopyDays] = useState<Record<number, number[]>>({})
 
   useEffect(() => {
     if (loading || user?.app_metadata?.onefind_platform_admin !== true) return
