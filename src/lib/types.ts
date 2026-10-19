@@ -138,6 +138,8 @@ export interface Booking {
   pet_transport_fee?: number
   pet_transport_address?: string | null
   pet_transport_notes?: string | null
+  confirmation_reminder_minutes?: 30 | 60 | 120 | 1440 | null
+  confirmation_reminder_sent_at?: string | null
   created_at: string
 }
 
