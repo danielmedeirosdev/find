@@ -3,7 +3,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2'
 const url = Deno.env.get('SUPABASE_URL')!
 const anon = Deno.env.get('SUPABASE_ANON_KEY')!
 const service = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const adminId = Deno.env.get('ONEFIND_ADMIN_USER_ID')
+
 const siteUrl = Deno.env.get('ONEFIND_SITE_URL') || 'https://www.onefind.com.br'
 
 Deno.serve(async req => {
@@ -13,12 +13,12 @@ Deno.serve(async req => {
   const respond = (status: number, data: unknown) => new Response(JSON.stringify(data), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
   if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
   if (req.method !== 'POST') return respond(405, { error: 'Método não permitido' })
-  if (!adminId) return respond(503, { error: 'Administrador não configurado' })
+
   const jwt = req.headers.get('Authorization')?.replace(/^Bearer /i, '')
   if (!jwt) return respond(401, { error: 'Não autenticado' })
   const auth = createClient(url, anon)
   const { data: { user }, error: authError } = await auth.auth.getUser(jwt)
-  if (authError || !user || user.id !== adminId) return respond(403, { error: 'Sem permissão' })
+  if (authError || !user || user.app_metadata?.onefind_platform_admin !== true) return respond(403, { error: 'Sem permissão' })
   const admin = createClient(url, service, { auth: { autoRefreshToken: false, persistSession: false } })
   try {
     const body = await req.json()
