@@ -14,7 +14,7 @@ export function AssistedSetup() {
   const [slogan, setSlogan] = useState('')
   const [address, setAddress] = useState('')
   const [phone, setPhone] = useState('')
-  const [businessType, setBusinessType] = useState('grooming')
+  const [businessType, setBusinessType] = useState('')
   const [services, setServices] = useState<OnboardingServiceInput[]>([{name:'',price:'',duration:''}])
   const [staff, setStaff] = useState<OnboardingStaffInput[]>([{name:'',role:''}])
   const [days, setDays] = useState<number[]>([])
@@ -64,7 +64,7 @@ export function AssistedSetup() {
     {shopId && !link && <form onSubmit={finish} className="space-y-5">
       <h2 className="text-lg font-semibold text-brass">Preparar a loja</h2>
       <p className="text-sm text-neutral-400">Preencha os dados confirmados pelo responsável. O convite só será liberado depois.</p>
-      <label className="block text-sm">Ramo<select required className="mt-2 block w-full rounded-xl border border-white/20 bg-neutral-800 p-3" value={businessType} onChange={e=>setBusinessType(e.target.value)}>{PET_BUSINESS_TYPES.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}</select></label>
+      <label className="block text-sm">Ramo<select required className="mt-2 block w-full rounded-xl border border-white/20 bg-neutral-800 p-3" value={businessType} onChange={e=>setBusinessType(e.target.value)}><option value="">Selecione</option>{PET_BUSINESS_TYPES.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}</select></label>
       <label className="block text-sm">Slogan<input required maxLength={120} className="mt-2 block w-full rounded-xl border border-white/20 bg-white/10 p-3" value={slogan} onChange={e=>setSlogan(e.target.value)}/></label>
       <label className="block text-sm">Endereço<input required className="mt-2 block w-full rounded-xl border border-white/20 bg-white/10 p-3" value={address} onChange={e=>setAddress(e.target.value)}/></label>
       <label className="block text-sm">WhatsApp<input required type="tel" className="mt-2 block w-full rounded-xl border border-white/20 bg-white/10 p-3" value={phone} onChange={e=>setPhone(e.target.value)}/></label>
