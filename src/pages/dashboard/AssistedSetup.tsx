@@ -12,6 +12,7 @@ export function AssistedSetup() {
   const [busy, setBusy] = useState(false)
   if (loading) return <p>Carregando...</p>
   if (!user) return <Navigate to="/painel" replace />
+  if (user.app_metadata?.onefind_platform_admin !== true) return <Navigate to="/painel/dashboard" replace />
 
   async function create(e: FormEvent) {
     e.preventDefault()
