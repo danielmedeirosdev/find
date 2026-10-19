@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { parseOnboardingProfile, parseOnboardingServices, parseOnboardingStaff, PET_BUSINESS_TYPES, type OnboardingServiceInput, type OnboardingStaffInput } from '../../lib/onboarding'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
@@ -10,6 +10,7 @@ export function AssistedSetup() {
   const [email, setEmail] = useState('')
   const [link, setLink] = useState('')
   const [shopId, setShopId] = useState('')
+  const [pending, setPending] = useState<{id:string;name:string}[]>([])
   const [slogan, setSlogan] = useState('')
   const [address, setAddress] = useState('')
   const [phone, setPhone] = useState('')
@@ -21,6 +22,7 @@ export function AssistedSetup() {
   const [end, setEnd] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  useEffect(()=>{if(!loading && user?.app_metadata?.onefind_platform_admin===true){void invokeFunction<{shops:{id:string;name:string}[]}>('create-assisted-shop',{action:'list'}).then(data=>setPending(data.shops)).catch(()=>{})}},[loading,user])
   if (loading) return <p>Carregando...</p>
   if (!user) return <Navigate to="/painel" replace />
   if (user.app_metadata?.onefind_platform_admin !== true) return <Navigate to="/painel/dashboard" replace />
@@ -53,6 +55,7 @@ export function AssistedSetup() {
   return <section className="mx-auto max-w-lg space-y-6">
     <h1 className="text-2xl font-semibold tracking-tight text-white">Configuração assistida</h1>
     <p className="text-sm leading-relaxed text-neutral-400">Prepare o acesso de uma loja e envie o convite ao responsável.</p>
+    {!shopId && pending.length>0 && <div className="space-y-2"><h2 className="text-sm font-semibold text-brass">Continuar configuração pendente</h2>{pending.map(s=><button key={s.id} type="button" className="block w-full rounded-lg border border-white/20 p-3 text-left" onClick={()=>{setShopId(s.id);setShopName(s.name)}}>{s.name}</button>)}</div>}
     {!shopId && <form onSubmit={create} className="space-y-5">
       <label className="block text-sm font-medium text-neutral-200">Nome da loja<input className="mt-2 block w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-white outline-none placeholder:text-neutral-500 focus:border-brass" value={shopName} onChange={e => setShopName(e.target.value)} required /></label>
       <label className="block">E-mail do responsável<input className="mt-2 block w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-white outline-none placeholder:text-neutral-500 focus:border-brass" type="email" value={email} onChange={e => setEmail(e.target.value)} required /></label>
