@@ -33,6 +33,7 @@ export function AdminHome() {
   useEffect(() => { void refresh() }, [])
   const pending = shops.filter(s => !s.onboarding_completed).length
   const ready = shops.length - pending
+  const trial = shops.filter(s => s.subscription_status === 'trial').length
   const visible = useMemo(() => shops.filter(s => {
     if (filter === 'pending' && s.onboarding_completed) return false
     if (filter === 'ready' && !s.onboarding_completed) return false
@@ -48,8 +49,8 @@ export function AdminHome() {
       </div>
       <Link to="/interno/nova" className="inline-flex items-center justify-center rounded-xl bg-brass px-5 py-3 font-semibold text-charcoal">+ Nova loja</Link>
     </div>
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-      {([{label:'Estabelecimentos',value:shops.length},{label:'Em configuração',value:pending},{label:'Configurados',value:ready}]).map(item=>
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      {([{label:'Estabelecimentos',value:shops.length},{label:'Em configuração',value:pending},{label:'Configurados',value:ready},{label:'Em teste',value:trial}]).map(item=>
         <div key={item.label} className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
           <p className="text-xs text-neutral-400">{item.label}</p>
           <p className="mt-3 text-3xl font-semibold text-white">{loading?'—':item.value}</p>
@@ -70,10 +71,10 @@ export function AdminHome() {
         <div className="divide-y divide-white/10">{visible.map(shop=>
           <div key={shop.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
             <div className="min-w-0">
-              <p className="truncate font-medium text-white">{shop.name}</p>
+              <Link to={`/interno/lojas/${encodeURIComponent(shop.id)}`} className="block truncate font-medium text-white hover:text-brass">{shop.name}</Link>
               <p className="mt-1 text-xs text-neutral-400">{shop.onboarding_completed?'Configuração concluída':'Configuração pendente'} · {shop.subscription_status||'Sem status de assinatura'}</p>
             </div>
-            {!shop.onboarding_completed ? <Link to={`/interno/nova?shop=${encodeURIComponent(shop.id)}`} className="rounded-lg border border-brass/50 px-3 py-2 text-sm text-brass">Continuar</Link> : <span className="rounded-lg border border-white/15 px-3 py-2 text-xs text-neutral-400">Configurada</span>}
+            {!shop.onboarding_completed ? <Link to={`/interno/nova?shop=${encodeURIComponent(shop.id)}`} className="rounded-lg border border-brass/50 px-3 py-2 text-sm text-brass">Continuar</Link> : <Link to={`/interno/lojas/${encodeURIComponent(shop.id)}`} className="rounded-lg border border-white/15 px-3 py-2 text-xs text-neutral-300">Ver detalhes</Link>}
           </div>)}</div>}
     </section>
   </div>
