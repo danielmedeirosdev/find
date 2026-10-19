@@ -16,6 +16,7 @@ import { NotFound } from './pages/public/NotFound'
 import { AuthCallback } from './pages/AuthCallback'
 import { BusinessAuth } from './pages/dashboard/BusinessAuth'
 import { Dashboard } from './pages/dashboard/Dashboard'
+import { AccountSecurity } from './pages/dashboard/AccountSecurity'
 import { MetaPixelTracker } from './components/MetaPixelTracker'
 
 export default function App() {
@@ -50,6 +51,7 @@ export default function App() {
           <Route path="painel" element={<DashboardLayout />}>
             <Route index element={<BusinessAuth />} />
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="seguranca" element={<AccountSecurity />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />
