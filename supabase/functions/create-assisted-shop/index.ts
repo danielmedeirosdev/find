@@ -10,7 +10,7 @@ const previewUrl = 'https://find-git-feature-seguranca-conta-assistida-onefind.v
 Deno.serve(async req => {
   const origin = req.headers.get('origin') || ''
   const allowed = [siteUrl, 'https://onefind.com.br', previewUrl]
-  const cors = { 'Access-Control-Allow-Origin': allowed.includes(origin) ? origin : siteUrl, 'Access-Control-Allow-Headers': 'authorization, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Cache-Control': 'no-store' }
+  const cors = { 'Access-Control-Allow-Origin': allowed.includes(origin) ? origin : siteUrl, 'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-client-info, x-supabase-api-version', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Cache-Control': 'no-store' }
   const respond = (status: number, data: unknown) => new Response(JSON.stringify(data), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
   if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
   if (req.method !== 'POST') return respond(405, { error: 'Método não permitido' })
@@ -23,6 +23,11 @@ Deno.serve(async req => {
   const admin = createClient(url, service, { auth: { autoRefreshToken: false, persistSession: false } })
   try {
     const body = await req.json()
+    if (body.action === 'overview') {
+      const {data,error}=await admin.from('shops').select('id,name,segment,onboarding_completed,subscription_status,trial_ends_at,created_at,owner_user_id').eq('segment','pet').order('created_at',{ascending:false}).limit(100)
+      if(error)return respond(500,{error:'Não foi possível carregar estabelecimentos'})
+      return respond(200,{shops:data||[]})
+    }
     if (body.action === 'list') {
       const {data,error}=await admin.from('shops').select('id,name,owner_user_id').eq('onboarding_completed',false).eq('segment','pet').order('created_at',{ascending:false}).limit(50)
       if(error)return respond(500,{error:'Não foi possível listar lojas'})
