@@ -20,6 +20,7 @@ import { BusinessAuth } from './pages/dashboard/BusinessAuth'
 import { Dashboard } from './pages/dashboard/Dashboard'
 import { AccountSecurity } from './pages/dashboard/AccountSecurity'
 import { AssistedSetup } from './pages/dashboard/AssistedSetup'
+import { AdminHome } from './pages/dashboard/AdminHome'
 import { MetaPixelTracker } from './components/MetaPixelTracker'
 
 export default function App() {
@@ -53,7 +54,8 @@ export default function App() {
           </Route>
 
           <Route path="interno" element={<InternalAdminLayout />}>
-            <Route index element={<AssistedSetup />} />
+            <Route index element={<AdminHome />} />
+            <Route path="nova" element={<AssistedSetup />} />
           </Route>
 
           <Route path="painel" element={<DashboardLayout />}>
