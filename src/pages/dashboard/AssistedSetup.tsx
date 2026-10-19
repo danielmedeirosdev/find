@@ -26,13 +26,13 @@ export function AssistedSetup() {
     } finally { setBusy(false) }
   }
   const message = `Oi! Deixei sua loja preparada no onefind. Para ativar seu acesso e criar sua senha, abra este link: ${link}`
-  return <main className="mx-auto max-w-lg p-6 space-y-5">
-    <h1 className="font-display text-3xl text-brass">Configuração assistida</h1>
-    <p>Uso exclusivo do administrador. Crie apenas contas autorizadas pelos responsáveis.</p>
-    <form onSubmit={create} className="space-y-4">
-      <label className="block">Nome da loja<input className="block w-full p-3 bg-charcoal text-white" value={shopName} onChange={e => setShopName(e.target.value)} required /></label>
-      <label className="block">E-mail do responsável<input className="block w-full p-3 bg-charcoal text-white" type="email" value={email} onChange={e => setEmail(e.target.value)} required /></label>
-      <button disabled={busy} className="bg-brass text-charcoal p-3 rounded-lg">{busy ? 'Preparando...' : 'Criar loja e convite'}</button>
+  return <section className="mx-auto max-w-lg space-y-6">
+    <h1 className="text-2xl font-semibold tracking-tight text-white">Configuração assistida</h1>
+    <p className="text-sm leading-relaxed text-neutral-400">Prepare o acesso de uma loja e envie o convite ao responsável.</p>
+    <form onSubmit={create} className="space-y-5">
+      <label className="block text-sm font-medium text-neutral-200">Nome da loja<input className="mt-2 block w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-white outline-none placeholder:text-neutral-500 focus:border-brass" value={shopName} onChange={e => setShopName(e.target.value)} required /></label>
+      <label className="block">E-mail do responsável<input className="mt-2 block w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-white outline-none placeholder:text-neutral-500 focus:border-brass" type="email" value={email} onChange={e => setEmail(e.target.value)} required /></label>
+      <button disabled={busy} className="rounded-xl bg-brass px-5 py-3 font-semibold text-charcoal transition hover:bg-brass-light disabled:opacity-50">{busy ? 'Preparando...' : 'Criar loja e convite'}</button>
     </form>
     {error && <p role="alert" className="text-red-400">{error}</p>}
     {link && <div className="space-y-3">
@@ -40,5 +40,5 @@ export function AssistedSetup() {
       <button className="bg-brass text-charcoal p-3 rounded-lg" onClick={() => navigator.clipboard.writeText(message)}>Copiar mensagem para WhatsApp</button>
       <a className="block underline" href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noreferrer">Abrir WhatsApp</a>
     </div>}
-  </main>
+  </section>
 }
