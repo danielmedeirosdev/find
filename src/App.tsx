@@ -49,11 +49,11 @@ export default function App() {
 
             <Route path="novidades" element={<Navigate to="/" replace />} />
             <Route path=":slug" element={<ShopPublic />} />
-            <Route path="interno" element={<InternalAdminLayout />}>
-            <Route index element={<AssistedSetup />} />
+          <Route path="*" element={<NotFound />} />
           </Route>
 
-          <Route path="*" element={<NotFound />} />
+          <Route path="interno" element={<InternalAdminLayout />}>
+            <Route index element={<AssistedSetup />} />
           </Route>
 
           <Route path="painel" element={<DashboardLayout />}>
