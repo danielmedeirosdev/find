@@ -1,10 +1,11 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase, authErrorMessage } from '../lib/supabase'
 import { isPasswordStrong, PasswordRequirements } from '../components/FormHints'
 
 export function ActivateShop() {
   const [params] = useSearchParams()
+  const started = useRef(false)
   const navigate = useNavigate()
   const [ready, setReady] = useState(false)
   const [error, setError] = useState('')
@@ -13,6 +14,8 @@ export function ActivateShop() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
+    if (started.current) return
+    started.current = true
     let cancelled = false
     const tokenHash = params.get('token_hash')
     // Remove the secret from the address bar and browser history immediately.
