@@ -31,11 +31,9 @@ Deno.serve(async req => {
     const { data: created, error: createError } = await admin.auth.admin.createUser({ email, email_confirm: true, user_metadata: { role: 'barber', shop_name: name, segment: 'pet' } })
     if (createError || !created.user) return respond(409, { error: 'Não foi possível criar usuário. Verifique se o e-mail já está cadastrado.' })
     const uid = created.user.id
-    const { error: shopError } = await admin.from('shops').insert({ owner_user_id: uid, name, segment: 'pet', subscription_status: 'trial' })
-    if (shopError) {
-      await admin.auth.admin.deleteUser(uid)
-      return respond(500, { error: 'Não foi possível preparar a loja.' })
-    }
+    // The existing auth.users trigger creates the shop and 30-day trial.
+    const { data: shop, error: shopError } = await admin.from('shops').select('id').eq('owner_user_id', uid).maybeSingle()
+    if (shopError || !shop) return respond(500, { error: 'A conta foi criada, mas não foi possível confirmar a loja. Verifique o cadastro antes de tentar novamente.' })
     const { data: link, error: linkError } = await admin.auth.admin.generateLink({ type: 'recovery', email, options: { redirectTo: siteUrl + '/painel/seguranca' } })
     if (linkError || !link.properties?.action_link) return respond(500, { error: 'Loja criada, mas não foi possível gerar o convite.' })
     return respond(200, { actionLink: link.properties.action_link, shopName: name })
