@@ -23,6 +23,22 @@ Deno.serve(async req => {
   const admin = createClient(url, service, { auth: { autoRefreshToken: false, persistSession: false } })
   try {
     const body = await req.json()
+    if (body.action === 'details') {
+      const shopId = typeof body.shopId === 'string' ? body.shopId : ''
+      if (!/^[0-9a-f-]{36}$/i.test(shopId)) return respond(400, {error:'Loja inválida'})
+      const {data:shop,error:shopError}=await admin.from('shops').select('id,name,slogan,address,phone,pet_business_type,subscription_status,trial_ends_at,onboarding_completed,created_at,owner_user_id').eq('id',shopId).eq('segment','pet').maybeSingle()
+      if(shopError || !shop) return respond(404,{error:'Loja não encontrada'})
+      const [services,professionals]=await Promise.all([
+        admin.from('services').select('id,name,price,duration_minutes').eq('shop_id',shopId).order('name'),
+        admin.from('barbers').select('id,name,role').eq('shop_id',shopId).order('name')
+      ])
+      if(services.error || professionals.error)return respond(500,{error:'Não foi possível carregar a configuração'})
+      const ids=(professionals.data||[]).map(p=>p.id)
+      const schedules=ids.length ? await admin.from('barber_schedule').select('barber_id,day_of_week,start_time,end_time,is_active').in('barber_id',ids) : {data:[],error:null}
+      if(schedules.error)return respond(500,{error:'Não foi possível carregar os horários'})
+      const {data:owner}=await admin.auth.admin.getUserById(shop.owner_user_id)
+      return respond(200,{shop:{...shop,owner_email:owner.user?.email||null},services:services.data||[],professionals:professionals.data||[],schedules:schedules.data||[]})
+    }
     if (body.action === 'overview') {
       const {data,error}=await admin.from('shops').select('id,name,segment,onboarding_completed,subscription_status,trial_ends_at,created_at,owner_user_id').eq('segment','pet').order('created_at',{ascending:false}).limit(100)
       if(error)return respond(500,{error:'Não foi possível carregar estabelecimentos'})
