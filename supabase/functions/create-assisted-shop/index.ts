@@ -35,8 +35,10 @@ Deno.serve(async req => {
     const { data: shop, error: shopError } = await admin.from('shops').select('id').eq('owner_user_id', uid).maybeSingle()
     if (shopError || !shop) return respond(500, { error: 'A conta foi criada, mas não foi possível confirmar a loja. Verifique o cadastro antes de tentar novamente.' })
     const { data: link, error: linkError } = await admin.auth.admin.generateLink({ type: 'recovery', email, options: { redirectTo: siteUrl + '/painel/seguranca' } })
-    if (linkError || !link.properties?.action_link) return respond(500, { error: 'Loja criada, mas não foi possível gerar o convite.' })
-    return respond(200, { actionLink: link.properties.action_link, shopName: name })
+    const tokenHash = link?.properties?.hashed_token
+    if (linkError || !tokenHash) return respond(500, { error: 'Loja criada, mas não foi possível gerar o convite.' })
+    const actionLink = siteUrl + '/ativar?token_hash=' + encodeURIComponent(tokenHash)
+    return respond(200, { actionLink, shopName: name })
   } catch {
     return respond(400, { error: 'Solicitação inválida' })
   }
