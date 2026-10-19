@@ -80,6 +80,7 @@ export function AgendaTab({ shopId, barberId }: Props) {
   const [loadError, setLoadError] = useState('')
   const [dayFilter, setDayFilter] = useState<DayFilter>('today')
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null)
+  const [reminderUpdatingId, setReminderUpdatingId] = useState<string | null>(null)
   const [showAvailability, setShowAvailability] = useState(false)
   const [shopName, setShopName] = useState('')
 
@@ -135,6 +136,29 @@ export function AgendaTab({ shopId, barberId }: Props) {
       await load()
     }
     setStatusUpdatingId(null)
+  }
+
+  const updateConfirmationReminder = async (
+    bookingId: string,
+    minutes: number | null
+  ) => {
+    setActionError('')
+    setReminderUpdatingId(bookingId)
+    const { error } = await supabase
+      .from('bookings')
+      .update({
+        confirmation_reminder_minutes: minutes,
+        confirmation_reminder_sent_at: null,
+      })
+      .eq('id', bookingId)
+      .eq('shop_id', shopId)
+
+    if (error) {
+      setActionError(userFacingError(error, 'Não foi possível salvar o lembrete.'))
+    } else {
+      await load()
+    }
+    setReminderUpdatingId(null)
   }
 
   const searchClientHistory = async () => {
@@ -408,6 +432,34 @@ export function AgendaTab({ shopId, barberId }: Props) {
                   </div>
                   <p className="font-mono text-brass shrink-0">{formatPrice(total)}</p>
                 </div>
+                {status === 'scheduled' && (
+                  <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-charcoal-light bg-black/10 p-3">
+                    <label htmlFor={`confirmation-reminder-${b.id}`} className="text-xs font-medium text-charcoal-muted">
+                      Lembrar de confirmar
+                    </label>
+                    <select
+                      id={`confirmation-reminder-${b.id}`}
+                      value={b.confirmation_reminder_minutes ?? ''}
+                      disabled={reminderUpdatingId === b.id}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        updateConfirmationReminder(b.id, value ? Number(value) : null)
+                      }}
+                      className="min-h-10 rounded-lg border border-charcoal-light bg-charcoal px-3 text-sm text-white focus:border-brass focus:outline-none disabled:opacity-50"
+                    >
+                      <option value="">Sem lembrete</option>
+                      <option value="30">30 min antes</option>
+                      <option value="60">1 hora antes</option>
+                      <option value="120">2 horas antes</option>
+                      <option value="1440">24 horas antes</option>
+                    </select>
+                    {b.confirmation_reminder_minutes && (
+                      <span className="text-[11px] text-brass">
+                        {b.confirmation_reminder_sent_at ? 'Lembrete enviado' : 'Lembrete programado'}
+                      </span>
+                    )}
+                  </div>
+                )}
                 <BookingActions
                   status={b.status}
                   busy={busy}
