@@ -105,6 +105,11 @@ export async function finalizeOAuthLogin(
   const user = session.user
   const displayName = googleDisplayName(user)
 
+  if (user.app_metadata?.onefind_platform_admin === true) {
+    clearOAuthIntent()
+    return { role: 'barber' as const, redirectTo: '/interno' as const, createdBusiness: false }
+  }
+
   const referralCode = readStoredReferralCode()
   await supabase.auth.updateUser({
     data: {
