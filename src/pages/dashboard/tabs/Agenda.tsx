@@ -49,6 +49,25 @@ function isActiveStatus(status: string | undefined) {
   )
 }
 
+function confirmationWhatsappUrl(booking: BookingWithDetails, shopName: string): string | null {
+  const base = whatsappUrl(booking.client_phone)
+  if (!base) return null
+
+  const [year, month, day] = booking.date.split('-')
+  const dateLabel = year && month && day ? `${day}/${month}` : booking.date
+  const services = Array.from(
+    new Map(
+      (booking.booking_services || []).map((item) => [item.service_id, item.services?.name])
+    ).values()
+  ).filter(Boolean)
+  const serviceLabel = services.length ? ` para ${services.join(' + ')}` : ''
+  const placeLabel = shopName ? ` na ${shopName}` : ''
+
+  const message = `Oi, ${booking.client_name}! Passando para confirmar seu horário${serviceLabel} no dia ${dateLabel} às ${formatTime(booking.time)}${placeLabel}. Está tudo certo para você? Se puder, me responde por aqui confirmando.`
+
+  return `${base}?text=${encodeURIComponent(message)}`
+}
+
 export function AgendaTab({ shopId, barberId }: Props) {
   const [bookings, setBookings] = useState<BookingWithDetails[]>([])
   const [shopServices, setShopServices] = useState<Service[]>([])
@@ -62,6 +81,7 @@ export function AgendaTab({ shopId, barberId }: Props) {
   const [dayFilter, setDayFilter] = useState<DayFilter>('today')
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null)
   const [showAvailability, setShowAvailability] = useState(false)
+  const [shopName, setShopName] = useState('')
 
   const today = addDaysIso(0)
   const tomorrow = addDaysIso(1)
@@ -78,9 +98,10 @@ export function AgendaTab({ shopId, barberId }: Props) {
 
     if (barberId) query = query.eq('barber_id', barberId)
 
-    const [{ data, error }, { data: svc }] = await Promise.all([
+    const [{ data, error }, { data: svc }, { data: shop }] = await Promise.all([
       query,
       supabase.from('services').select('*').eq('shop_id', shopId).order('name'),
+      supabase.from('shops').select('name').eq('id', shopId).maybeSingle(),
     ])
 
     if (error) {
@@ -90,6 +111,7 @@ export function AgendaTab({ shopId, barberId }: Props) {
       setBookings((data as BookingWithDetails[]) || [])
     }
     setShopServices(svc || [])
+    setShopName(shop?.name || '')
     setLoading(false)
   }, [shopId, barberId, today])
 
@@ -362,6 +384,17 @@ export function AgendaTab({ shopId, barberId }: Props) {
                           className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[11px] font-semibold text-emerald-300"
                         >
                           WhatsApp
+                        </a>
+                      )}
+                      {confirmationWhatsappUrl(b, shopName) && status === 'scheduled' && (
+                        <a
+                          href={confirmationWhatsappUrl(b, shopName) || '#'}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={`Confirmar horário de ${b.client_name} pelo WhatsApp`}
+                          className="rounded-md border border-brass/40 bg-brass/10 px-2 py-1 text-[11px] font-semibold text-brass transition hover:bg-brass/20"
+                        >
+                          Confirmar horário
                         </a>
                       )}
                     </div>
