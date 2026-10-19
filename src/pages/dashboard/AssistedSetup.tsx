@@ -87,6 +87,7 @@ export function AssistedSetup() {
   const [packages, setPackages] = useState<PackageRow[]>([])
   const [photos, setPhotos] = useState<PhotoRow[]>([])
   const [closures, setClosures] = useState<ClosureRow[]>([])
+  const [copyDays, setCopyDays] = useState<Record<number, number[]>>({})
 
   useEffect(() => {
     if (loading || user?.app_metadata?.onefind_platform_admin !== true) return
@@ -363,6 +364,14 @@ export function AssistedSetup() {
             {p.photo_url && <img src={p.photo_url} alt="" className="h-14 w-14 rounded-full object-cover"/>}
             <ImageDropzone onFiles={(files)=>uploadStaffPhoto(i,files)} disabled={busy} className="cursor-pointer rounded-lg border border-dashed border-white/20 px-3 py-2 text-xs text-brass">{p.photo_url?'Trocar foto':'Adicionar foto'}</ImageDropzone>
             <button type="button" onClick={()=>setStaff(v=>v.filter((_,j)=>j!==i))} className="ml-auto text-sm text-red-400">Remover profissional</button>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-white/10 p-3 text-xs">
+            <span className="text-neutral-300">Aplicar horário de segunda a sexta:</span>
+            <button type="button" onClick={() => setStaff(v => v.map((person,j) => j!==i ? person : {
+              ...person, schedules: person.schedules.map(day => day.day_of_week>=1 && day.day_of_week<=5
+                ? {...day,is_active:true,start_time:'11:00',end_time:'18:00'} : day)
+            }))} className="rounded-lg border border-brass/40 px-3 py-2 text-brass">Seg–Sex 11:00–18:00</button>
+            <span className="text-neutral-500">Depois ajuste cada dia abaixo, inclusive sábado e domingo.</span>
           </div>
           <div className="mt-4 grid gap-2">
             {p.schedules.map((sc,k)=><div key={sc.day_of_week} className="grid grid-cols-[5rem_1fr_1fr] items-center gap-2 text-sm">
