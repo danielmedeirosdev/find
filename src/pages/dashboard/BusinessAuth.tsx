@@ -35,7 +35,7 @@ export function BusinessAuth() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      navigate('/painel/dashboard', { replace: true })
+      navigate(user.app_metadata?.onefind_platform_admin === true ? '/interno' : '/painel/dashboard', { replace: true })
     }
   }, [authLoading, user, navigate])
 
@@ -168,6 +168,10 @@ export function BusinessAuth() {
         const {
           data: { user },
         } = await supabase.auth.getUser()
+        if (user?.app_metadata?.onefind_platform_admin === true) {
+          navigate('/interno', { replace: true })
+          return
+        }
         if (user) {
           const { data: shop } = await supabase
             .from('shops')
