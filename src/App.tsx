@@ -21,6 +21,7 @@ import { Dashboard } from './pages/dashboard/Dashboard'
 import { AccountSecurity } from './pages/dashboard/AccountSecurity'
 import { AssistedSetup } from './pages/dashboard/AssistedSetup'
 import { AdminHome } from './pages/dashboard/AdminHome'
+import { AdminShopDetail } from './pages/dashboard/AdminShopDetail'
 import { MetaPixelTracker } from './components/MetaPixelTracker'
 
 export default function App() {
@@ -56,6 +57,7 @@ export default function App() {
           <Route path="interno" element={<InternalAdminLayout />}>
             <Route index element={<AdminHome />} />
             <Route path="nova" element={<AssistedSetup />} />
+            <Route path="lojas/:shopId" element={<AdminShopDetail />} />
           </Route>
 
           <Route path="painel" element={<DashboardLayout />}>
