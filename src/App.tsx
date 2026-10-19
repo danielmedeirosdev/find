@@ -17,6 +17,7 @@ import { AuthCallback } from './pages/AuthCallback'
 import { BusinessAuth } from './pages/dashboard/BusinessAuth'
 import { Dashboard } from './pages/dashboard/Dashboard'
 import { AccountSecurity } from './pages/dashboard/AccountSecurity'
+import { AssistedSetup } from './pages/dashboard/AssistedSetup'
 import { MetaPixelTracker } from './components/MetaPixelTracker'
 
 export default function App() {
@@ -52,6 +53,7 @@ export default function App() {
             <Route index element={<BusinessAuth />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="seguranca" element={<AccountSecurity />} />
+            <Route path="configuracao-assistida" element={<AssistedSetup />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />
