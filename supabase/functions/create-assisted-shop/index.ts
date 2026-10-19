@@ -23,6 +23,11 @@ Deno.serve(async req => {
   const admin = createClient(url, service, { auth: { autoRefreshToken: false, persistSession: false } })
   try {
     const body = await req.json()
+    if (body.action === 'list') {
+      const {data,error}=await admin.from('shops').select('id,name,owner_user_id').eq('onboarding_completed',false).eq('segment','pet').order('created_at',{ascending:false}).limit(50)
+      if(error)return respond(500,{error:'Não foi possível listar lojas'})
+      return respond(200,{shops:data||[]})
+    }
     const action = body.action === 'finish' ? 'finish' : 'create'
     if (action === 'finish') {
       const shopId = typeof body.shopId === 'string' ? body.shopId : ''
