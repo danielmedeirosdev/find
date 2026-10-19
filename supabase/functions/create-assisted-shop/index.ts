@@ -5,10 +5,11 @@ const anon = Deno.env.get('SUPABASE_ANON_KEY')!
 const service = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 const siteUrl = Deno.env.get('ONEFIND_SITE_URL') || 'https://www.onefind.com.br'
+const previewUrl = 'https://find-git-feature-seguranca-conta-assistida-onefind.vercel.app'
 
 Deno.serve(async req => {
   const origin = req.headers.get('origin') || ''
-  const allowed = [siteUrl, 'https://onefind.com.br']
+  const allowed = [siteUrl, 'https://onefind.com.br', previewUrl]
   const cors = { 'Access-Control-Allow-Origin': allowed.includes(origin) ? origin : siteUrl, 'Access-Control-Allow-Headers': 'authorization, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Cache-Control': 'no-store' }
   const respond = (status: number, data: unknown) => new Response(JSON.stringify(data), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
   if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
@@ -37,7 +38,8 @@ Deno.serve(async req => {
     const { data: link, error: linkError } = await admin.auth.admin.generateLink({ type: 'recovery', email, options: { redirectTo: siteUrl + '/painel/seguranca' } })
     const tokenHash = link?.properties?.hashed_token
     if (linkError || !tokenHash) return respond(500, { error: 'Loja criada, mas não foi possível gerar o convite.' })
-    const actionLink = siteUrl + '/ativar?token_hash=' + encodeURIComponent(tokenHash)
+    const activationOrigin = origin === previewUrl ? previewUrl : siteUrl
+    const actionLink = activationOrigin + '/ativar?token_hash=' + encodeURIComponent(tokenHash)
     return respond(200, { actionLink, shopName: name })
   } catch {
     return respond(400, { error: 'Solicitação inválida' })
