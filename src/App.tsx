@@ -3,6 +3,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { ReferralCapture } from './components/ReferralCapture'
 import { PublicLayout } from './components/PublicLayout'
 import { DashboardLayout } from './components/DashboardLayout'
+import { InternalAdminLayout } from './components/InternalAdminLayout'
 import { MarketingLanding } from './pages/public/MarketingLanding'
 import { ShopPublic } from './pages/public/ShopPublic'
 import { PetBooking } from './pages/public/PetBooking'
@@ -48,14 +49,17 @@ export default function App() {
 
             <Route path="novidades" element={<Navigate to="/" replace />} />
             <Route path=":slug" element={<ShopPublic />} />
-            <Route path="*" element={<NotFound />} />
+            <Route path="interno" element={<InternalAdminLayout />}>
+            <Route index element={<AssistedSetup />} />
+          </Route>
+
+          <Route path="*" element={<NotFound />} />
           </Route>
 
           <Route path="painel" element={<DashboardLayout />}>
             <Route index element={<BusinessAuth />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="seguranca" element={<AccountSecurity />} />
-            <Route path="configuracao-assistida" element={<AssistedSetup />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />
