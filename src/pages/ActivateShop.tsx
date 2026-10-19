@@ -16,7 +16,6 @@ export function ActivateShop() {
   useEffect(() => {
     if (started.current) return
     started.current = true
-    let cancelled = false
     const tokenHash = params.get('token_hash')
     // Remove the secret from the address bar and browser history immediately.
     window.history.replaceState(null, '', '/ativar')
@@ -28,21 +27,18 @@ export function ActivateShop() {
     void (async () => {
       await supabase.auth.signOut()
       const { data, error: verifyError } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' })
-      if (cancelled) return
       if (verifyError || !data.user) {
         setError('O convite expirou ou já foi utilizado. Solicite outro link.')
         return
       }
       const { data: shop } = await supabase.from('shops').select('id').eq('owner_user_id', data.user.id).maybeSingle()
-      if (cancelled) return
       if (!shop) {
         await supabase.auth.signOut()
         setError('Este convite não corresponde a um estabelecimento.')
         return
       }
       setReady(true)
-    })().catch(() => { if (!cancelled) setError('Não foi possível validar o convite.') })
-    return () => { cancelled = true }
+    })().catch(() => setError('Não foi possível validar o convite.'))
   }, [params])
 
   async function submit(e: FormEvent) {
