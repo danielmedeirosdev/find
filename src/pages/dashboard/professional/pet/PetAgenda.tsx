@@ -42,6 +42,18 @@ function addDaysIso(days: number): string {
 }
 
 export function PetAgenda({ shopId, barberId }: Props) {
+  const [showNew, setShowNew] = useState(false)
+  const [clients, setClients] = useState<{id:string;name:string;phone:string}[]>([])
+  const [petsList, setPetsList] = useState<{id:string;name:string;customer_id:string}[]>([])
+  const [teamList, setTeamList] = useState<{id:string;name:string}[]>([])
+  const [clientId, setClientId] = useState('')
+  const [petId, setPetId] = useState('')
+  const [serviceId, setServiceId] = useState('')
+  const [staffId, setStaffId] = useState(barberId || '')
+  const [dateValue, setDateValue] = useState(localDateIso())
+  const [timeValue, setTimeValue] = useState('')
+  const [newError, setNewError] = useState('')
+  const [savingNew, setSavingNew] = useState(false)
   const [bookings, setBookings] = useState<BookingWithDetails[]>([])
   const [shopServices, setShopServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
@@ -97,6 +109,33 @@ export function PetAgenda({ shopId, barberId }: Props) {
     load()
   }, [load])
 
+  const openNew = async () => {
+    const [a,b,d] = await Promise.all([
+      supabase.from('shop_customers').select('id,name,phone').eq('shop_id',shopId).order('name'),
+      supabase.from('pets').select('id,name,customer_id').eq('shop_id',shopId).order('name'),
+      supabase.from('barbers').select('id,name').eq('shop_id',shopId).order('name'),
+    ])
+    if(a.error||b.error||d.error){setActionError('Erro ao carregar dados para agendar.');return}
+    setClients(a.data||[]);setPetsList(b.data||[]);setTeamList(d.data||[]);setNewError('');setShowNew(true)
+  }
+  const saveNew = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const client=clients.find(x=>x.id===clientId)
+    const pet=petsList.find(x=>x.id===petId&&x.customer_id===clientId)
+    const service=shopServices.find(x=>x.id===serviceId)
+    if(!client||!pet||!service||!staffId||!dateValue||!timeValue){setNewError('Preencha todos os campos.');return}
+    if(dateValue<localDateIso()){setNewError('Selecione uma data futura.');return}
+    setSavingNew(true);setNewError('')
+    const {data,error}=await supabase.from('bookings').insert({
+      shop_id:shopId,barber_id:staffId,service_id:service.id,
+      client_name:client.name,client_phone:client.phone,shop_customer_id:client.id,pet_id:pet.id,
+      date:dateValue,time:timeValue,status:'scheduled',duration_minutes:service.duration_minutes
+    }).select('id').single()
+    if(error){setNewError(userFacingError(error,'Não foi possível agendar.'));setSavingNew(false);return}
+    const linked=await supabase.from('booking_services').insert({booking_id:data.id,service_id:service.id})
+    if(linked.error)setActionError('Atendimento criado, mas houve erro ao vincular o serviço.')
+    setSavingNew(false);setShowNew(false);await load()
+  }
   const updateStatus = async (
     bookingId: string,
     status: BookingActionStatus
@@ -205,6 +244,19 @@ export function PetAgenda({ shopId, barberId }: Props) {
 
   return (
     <div className="overflow-x-hidden">
+      <div className="mb-4 flex justify-end"><button type="button" onClick={()=>void openNew()} className="rounded-xl bg-brass px-5 py-3 font-semibold text-charcoal-dark">+ Novo agendamento</button></div>
+      {showNew && <form onSubmit={saveNew} className="mb-6 grid gap-3 rounded-2xl border border-brass/40 bg-charcoal-dark p-4 sm:grid-cols-2">
+        <h3 className="text-xl font-semibold text-white sm:col-span-2">Novo agendamento</h3>
+        <label className="grid gap-1 text-sm text-white">Cliente<select required value={clientId} onChange={e=>{setClientId(e.target.value);setPetId('')}} className="rounded-lg bg-charcoal p-3"><option value="">Selecione</option>{clients.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+        <label className="grid gap-1 text-sm text-white">Pet<select required value={petId} onChange={e=>setPetId(e.target.value)} className="rounded-lg bg-charcoal p-3"><option value="">Selecione</option>{petsList.filter(x=>x.customer_id===clientId).map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+        <label className="grid gap-1 text-sm text-white">Serviço<select required value={serviceId} onChange={e=>setServiceId(e.target.value)} className="rounded-lg bg-charcoal p-3"><option value="">Selecione</option>{shopServices.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+        <label className="grid gap-1 text-sm text-white">Profissional<select required value={staffId} onChange={e=>setStaffId(e.target.value)} className="rounded-lg bg-charcoal p-3"><option value="">Selecione</option>{teamList.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+        <label className="grid gap-1 text-sm text-white">Data<input type="date" required min={localDateIso()} value={dateValue} onChange={e=>setDateValue(e.target.value)} className="rounded-lg bg-charcoal p-3"/></label>
+        <label className="grid gap-1 text-sm text-white">Horário<input type="time" required value={timeValue} onChange={e=>setTimeValue(e.target.value)} className="rounded-lg bg-charcoal p-3"/></label>
+        {newError && <p role="alert" className="text-red-300 sm:col-span-2">{newError}</p>}
+        <div className="flex gap-3 sm:col-span-2"><button type="submit" disabled={savingNew} className="rounded-xl bg-brass px-5 py-3 font-semibold text-charcoal-dark disabled:opacity-50">{savingNew?'Salvando...':'Salvar agendamento'}</button><button type="button" onClick={()=>setShowNew(false)} className="rounded-xl border border-white/20 px-4 py-3 text-white">Cancelar</button></div>
+      </form>}
+
       <header className="mb-6 rounded-2xl border border-charcoal-light bg-gradient-to-br from-charcoal-dark via-charcoal-dark to-brass/5 p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
