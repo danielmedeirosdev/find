@@ -1,3 +1,4 @@
+import { ConfirmReceipt, type ReceiptView } from '../../../../components/public/ConfirmReceipt'
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../../../lib/supabase'
 import {
@@ -43,6 +44,9 @@ function addDaysIso(days: number): string {
 
 export function PetAgenda({ shopId, barberId }: Props) {
   const [showNew, setShowNew] = useState(false)
+  const [newStep, setNewStep] = useState(1)
+  const [receipt, setReceipt] = useState<ReceiptView | null>(null)
+  const [receiptPhone, setReceiptPhone] = useState('')
   const [clients, setClients] = useState<{id:string;name:string;phone:string}[]>([])
   const [petsList, setPetsList] = useState<{id:string;name:string;customer_id:string}[]>([])
   const [teamList, setTeamList] = useState<{id:string;name:string}[]>([])
@@ -116,7 +120,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
       supabase.from('barbers').select('id,name').eq('shop_id',shopId).order('name'),
     ])
     if(a.error||b.error||d.error){setActionError('Erro ao carregar dados para agendar.');return}
-    setClients(a.data||[]);setPetsList(b.data||[]);setTeamList(d.data||[]);setNewError('');setShowNew(true)
+    setClients(a.data||[]);setPetsList(b.data||[]);setTeamList(d.data||[]);setNewError('');setNewStep(1);setReceipt(null);setShowNew(true)
   }
   const saveNew = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -134,7 +138,16 @@ export function PetAgenda({ shopId, barberId }: Props) {
     if(error){setNewError(userFacingError(error,'Não foi possível agendar.'));setSavingNew(false);return}
     const linked=await supabase.from('booking_services').insert({booking_id:data.id,service_id:service.id})
     if(linked.error)setActionError('Atendimento criado, mas houve erro ao vincular o serviço.')
-    setSavingNew(false);setShowNew(false);await load()
+    setReceipt({
+      isPet:true,shopId,shopName:shopName || 'Pet shop',
+      barberName:teamList.find(x=>x.id===staffId)?.name || '',
+      date:dateValue,time:timeValue,durationMinutes:service.duration_minutes || 0,
+      clientName:client.name,clientPhone:client.phone,
+      services:[{id:service.id,name:service.name,price:Number(service.price||0)}],
+      petName:pet.name,
+    })
+    setReceiptPhone(client.phone)
+    setSavingNew(false);setNewStep(4);await load()
   }
   const updateStatus = async (
     bookingId: string,
@@ -245,18 +258,35 @@ export function PetAgenda({ shopId, barberId }: Props) {
   return (
     <div className="overflow-x-hidden">
       <div className="mb-4 flex justify-end"><button type="button" onClick={()=>void openNew()} className="rounded-xl bg-brass px-5 py-3 font-semibold text-charcoal-dark">+ Novo agendamento</button></div>
-      {showNew && <form onSubmit={saveNew} className="mb-6 grid gap-3 rounded-2xl border border-brass/40 bg-charcoal-dark p-4 sm:grid-cols-2">
-        <h3 className="text-xl font-semibold text-white sm:col-span-2">Novo agendamento</h3>
-        <label className="grid gap-1 text-sm text-white">Cliente<select required value={clientId} onChange={e=>{setClientId(e.target.value);setPetId('')}} className="rounded-lg bg-charcoal p-3"><option value="">Selecione</option>{clients.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-        <label className="grid gap-1 text-sm text-white">Pet<select required value={petId} onChange={e=>setPetId(e.target.value)} className="rounded-lg bg-charcoal p-3"><option value="">Selecione</option>{petsList.filter(x=>x.customer_id===clientId).map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-        <label className="grid gap-1 text-sm text-white">Serviço<select required value={serviceId} onChange={e=>setServiceId(e.target.value)} className="rounded-lg bg-charcoal p-3"><option value="">Selecione</option>{shopServices.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-        <label className="grid gap-1 text-sm text-white">Profissional<select required value={staffId} onChange={e=>setStaffId(e.target.value)} className="rounded-lg bg-charcoal p-3"><option value="">Selecione</option>{teamList.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-        <label className="grid gap-1 text-sm text-white">Data<input type="date" required min={localDateIso()} value={dateValue} onChange={e=>setDateValue(e.target.value)} className="rounded-lg bg-charcoal p-3"/></label>
-        <label className="grid gap-1 text-sm text-white">Horário<input type="time" required value={timeValue} onChange={e=>setTimeValue(e.target.value)} className="rounded-lg bg-charcoal p-3"/></label>
-        {newError && <p role="alert" className="text-red-300 sm:col-span-2">{newError}</p>}
-        <div className="flex gap-3 sm:col-span-2"><button type="submit" disabled={savingNew} className="rounded-xl bg-brass px-5 py-3 font-semibold text-charcoal-dark disabled:opacity-50">{savingNew?'Salvando...':'Salvar agendamento'}</button><button type="button" onClick={()=>setShowNew(false)} className="rounded-xl border border-white/20 px-4 py-3 text-white">Cancelar</button></div>
-      </form>}
-
+      {showNew && <section className="mb-6 rounded-2xl border border-brass/30 bg-charcoal-dark p-4 sm:p-6">
+        <div className="mb-5 flex items-center justify-between gap-3"><h3 className="text-xl font-semibold text-white">Novo agendamento</h3><button type="button" onClick={()=>setShowNew(false)} className="text-sm text-charcoal-muted">Fechar</button></div>
+        <div className="mb-6 grid grid-cols-4 gap-2">{['Cliente e pet','Serviço','Horário','Comprovante'].map((label,i)=><div key={label} className={`rounded-lg px-1 py-3 text-center text-xs font-medium ${newStep===i+1?'bg-brass text-charcoal-dark':'bg-white/5 text-charcoal-muted'}`}>{i+1}. {label}</div>)}</div>
+        {newStep===4 && receipt ? <div className="space-y-4">
+          <ConfirmReceipt view={receipt} signedIn={true}/>
+          <a target="_blank" rel="noopener noreferrer" href={`https://wa.me/${receiptPhone.replace(/\D/g,'').replace(/^(?!55)/,'55')}?text=${encodeURIComponent(`Oi, ${receipt.clientName}! Seu horário na ${receipt.shopName} está agendado.\nPet: ${receipt.petName}\nServiço: ${receipt.services.map(s=>s.name).join(', ')}\nData: ${formatDate(receipt.date)}\nHorário: ${formatTime(receipt.time)}\nProfissional: ${receipt.barberName || 'A definir'}\nValor: ${formatPrice(receipt.services.reduce((a,s)=>a+s.price,0))}`)}`} className="block rounded-xl bg-brass px-5 py-4 text-center font-semibold text-charcoal-dark">Mandar comprovante pro cliente pelo WhatsApp</a>
+          <p className="text-center text-xs text-charcoal-muted">Abre o WhatsApp com os dados do comprovante prontos para enviar.</p>
+          <button type="button" onClick={()=>setShowNew(false)} className="w-full rounded-xl border border-white/20 py-3 text-white">Concluir</button>
+        </div> : <form onSubmit={e=>{if(newStep<3){e.preventDefault();setNewError('');setNewStep(newStep+1)}else void saveNew(e)}} className="space-y-4">
+          {newStep===1 && <div className="space-y-4">
+            <p className="text-sm text-charcoal-muted">Escolha quem será atendido.</p>
+            <label className="grid gap-2 text-sm text-white">Cliente<select required value={clientId} onChange={e=>{setClientId(e.target.value);setPetId('')}} className="min-h-12 rounded-xl bg-charcoal p-3"><option value="">Selecione um cliente</option>{clients.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+            <label className="grid gap-2 text-sm text-white">Pet<select required value={petId} onChange={e=>setPetId(e.target.value)} className="min-h-12 rounded-xl bg-charcoal p-3"><option value="">Selecione o pet</option>{petsList.filter(x=>x.customer_id===clientId).map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+          </div>}
+          {newStep===2 && <div className="space-y-4">
+            <p className="text-sm text-charcoal-muted">Selecione o serviço e quem vai realizar o atendimento.</p>
+            <label className="grid gap-2 text-sm text-white">Serviço<select required value={serviceId} onChange={e=>setServiceId(e.target.value)} className="min-h-12 rounded-xl bg-charcoal p-3"><option value="">Selecione um serviço</option>{shopServices.map(x=><option key={x.id} value={x.id}>{x.name} · {formatPrice(Number(x.price||0))}</option>)}</select></label>
+            <label className="grid gap-2 text-sm text-white">Profissional<select required value={staffId} onChange={e=>setStaffId(e.target.value)} className="min-h-12 rounded-xl bg-charcoal p-3"><option value="">Selecione</option>{teamList.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+          </div>}
+          {newStep===3 && <div className="space-y-4">
+            <p className="text-sm text-charcoal-muted">Defina quando o pet será atendido.</p>
+            <label className="grid gap-2 text-sm text-white">Data<input type="date" required min={localDateIso()} value={dateValue} onChange={e=>setDateValue(e.target.value)} className="min-h-12 rounded-xl bg-charcoal p-3"/></label>
+            <label className="grid gap-2 text-sm text-white">Horário<input type="time" required value={timeValue} onChange={e=>setTimeValue(e.target.value)} className="min-h-12 rounded-xl bg-charcoal p-3"/></label>
+            <div className="rounded-xl border border-white/10 p-4 text-sm text-white">Confira: {clients.find(x=>x.id===clientId)?.name} · {petsList.find(x=>x.id===petId)?.name} · {shopServices.find(x=>x.id===serviceId)?.name}</div>
+          </div>}
+          {newError && <p role="alert" className="text-sm text-red-300">{newError}</p>}
+          <div className="flex gap-3">{newStep>1 && <button type="button" onClick={()=>setNewStep(newStep-1)} className="rounded-xl border border-white/20 px-5 py-3 text-white">Voltar</button>}<button type="submit" disabled={savingNew} className="flex-1 rounded-xl bg-brass px-5 py-3 font-semibold text-charcoal-dark disabled:opacity-50">{savingNew?'Salvando...':newStep===3?'Confirmar agendamento':'Continuar'}</button></div>
+        </form>}
+      </section>}
       <header className="mb-6 rounded-2xl border border-charcoal-light bg-gradient-to-br from-charcoal-dark via-charcoal-dark to-brass/5 p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
