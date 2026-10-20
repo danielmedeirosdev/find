@@ -139,7 +139,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
     const linked=await supabase.from('booking_services').insert({booking_id:data.id,service_id:service.id})
     if(linked.error)setActionError('Atendimento criado, mas houve erro ao vincular o serviço.')
     setReceipt({
-      isPet:true,shopId,shopName:shopName || 'Pet shop',
+      isPet:true,shopId,shopName:'Pet shop',
       barberName:teamList.find(x=>x.id===staffId)?.name || '',
       date:dateValue,time:timeValue,durationMinutes:service.duration_minutes || 0,
       clientName:client.name,clientPhone:client.phone,
