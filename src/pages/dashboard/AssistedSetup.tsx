@@ -69,6 +69,8 @@ export function AssistedSetup() {
   const [shopName, setShopName] = useState('')
   const [email, setEmail] = useState('')
   const [pending, setPending] = useState<{id:string;name:string}[]>([])
+  const [readyShops, setReadyShops] = useState<{id:string;name:string}[]>([])
+  const [renewingId, setRenewingId] = useState('')
   const [link, setLink] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -90,6 +92,7 @@ export function AssistedSetup() {
 
   useEffect(() => {
     if (loading || user?.app_metadata?.onefind_platform_admin !== true) return
+    void invokeFunction<{shops:{id:string;name:string}[]}>('create-assisted-shop',{action:'list_ready'}).then(data=>setReadyShops(data.shops)).catch(()=>{})
     void invokeFunction<{shops:{id:string;name:string}[]}>('create-assisted-shop',{action:'list'})
       .then((data) => {
         setPending(data.shops)
@@ -162,6 +165,16 @@ export function AssistedSetup() {
     } finally {
       setBusy(false)
     }
+  }
+
+  async function renewInvite(id: string) {
+    setRenewingId(id); setError(''); setSaved(''); setLink('')
+    try {
+      const data=await invokeFunction<{actionLink:string}>('create-assisted-shop',{action:'renew_invite',shopId:id})
+      setLink(data.actionLink)
+      setShopId(id)
+    } catch(err) { setError(err instanceof Error ? err.message : 'Não foi possível renovar o convite.') }
+    finally { setRenewingId('') }
   }
 
   async function create(e: FormEvent) {
@@ -296,11 +309,19 @@ export function AssistedSetup() {
       <div className="grid gap-2 sm:grid-cols-2">{pending.map((s) => <button key={s.id} type="button" onClick={() => void selectShop(s.id,s.name)} className="rounded-xl border border-white/10 bg-white/5 p-3 text-left text-white hover:border-brass/50">{s.name}</button>)}</div>
     </div>}
 
+    {!shopId && readyShops.length>0 && <div className="rounded-2xl border border-white/10 p-4">
+      <h2 className="mb-2 text-sm font-semibold text-brass">Lojas já preparadas · renovar convite</h2>
+      <p className="mb-3 text-xs text-neutral-400">Gere outro link para uma loja já configurada, sem recriar a conta. O link anterior deixa de ser necessário.</p>
+      <div className="grid gap-2 sm:grid-cols-2">{readyShops.map(s=><div key={s.id} className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 p-3"><span className="min-w-0 truncate text-sm text-white">{s.name}</span><button type="button" disabled={!!renewingId} onClick={()=>void renewInvite(s.id)} className="shrink-0 rounded-lg border border-brass/40 px-3 py-2 text-xs text-brass disabled:opacity-50">{renewingId===s.id?'Gerando...':'Novo link'}</button></div>)}</div>
+    </div>}
+
     {!shopId && <form onSubmit={create} className="grid gap-4 rounded-2xl border border-white/10 p-5 sm:grid-cols-2">
       <label className="text-sm text-neutral-300">Nome da loja<input required value={shopName} onChange={(e)=>setShopName(e.target.value)} className="mt-2 w-full rounded-xl border border-white/15 bg-white/5 p-3 text-white" /></label>
       <label className="text-sm text-neutral-300">E-mail do responsável<input required type="email" value={email} onChange={(e)=>setEmail(e.target.value)} className="mt-2 w-full rounded-xl border border-white/15 bg-white/5 p-3 text-white" /></label>
       <button disabled={busy} className="rounded-xl bg-brass px-5 py-3 font-semibold text-charcoal disabled:opacity-50 sm:col-span-2">{busy?'Preparando...':'Criar loja e abrir configuração completa'}</button>
     </form>}
+
+    {error && !shopId && <p role="alert" className="rounded-xl border border-red-500/30 p-3 text-sm text-red-300">{error}</p>}
 
     {shopId && !link && <>
       <section className="space-y-4 rounded-2xl border border-white/10 p-5">
