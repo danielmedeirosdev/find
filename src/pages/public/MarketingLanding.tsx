@@ -194,9 +194,12 @@ export function MarketingLanding() {
               </p>
               <ul className="plan-inclusions" aria-label="O que está incluído no plano">
                 <li>Cadastro de clientes e pets, com histórico e observações</li>
-                <li>Agenda e gestão dos atendimentos</li>
+                <li>Agenda e gestão dos atendimentos, com agendamento direto no painel</li>
+                <li>Agendamentos recorrentes semanais e quinzenais</li>
                 <li>Confirmação de horário pelo WhatsApp com mensagem pronta</li>
                 <li>Serviços, preços e organização da equipe</li>
+                <li>Equipe pode agendar com acesso separado do financeiro</li>
+                <li>Comprovantes de agendamento com compartilhamento pelo WhatsApp</li>
                 <li>Controle financeiro do estabelecimento</li>
                 <li>Página da loja, link de agendamento e QR code</li>
               </ul>
