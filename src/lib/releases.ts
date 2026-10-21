@@ -17,6 +17,22 @@ export interface ProductRelease {
 
 export const PRODUCT_RELEASES: ProductRelease[] = [
   {
+    id: 'agenda-recorrente-equipe-outubro',
+    date: '2026-10-21',
+    label: 'Novidades da agenda',
+    title: 'Agendamento recorrente e mais autonomia para a equipe',
+    summary: 'Novas opções para organizar os atendimentos pelo painel, repetir horários e compartilhar comprovantes.',
+    notes: [
+      { title: 'Agendamento direto no painel', description: 'Cadastre o atendimento de um cliente e pet pela agenda da equipe, sem depender do link público.', icon: 'agenda' },
+      { title: 'Repetição semanal e quinzenal', description: 'Reserve uma sequência de 2 a 12 atendimentos com intervalo de 7 ou 14 dias, com verificação de conflitos.', icon: 'refresh' },
+      { title: 'Equipe também pode agendar', description: 'Profissionais vinculados à loja podem criar atendimentos sem precisar acessar a área financeira.', icon: 'users' },
+      { title: 'Financeiro reservado ao proprietário', description: 'Permissões de agendamento separadas das permissões financeiras da loja.', icon: 'shield' },
+      { title: 'Comprovante e WhatsApp', description: 'Ao finalizar um agendamento manual, confira o comprovante e use a opção de compartilhamento pelo WhatsApp.', icon: 'check' },
+      { title: 'Recuperação de senha', description: 'Novo fluxo para solicitar um link por e-mail e definir outra senha de acesso.', icon: 'settings' },
+    ],
+  },
+
+  {
     id: 'pet-operacao-completa',
     date: '2026-09-01',
     label: 'Grande atualização',
