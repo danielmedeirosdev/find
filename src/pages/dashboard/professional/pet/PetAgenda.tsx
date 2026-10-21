@@ -58,6 +58,9 @@ export function PetAgenda({ shopId, barberId }: Props) {
   const [timeValue, setTimeValue] = useState('')
   const [newError, setNewError] = useState('')
   const [savingNew, setSavingNew] = useState(false)
+  const [repeatEvery, setRepeatEvery] = useState(0)
+  const [repeatCount, setRepeatCount] = useState(4)
+  const [createdCount, setCreatedCount] = useState(1)
   const [bookings, setBookings] = useState<BookingWithDetails[]>([])
   const [shopServices, setShopServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
@@ -120,7 +123,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
       supabase.from('barbers').select('id,name').eq('shop_id',shopId).order('name'),
     ])
     if(a.error||b.error||d.error){setActionError('Erro ao carregar dados para agendar.');return}
-    setClients(a.data||[]);setPetsList(b.data||[]);setTeamList(d.data||[]);setNewError('');setNewStep(1);setReceipt(null);setShowNew(true)
+    setClients(a.data||[]);setPetsList(b.data||[]);setTeamList(d.data||[]);setNewError('');setNewStep(1);setReceipt(null);setRepeatEvery(0);setRepeatCount(4);setShowNew(true)
   }
   const saveNew = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -130,14 +133,36 @@ export function PetAgenda({ shopId, barberId }: Props) {
     if(!client||!pet||!service||!staffId||!dateValue||!timeValue){setNewError('Preencha todos os campos.');return}
     if(dateValue<localDateIso()){setNewError('Selecione uma data futura.');return}
     setSavingNew(true);setNewError('')
-    const {data,error}=await supabase.from('bookings').insert({
-      shop_id:shopId,barber_id:staffId,service_id:service.id,
-      client_name:client.name,client_phone:client.phone,shop_customer_id:client.id,pet_id:pet.id,
-      date:dateValue,time:timeValue,status:'scheduled',duration_minutes:service.duration_minutes
-    }).select('id').single()
-    if(error){setNewError(userFacingError(error,'Não foi possível agendar.'));setSavingNew(false);return}
-    const linked=await supabase.from('booking_services').insert({booking_id:data.id,service_id:service.id})
-    if(linked.error)setActionError('Atendimento criado, mas houve erro ao vincular o serviço.')
+    const count=repeatEvery===0?1:Math.min(12,Math.max(2,repeatCount))
+    const dates=Array.from({length:count},(_,i)=>{
+      const [year,month,day]=dateValue.split('-').map(Number)
+      const d=new Date(Date.UTC(year,month-1,day+i*repeatEvery))
+      return d.toISOString().slice(0,10)
+    })
+    let completed=0
+    for(const bookingDate of dates){
+      const {data:busy,error:busyError}=await supabase.from('bookings').select('id,time,duration_minutes,status')
+        .eq('shop_id',shopId).eq('barber_id',staffId).eq('date',bookingDate)
+        .not('status','in','("cancelled","no_show")')
+      if(busyError){setNewError(`Não foi possível conferir os horários. ${completed} agendamento(s) já criado(s).`);setSavingNew(false);return}
+      const minutes=(value:string)=>{const [h,m]=value.split(':').map(Number);return h*60+m}
+      const start=minutes(timeValue)
+      const duration=service.duration_minutes||60
+      if((busy||[]).some(x=>start<minutes(x.time)+Number(x.duration_minutes||60)&&minutes(x.time)<start+duration)){
+        setNewError(`O profissional já tem atendimento em ${formatDate(bookingDate)} às ${formatTime(timeValue)}. ${completed} agendamento(s) já criado(s).`)
+        setSavingNew(false);return
+      }
+      const {data,error}=await supabase.from('bookings').insert({
+        shop_id:shopId,barber_id:staffId,service_id:service.id,
+        client_name:client.name,client_phone:client.phone,shop_customer_id:client.id,pet_id:pet.id,
+        date:bookingDate,time:timeValue,status:'scheduled',duration_minutes:service.duration_minutes
+      }).select('id').single()
+      if(error){setNewError(`${userFacingError(error,'Não foi possível agendar.')} ${completed} agendamento(s) já criado(s).`);setSavingNew(false);return}
+      completed++
+      const linked=await supabase.from('booking_services').insert({booking_id:data.id,service_id:service.id})
+      if(linked.error)setActionError('Atendimento criado, mas houve erro ao vincular o serviço.')
+    }
+    setCreatedCount(completed)
     setReceipt({
       isPet:true,shopId,shopName:'Pet shop',
       barberName:teamList.find(x=>x.id===staffId)?.name || '',
@@ -262,6 +287,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
         <div className="mb-5 flex items-center justify-between gap-3"><h3 className="text-xl font-semibold text-white">Novo agendamento</h3><button type="button" onClick={()=>setShowNew(false)} className="text-sm text-charcoal-muted">Fechar</button></div>
         <div className="mb-6 grid grid-cols-4 gap-2">{['Cliente e pet','Serviço','Horário','Comprovante'].map((label,i)=><div key={label} className={`rounded-lg px-1 py-3 text-center text-xs font-medium ${newStep===i+1?'bg-brass text-charcoal-dark':'bg-white/5 text-charcoal-muted'}`}>{i+1}. {label}</div>)}</div>
         {newStep===4 && receipt ? <div className="space-y-4">
+          {createdCount>1 && <p className="rounded-xl border border-brass/30 p-3 text-center text-sm text-white">{createdCount} agendamentos criados com sucesso. O comprovante abaixo corresponde ao primeiro horário.</p>}
           <ConfirmReceipt view={receipt} signedIn={true}/>
           <a target="_blank" rel="noopener noreferrer" href={`https://wa.me/${receiptPhone.replace(/\D/g,'').replace(/^(?!55)/,'55')}?text=${encodeURIComponent(`Oi, ${receipt.clientName}! Seu horário na ${receipt.shopName} está agendado.\nPet: ${receipt.petName}\nServiço: ${receipt.services.map(s=>s.name).join(', ')}\nData: ${formatDate(receipt.date)}\nHorário: ${formatTime(receipt.time)}\nProfissional: ${receipt.barberName || 'A definir'}\nValor: ${formatPrice(receipt.services.reduce((a,s)=>a+s.price,0))}`)}`} className="block rounded-xl bg-brass px-5 py-4 text-center font-semibold text-charcoal-dark">Mandar comprovante pro cliente pelo WhatsApp</a>
           <p className="text-center text-xs text-charcoal-muted">Abre o WhatsApp com os dados do comprovante prontos para enviar.</p>
@@ -281,6 +307,9 @@ export function PetAgenda({ shopId, barberId }: Props) {
             <p className="text-sm text-charcoal-muted">Defina quando o pet será atendido.</p>
             <label className="grid gap-2 text-sm text-white">Data<input type="date" required min={localDateIso()} value={dateValue} onChange={e=>setDateValue(e.target.value)} className="min-h-12 rounded-xl bg-charcoal p-3"/></label>
             <label className="grid gap-2 text-sm text-white">Horário<input type="time" required value={timeValue} onChange={e=>setTimeValue(e.target.value)} className="min-h-12 rounded-xl bg-charcoal p-3"/></label>
+            <label className="grid gap-2 text-sm text-white">Repetição<select value={repeatEvery} onChange={e=>setRepeatEvery(Number(e.target.value))} className="min-h-12 rounded-xl bg-charcoal p-3"><option value={0}>Não repetir</option><option value={7}>Toda semana</option><option value={14}>A cada 15 dias (quinzenal)</option></select></label>
+            {repeatEvery>0 && <label className="grid gap-2 text-sm text-white">Quantidade de atendimentos (incluindo o primeiro)<select value={repeatCount} onChange={e=>setRepeatCount(Number(e.target.value))} className="min-h-12 rounded-xl bg-charcoal p-3">{Array.from({length:11},(_,i)=>i+2).map(n=><option key={n} value={n}>{n} atendimentos</option>)}</select></label>}
+            {repeatEvery>0 && <p className="text-xs text-charcoal-muted">Os horários serão reservados nas próximas {repeatCount} datas. Se houver conflito, a criação para e informa quantos foram salvos.</p>}
             <div className="rounded-xl border border-white/10 p-4 text-sm text-white">Confira: {clients.find(x=>x.id===clientId)?.name} · {petsList.find(x=>x.id===petId)?.name} · {shopServices.find(x=>x.id===serviceId)?.name}</div>
           </div>}
           {newError && <p role="alert" className="text-sm text-red-300">{newError}</p>}
