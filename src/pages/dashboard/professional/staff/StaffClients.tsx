@@ -14,6 +14,12 @@ export function StaffClientsTab({ shopId, barberId }: Props) {
   const [bookings, setBookings] = useState<BookingWithDetails[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [adding, setAdding] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [customerName, setCustomerName] = useState('')
+  const [customerPhone, setCustomerPhone] = useState('')
+  const [petName, setPetName] = useState('')
+  const [notice, setNotice] = useState('')
 
   const load = useCallback(async () => {
     setError('')
@@ -62,14 +68,37 @@ export function StaffClientsTab({ shopId, barberId }: Props) {
     return Array.from(map.values()).sort((a, b) => b.lastDate.localeCompare(a.lastDate))
   }, [bookings])
 
+  const saveCustomer = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!customerName.trim() || !customerPhone.trim()) return
+    setSaving(true)
+    setError('')
+    setNotice('')
+    const {data: customer,error: customerError}=await supabase.from('shop_customers')
+      .insert({shop_id:shopId,name:customerName.trim(),phone:customerPhone.trim()}).select('id').single()
+    if(customerError){setError(userFacingError(customerError,'Não foi possível cadastrar o cliente.'));setSaving(false);return}
+    if(petName.trim()){
+      const {error: petError}=await supabase.from('pets').insert({shop_id:shopId,customer_id:customer.id,name:petName.trim()})
+      if(petError){setError('Cliente cadastrado, mas não foi possível cadastrar o pet.');setSaving(false);return}
+    }
+    setCustomerName('');setCustomerPhone('');setPetName('');setAdding(false);setSaving(false)
+    setNotice('Cliente cadastrado. Já pode selecioná-lo em Novo agendamento.')
+    await load()
+  }
+
   if (loading) return <LoadingBlock label="Carregando clientes..." />
 
   return (
     <div>
-      <h2 className="font-display text-2xl text-white mb-2">Meus clientes</h2>
-      <p className="text-sm text-charcoal-muted mb-6">
-        Clientes dos seus atendimentos — apenas o necessário para executar o dia.
-      </p>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><h2 className="font-display text-2xl text-white">Meus clientes</h2><button type="button" onClick={()=>setAdding(v=>!v)} className="rounded-xl bg-brass px-4 py-2 font-semibold text-charcoal-dark">+ Cadastrar cliente</button></div>
+      <p className="mb-4 text-sm text-charcoal-muted">Consulte seus atendimentos ou cadastre um cliente para agendar.</p>
+      {notice && <p role="status" className="mb-4 text-sm text-emerald-300">{notice}</p>}
+      {adding && <form onSubmit={saveCustomer} className="mb-5 grid gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <label className="grid gap-1 text-sm text-white">Nome do cliente<input required value={customerName} onChange={e=>setCustomerName(e.target.value)} className="rounded-lg border border-white/15 bg-charcoal p-3"/></label>
+        <label className="grid gap-1 text-sm text-white">WhatsApp<input required type="tel" value={customerPhone} onChange={e=>setCustomerPhone(e.target.value)} className="rounded-lg border border-white/15 bg-charcoal p-3"/></label>
+        <label className="grid gap-1 text-sm text-white">Nome do pet (opcional)<input value={petName} onChange={e=>setPetName(e.target.value)} className="rounded-lg border border-white/15 bg-charcoal p-3"/></label>
+        <button type="submit" disabled={saving} className="rounded-lg bg-brass p-3 font-semibold text-charcoal-dark disabled:opacity-50">{saving?'Salvando...':'Salvar cliente'}</button>
+      </form>}
       {error && (
         <div className="mb-4">
           <InlineError message={error} />
