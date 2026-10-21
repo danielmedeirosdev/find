@@ -12,6 +12,7 @@ interface Props {
 
 export function StaffClientsTab({ shopId, barberId }: Props) {
   const [bookings, setBookings] = useState<BookingWithDetails[]>([])
+  const [registered, setRegistered] = useState<{name:string;phone:string}[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [adding, setAdding] = useState(false)
@@ -23,6 +24,8 @@ export function StaffClientsTab({ shopId, barberId }: Props) {
 
   const load = useCallback(async () => {
     setError('')
+    const {data: registeredClients}=await supabase.from('shop_customers').select('name,phone').eq('shop_id',shopId).order('name')
+    setRegistered(registeredClients||[])
     const { data, error: qError } = await supabase
       .from('bookings')
       .select('id, client_name, client_phone, date, time, status')
@@ -65,8 +68,9 @@ export function StaffClientsTab({ shopId, barberId }: Props) {
         existing.count += 1
       }
     }
+    for(const c of registered){const key=`${(c.phone||'').replace(/\\D/g,'')}|${c.name.toLowerCase()}`;if(!map.has(key))map.set(key,{name:c.name,phone:c.phone,lastDate:'',lastTime:'',count:0})}
     return Array.from(map.values()).sort((a, b) => b.lastDate.localeCompare(a.lastDate))
-  }, [bookings])
+  }, [bookings,registered])
 
   const saveCustomer = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -124,8 +128,8 @@ export function StaffClientsTab({ shopId, barberId }: Props) {
                     {formatPhone(c.phone) || 'Sem telefone'}
                   </p>
                   <p className="mt-1 text-xs text-charcoal-muted">
-                    Último: {formatDate(c.lastDate)} · {formatTime(c.lastTime)} · {c.count}{' '}
-                    {c.count === 1 ? 'atendimento' : 'atendimentos'}
+                    {c.count ? <>Último: {formatDate(c.lastDate)} · {formatTime(c.lastTime)} · {c.count}{' '}</> : 'Ainda sem atendimentos'}{' '}
+                    {c.count ? (c.count === 1 ? 'atendimento' : 'atendimentos') : ''}
                   </p>
                 </div>
                 {whatsapp && (
