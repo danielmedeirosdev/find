@@ -16,6 +16,7 @@ import { Faq } from './pages/public/Faq'
 import { NotFound } from './pages/public/NotFound'
 import { AuthCallback } from './pages/AuthCallback'
 import { ActivateShop } from './pages/ActivateShop'
+import { ResetPassword } from './pages/ResetPassword'
 import { BusinessAuth } from './pages/dashboard/BusinessAuth'
 import { Dashboard } from './pages/dashboard/Dashboard'
 import { AccountSecurity } from './pages/dashboard/AccountSecurity'
@@ -46,6 +47,7 @@ export default function App() {
             <Route path="cadastro" element={<ClientAuth />} />
             <Route path="auth/callback" element={<AuthCallback />} />
             <Route path="ativar" element={<ActivateShop />} />
+            <Route path="redefinir-senha" element={<ResetPassword />} />
             <Route path="minhas-reservas" element={<MyBookings />} />
             <Route path="privacidade" element={<PrivacyPolicy />} />
 
