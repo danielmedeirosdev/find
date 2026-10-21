@@ -283,10 +283,10 @@ export function PetAgenda({ shopId, barberId }: Props) {
   return (
     <div className="overflow-x-hidden">
       <div className="mb-4 flex justify-end"><button type="button" onClick={()=>void openNew()} className="rounded-xl bg-brass px-5 py-3 font-semibold text-charcoal-dark">+ Novo agendamento</button></div>
-      {showNew && <section className="mb-6 rounded-2xl border border-brass/30 bg-charcoal-dark p-4 sm:p-6">
-        <div className="mb-5 flex items-center justify-between gap-3"><h3 className="text-xl font-semibold text-white">Novo agendamento</h3><button type="button" onClick={()=>setShowNew(false)} className="text-sm text-charcoal-muted">Fechar</button></div>
-        <div className="mb-6 grid grid-cols-4 gap-2">{['Cliente e pet','Serviço','Horário','Comprovante'].map((label,i)=><div key={label} className={`rounded-lg px-1 py-3 text-center text-xs font-medium ${newStep===i+1?'bg-brass text-charcoal-dark':'bg-white/5 text-charcoal-muted'}`}>{i+1}. {label}</div>)}</div>
-        {newStep===4 && receipt ? <div className="space-y-4">
+      {showNew && <section className="mb-4 rounded-xl border border-white/10 bg-charcoal-dark p-3 sm:p-4">
+        <div className="mb-3 flex items-center justify-between gap-3"><h3 className="text-lg font-semibold text-white">Novo agendamento</h3><button type="button" onClick={()=>setShowNew(false)} className="text-sm text-charcoal-muted">Fechar</button></div>
+        <div className="mb-6 grid grid-cols-4 gap-2">{['Cliente e pet','Serviço','Horário','Comprovante'].map((label,i)=><div key={label} className={`rounded-lg px-1 py-2 text-center text-[11px] font-medium ${newStep===i+1?'bg-brass text-charcoal-dark':'bg-white/5 text-charcoal-muted'}`}>{i+1}. {label}</div>)}</div>
+        {newStep===4 && receipt ? <div className="space-y-3">
           {createdCount>1 && <p className="rounded-xl border border-brass/30 p-3 text-center text-sm text-white">{createdCount} agendamentos criados com sucesso. O comprovante abaixo corresponde ao primeiro horário.</p>}
           <ConfirmReceipt view={receipt} signedIn={true}/>
           <a target="_blank" rel="noopener noreferrer" href={`https://wa.me/${receiptPhone.replace(/\D/g,'').replace(/^(?!55)/,'55')}?text=${encodeURIComponent(`Oi, ${receipt.clientName}! Seu horário na ${receipt.shopName} está agendado.\nPet: ${receipt.petName}\nServiço: ${receipt.services.map(s=>s.name).join(', ')}\nData: ${formatDate(receipt.date)}\nHorário: ${formatTime(receipt.time)}\nProfissional: ${receipt.barberName || 'A definir'}\nValor: ${formatPrice(receipt.services.reduce((a,s)=>a+s.price,0))}`)}`} className="block rounded-xl bg-brass px-5 py-4 text-center font-semibold text-charcoal-dark">Mandar comprovante pro cliente pelo WhatsApp</a>
