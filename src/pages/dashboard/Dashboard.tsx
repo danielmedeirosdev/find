@@ -163,6 +163,7 @@ export function Dashboard() {
   }
 
   if (!user) return <Navigate to="/painel" replace />
+  if (user.app_metadata?.onefind_platform_admin === true) return <Navigate to="/interno" replace />
   if (loadError) {
     return (
       <div className="mx-auto max-w-lg rounded-xl border border-charcoal-light p-6 text-center">
