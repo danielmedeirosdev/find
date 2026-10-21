@@ -32,6 +32,7 @@ export function BusinessAuth() {
   const [info, setInfo] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [resetMode, setResetMode] = useState(false)
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -81,6 +82,17 @@ export function BusinessAuth() {
       setError(authErrorMessage(err))
       setGoogleLoading(false)
     }
+  }
+
+  const sendReset = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true);setError('');setInfo('')
+    const {error: resetError}=await supabase.auth.resetPasswordForEmail(email.trim(),{
+      redirectTo: `${window.location.origin}/redefinir-senha`
+    })
+    if(resetError)setError(authErrorMessage(resetError))
+    else setInfo('Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha. Confira também o spam.')
+    setLoading(false)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -217,10 +229,10 @@ export function BusinessAuth() {
       </div>
 
       <form
-        onSubmit={handleSubmit}
+        onSubmit={resetMode ? sendReset : handleSubmit}
         className="rounded-lg border border-charcoal-light bg-charcoal-light/30 p-6 space-y-4"
       >
-        {mode === 'signup' && (
+        {!resetMode && mode === 'signup' && (
           <>
             <div>
               <FieldLabel>Nome do estabelecimento</FieldLabel>
@@ -250,7 +262,7 @@ export function BusinessAuth() {
           <FieldHint>Usado para entrar no painel e receber avisos da assinatura.</FieldHint>
         </div>
 
-        <div>
+        {!resetMode && <div>
           <FieldLabel>Senha</FieldLabel>
           <input
             type="password"
@@ -262,26 +274,30 @@ export function BusinessAuth() {
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
           {mode === 'signup' && <PasswordRequirements password={password} />}
-        </div>
+        </div>}
 
+        {mode === 'login' && !resetMode && <button type="button" onClick={()=>{setResetMode(true);setError('');setInfo('')}} className="text-sm text-brass underline">Esqueci minha senha</button>}
+        {resetMode && <p className="text-sm text-charcoal-muted">Enviaremos um link de recuperação para o e-mail cadastrado.</p>}
         {error && <p className="text-sm text-red-400">{error}</p>}
         {info && <p className="text-sm text-brass">{info}</p>}
 
         <button
           type="submit"
-          disabled={loading || googleLoading || (mode === 'signup' && !isPasswordStrong(password))}
+          disabled={loading || googleLoading || (!resetMode && mode === 'signup' && !isPasswordStrong(password))}
           className="w-full rounded-lg bg-brass py-3 font-semibold text-charcoal disabled:opacity-50"
         >
           {loading
             ? 'Aguarde...'
+            : resetMode ? 'Enviar link de recuperação'
             : mode === 'login'
               ? 'Entrar'
               : 'Criar conta'}
         </button>
 
-        <AuthDivider tone="dark" />
+        {resetMode && <button type="button" onClick={()=>{setResetMode(false);setError('');setInfo('')}} className="block w-full text-center text-sm text-brass">Voltar ao login</button>}
+        {!resetMode && <AuthDivider tone="dark" />}
 
-        <GoogleSignInButton
+        {!resetMode && <GoogleSignInButton
           tone="dark"
           disabled={loading || googleLoading}
           onCredential={handleGoogleCredential}
@@ -289,10 +305,10 @@ export function BusinessAuth() {
             setError(message)
             setGoogleLoading(false)
           }}
-        />
+        />}
       </form>
 
-      <p className="mt-4 text-center text-sm text-charcoal-muted">
+      {!resetMode && <p className="mt-4 text-center text-sm text-charcoal-muted">
         {mode === 'login' ? (
           <>
             Primeira vez?{' '}
@@ -324,7 +340,7 @@ export function BusinessAuth() {
             </button>
           </>
         )}
-      </p>
+      </p>}
 
       <p className="mt-4 text-center">
         <Link to="/" className="inline-flex items-center text-sm text-charcoal-muted hover:text-brass">
