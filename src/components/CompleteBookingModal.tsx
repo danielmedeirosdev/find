@@ -19,6 +19,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
     [booking]
   )
   const [selectedIds, setSelectedIds] = useState<Set<string>>(initialIds)
+  const [showOtherServices, setShowOtherServices] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix')
   const [packages, setPackages] = useState<CustomerPackage[]>([])
   const [selectedPackageId, setSelectedPackageId] = useState<string>('')
@@ -42,12 +43,9 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
   }, [booking.pet_id])
 
   const selectedServices = shopServices.filter((s) => selectedIds.has(s.id))
-  const selectionUnchanged = selectedIds.size === initialIds.size && Array.from(selectedIds).every((id) => initialIds.has(id))
   const parsedTransportFee = Number(transportFee.replace(',', '.'))
   const currentTransportFee = Number(booking.pet_transport_fee || 0)
-  const baseTotal = selectionUnchanged && booking.quoted_amount != null
-    ? Math.max(0, Number(booking.quoted_amount) - currentTransportFee)
-    : getTotalPrice(selectedServices) + Number(booking.extras_amount || 0)
+  const baseTotal = getTotalPrice(selectedServices) + Number(booking.extras_amount || 0) + Number(booking.booking_custom_field_answers?.reduce((sum, answer) => sum + Number(answer.price_delta || 0), 0) || 0) - Number(booking.discount_amount || 0)
   const total = baseTotal + (booking.pet_transport_requested && Number.isFinite(parsedTransportFee) ? parsedTransportFee : 0)
 
   const toggleService = (id: string) => {
@@ -103,37 +101,38 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg border border-charcoal-light bg-charcoal p-6">
-        <h3 className="font-display text-xl text-white mb-1">Finalizar atendimento</h3>
-        <p className="text-sm text-charcoal-muted mb-6">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-0 sm:items-center sm:p-4">
+      <div className="max-h-[92dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-3xl border border-charcoal-light bg-charcoal p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-h-[90vh] sm:rounded-2xl sm:p-6">
+        <h3 className="font-display text-xl font-semibold text-white mb-1">Finalizar atendimento</h3>
+        <p className="text-sm text-charcoal-muted mb-4">
           {booking.pets?.name ? `${booking.pets.name} · ` : ''}
           {booking.client_name} · {booking.barbers?.name}
         </p>
 
-        <div className="mb-6">
+        <div className="mb-5">
           <p className="text-sm font-medium text-white mb-3">Serviços executados</p>
           <div className="space-y-2">
-            {shopServices.map((s) => (
+            {shopServices.filter(s => initialIds.has(s.id) || selectedIds.has(s.id) || showOtherServices).map((s) => (
               <label
                 key={s.id}
-                className={`flex cursor-pointer items-center justify-between rounded-lg border p-3 ${
+                className={`flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 ${
                   selectedIds.has(s.id) ? 'border-brass bg-brass/10' : 'border-charcoal-light'
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <input
                     type="checkbox"
                     checked={selectedIds.has(s.id)}
                     onChange={() => toggleService(s.id)}
                     className="accent-brass"
                   />
-                  <span className="text-sm text-white">{s.name}</span>
+                  <span className="min-w-0 break-words text-sm text-white">{s.name}</span>
                 </div>
-                <span className="font-mono text-sm text-brass">{formatPrice(Number(s.price))}</span>
+                <span className="shrink-0 text-right text-xs font-medium tabular-nums text-brass sm:text-sm">{formatPrice(Number(s.price))}</span>
               </label>
             ))}
           </div>
+          {shopServices.some(s => !initialIds.has(s.id) && !selectedIds.has(s.id)) && <button type="button" onClick={() => setShowOtherServices(v => !v)} className="mt-3 min-h-10 w-full rounded-xl border border-brass/30 px-3 py-2 text-sm font-medium text-brass">{showOtherServices ? "Ocultar outros serviços" : "+ Adicionar outro serviço"}</button>}
         </div>
 
         {(booking.booking_custom_field_answers?.length || booking.pet_transport_requested) ? (
@@ -183,25 +182,25 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
           </div>
         </div>
 
-        <div className="mb-6 flex justify-between rounded-lg bg-charcoal-light/30 p-4 font-mono">
+        <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-brass/25 bg-brass/10 p-4">
           <span className="text-white">Total</span>
-          <span className="text-brass text-lg">{formatPrice(total)}</span>
+          <span className="break-all text-right text-lg font-semibold tabular-nums text-brass">{formatPrice(total)}</span>
         </div>
 
         {error && <p className="mb-4 text-sm text-red-400">{error}</p>}
 
-        <div className="flex gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <button
             onClick={onClose}
             disabled={submitting}
-            className="flex-1 rounded-lg border border-charcoal-light py-3 text-charcoal-muted hover:text-white"
+            className="min-h-12 rounded-xl border border-charcoal-light px-2 py-3 text-sm text-charcoal-muted hover:text-white"
           >
             Cancelar
           </button>
           <button
             onClick={handleConfirm}
             disabled={submitting}
-            className="flex-1 rounded-lg bg-brass py-3 font-semibold text-charcoal disabled:opacity-50"
+            className="min-h-12 rounded-xl bg-brass px-2 py-3 text-sm font-semibold text-charcoal disabled:opacity-50"
           >
             {submitting ? 'Salvando...' : 'Confirmar'}
           </button>
