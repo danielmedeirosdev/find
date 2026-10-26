@@ -97,7 +97,7 @@ export function ProfessionalShell({
           <button type="button" onClick={() => setMobileMenuOpen(open => !open)}
             aria-expanded={mobileMenuOpen} aria-controls="onefind-mobile-navigation"
             className="flex min-h-12 w-full items-center justify-between rounded-xl border border-white/15 bg-charcoal-light/50 px-4 text-sm font-semibold text-white">
-            <span className="flex items-center gap-2"><AppIcon name="menu" size={18} /> {tabs.find(tab => tab.id === activeTab)?.label || 'Menu'}</span>
+            <span className="flex items-center gap-2"><AppIcon name="agenda" size={18} /> {tabs.find(tab => tab.id === activeTab)?.label || 'Menu'}</span>
             <span className="text-brass">{mobileMenuOpen ? 'Fechar' : 'Todas as áreas'}</span>
           </button>
           {mobileMenuOpen && (
