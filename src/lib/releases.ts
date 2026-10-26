@@ -17,6 +17,17 @@ export interface ProductRelease {
 
 export const PRODUCT_RELEASES: ProductRelease[] = [
   {
+    id: 'servicos-combinados-pacotes-outubro',
+    date: '2026-10-26',
+    label: 'Novidades do agendamento',
+    title: 'Mais de um serviço por agendamento e edição de pacotes',
+    summary: 'Monte atendimentos completos no mesmo horário e ajuste os modelos de pacotes já cadastrados.',
+    notes: [
+      { title: 'Vários serviços no mesmo horário', description: 'Selecione banho, hidratação e outros serviços no mesmo agendamento interno, com valores e durações somados.', icon: 'check' },
+      { title: 'Pacotes editáveis', description: 'Altere modelos de pacotes já cadastrados sem precisar excluir e criar novamente.', icon: 'settings' },
+    ],
+  },
+  {
     id: 'agenda-recorrente-equipe-outubro',
     date: '2026-10-21',
     label: 'Novidades da agenda',
