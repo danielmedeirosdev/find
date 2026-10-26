@@ -14,7 +14,7 @@ test('invalid input and network failure retain truthful state',async({page})=>{
  await page.getByPlaceholder('Ex: Maria Silva').fill('QA inválido')
  await page.getByPlaceholder('Ex: (11) 99999-9999').fill('12')
  await page.getByRole('button',{name:'Adicionar',exact:true}).click()
- await expect(page.getByText('Informe nome e WhatsApp válidos.',{exact:true})).toBeVisible()
+ await expect(page.getByText('Informe um WhatsApp válido.',{exact:true})).toBeVisible()
  expect(await data(page,'shop_customers?select=id')).toHaveLength(before.length)
  await page.route('**/rest/v1/financial_transactions*',route=>route.abort('failed'))
  await page.goto('/painel/dashboard?aba=cashflow')

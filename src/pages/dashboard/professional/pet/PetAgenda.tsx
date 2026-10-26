@@ -1,10 +1,11 @@
-import { applyWeekdayDiscount } from '../../../../lib/servicePricing'
+import { applyWeekdayDiscount, petTransportFee } from '../../../../lib/servicePricing'
 import { Modal } from '../../../../components/Modal'
 import { ConfirmReceipt, type ReceiptView } from '../../../../components/public/ConfirmReceipt'
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../../../lib/supabase'
 import {
   formatPrice,
+  customerLabel,
   formatDate,
   formatTime,
   formatDuration,
@@ -20,11 +21,13 @@ import { userFacingError } from '../../../../lib/userFacingError'
 import { ProfessionalTimeOff } from '../../../../components/ProfessionalTimeOff'
 import { ShopClosures } from '../../../../components/ShopClosures'
 import { bookingTotal } from '../../../../lib/finance'
-import { bookingClock, loadBookingAvailability, availableBookingTimes, eligibleProfessionals, localDateIso } from '../../../../lib/booking'
+import { loadBookingAvailability, availableBookingTimes, eligibleProfessionals, localDateIso } from '../../../../lib/booking'
 import { BookingSchedulePicker } from '../../../../components/BookingSchedulePicker'
 import { BookingServicePicker } from '../../../../components/BookingServicePicker'
+import { BookingTransportFields } from '../../../../components/BookingTransportFields'
+import { BookingCustomerPicker } from '../../../../components/BookingCustomerPicker'
 import { BookingStepper } from '../../../../components/public/BookingStepper'
-import type { BookingWithDetails, Service, ServiceSizeRule, PetSize, ServiceWeekdayDiscount } from '../../../../lib/types'
+import type { BookingWithDetails, Service, ServiceSizeRule, PetSize, ServiceWeekdayDiscount, ServicePetTransport, Booking } from '../../../../lib/types'
 
 interface Props {
   shopId: string
@@ -66,6 +69,12 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
   const [scheduleValid, setScheduleValid] = useState(false)
   const [newError, setNewError] = useState('')
   const [savingNew, setSavingNew] = useState(false)
+  const [newNotes,setNewNotes] = useState('')
+  const [transportSettings,setTransportSettings] = useState<ServicePetTransport[]>([])
+  const [newTransport,setNewTransport] = useState(false)
+  const [newAddress,setNewAddress] = useState('')
+  const [newTransportNotes,setNewTransportNotes] = useState('')
+  const [newTransportFee,setNewTransportFee] = useState('')
   const [repeatEvery, setRepeatEvery] = useState(0)
   const [repeatCount, setRepeatCount] = useState(4)
   const [createdCount, setCreatedCount] = useState(1)
@@ -94,6 +103,18 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
   const [editTime,setEditTime] = useState('')
   const [editNotes,setEditNotes] = useState('')
   const [editScheduleValid,setEditScheduleValid] = useState(false)
+
+  const selectedTransport = transportSettings.filter(setting=>setting.enabled && serviceIds.includes(setting.service_id))
+  const transportAvailable = selectedTransport.length>0
+  const transportFeeOverride = newTransportFee.trim()==='' ? null : Number(newTransportFee.replace(',','.'))
+  const transportFeeValid = transportFeeOverride===null || (Number.isFinite(transportFeeOverride) && transportFeeOverride>=0 && transportFeeOverride<=999999.99)
+  const transportPending = newTransport && transportFeeOverride===null && selectedTransport.some(setting=>setting.pricing_mode==='quote')
+  const taxiFee = newTransport && transportFeeValid ? transportFeeOverride ?? petTransportFee(new Set(serviceIds),transportSettings) : 0
+  const validateDetails = () => {
+    if(newTransport && newAddress.trim().length<5){setNewError('Informe o endereço onde o pet será buscado.');return false}
+    if(newTransport && !transportFeeValid){setNewError('Informe um valor válido para o Táxi Pet.');return false}
+    return true
+  }
 
   const saveExtraServices = async () => {
     if (!editingBooking || savingExtras) return
@@ -146,7 +167,15 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
       setBookings((data as BookingWithDetails[]) || [])
     }
     setShopServices(svc || [])
-    if(svc?.length){const [rules,discounts]=await Promise.all([supabase.from('service_size_rules').select('*').in('service_id',svc.map(s=>s.id)),supabase.from('service_weekday_discounts').select('*').in('service_id',svc.map(s=>s.id))]);setSizeRules(rules.data||[]);setWeekdayDiscounts(discounts.data||[]);if(rules.error||discounts.error)setLoadError('Não foi possível carregar as regras de preços. Atualize a agenda.')}
+    if(svc?.length){
+      const [rules,discounts,transport]=await Promise.all([
+        supabase.from('service_size_rules').select('*').in('service_id',svc.map(s=>s.id)),
+        supabase.from('service_weekday_discounts').select('*').in('service_id',svc.map(s=>s.id)),
+        supabase.from('service_pet_transport').select('*').eq('shop_id',shopId).in('service_id',svc.map(s=>s.id)),
+      ])
+      setSizeRules(rules.data||[]);setWeekdayDiscounts(discounts.data||[]);setTransportSettings(transport.data||[])
+      if(rules.error||discounts.error||transport.error)setLoadError('Não foi possível carregar as regras de preços e transporte. Atualize a agenda.')
+    }
     setLoading(false)
   }, [shopId, barberId, today])
 
@@ -162,7 +191,7 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
       supabase.from('barbers').select('id,name').eq('shop_id',shopId).order('name'),
     ])
     if(a.error||b.error||d.error){setActionError('Erro ao carregar dados para agendar.');return}
-    setClients(a.data||[]);setPetsList(b.data||[]);setTeamList(d.data||[]);setNewError('');setNewStep(1);setReceipt(null);setRepeatEvery(0);setRepeatCount(4);setServiceIds([]);setClientId('');setPetId('');setTimeValue('');setDateValue('');setScheduleValid(false);setStaffId(barberId||d.data?.[0]?.id||'');setShowNew(true)
+    setClients(a.data||[]);setPetsList(b.data||[]);setTeamList(d.data||[]);setNewError('');setNewStep(1);setReceipt(null);setRepeatEvery(0);setRepeatCount(4);setServiceIds([]);setNewNotes('');setNewTransport(false);setNewAddress('');setNewTransportNotes('');setNewTransportFee('');setClientId('');setPetId('');setTimeValue('');setDateValue('');setScheduleValid(false);setStaffId(barberId||d.data?.[0]?.id||'');setShowNew(true)
   }
   const saveNew = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -171,7 +200,7 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
     const selectedServices=shopServices.filter(x=>serviceIds.includes(x.id))
     const totalDuration=getPetServicesDuration(selectedServices,pet?.size||'medio',sizeRules)
     if(!client||!pet||selectedServices.length===0||!staffId||!dateValue||!timeValue){setNewError('Preencha todos os campos.');return}
-    if(dateValue<bookingClock().date){setNewError('Selecione uma data futura.');return}
+    if(!validateDetails())return
     if(savingNew || !scheduleValid){setNewError('Escolha um horário disponível.');return}
     setSavingNew(true);setNewError('')
     const count=repeatEvery===0?1:Math.min(12,Math.max(2,repeatCount))
@@ -181,6 +210,7 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
       return d.toISOString().slice(0,10)
     })
     let completed=0
+    let firstBooking: Booking | null = null
     let availability
     try { availability = await loadBookingAvailability(shopId, [staffId]) }
     catch (error) { setNewError(userFacingError(error,'Não foi possível conferir os horários.')); setSavingNew(false); return }
@@ -192,11 +222,16 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
     const unavailableDate = dates.find(date => !availableBookingTimes(availability, staffId, date, totalDuration).includes(timeValue))
     if (unavailableDate) { setNewError(`Não há disponibilidade em ${formatDate(unavailableDate)} às ${formatTime(timeValue)}. Nenhum agendamento foi criado.`); setTimeValue(''); setScheduleValid(false); setSavingNew(false); return }
     for(const bookingDate of dates){
-      const {error}=await supabase.rpc('create_operational_booking', {
+      const {data:created,error}=await supabase.rpc('create_operational_booking_with_details', {
         p_shop_id:shopId,p_barber_id:staffId,p_customer_id:client.id,p_pet_id:pet.id,
         p_date:bookingDate,p_time:timeValue,p_service_ids:selectedServices.map(s=>s.id),
+        p_notes:newNotes.trim()||null,p_pet_transport:newTransport,
+        p_transport_address:newTransport?newAddress.trim():null,
+        p_transport_notes:newTransport?newTransportNotes.trim():null,
+        p_transport_fee:newTransport?transportFeeOverride:null,
       })
       if(error){setNewError(`${userFacingError(error,'Não foi possível agendar.')} ${completed} agendamento(s) já criado(s).`);setSavingNew(false);await load();return}
+      if(!firstBooking)firstBooking=created as Booking
       completed++
     }
     setCreatedCount(completed)
@@ -205,6 +240,9 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
       barberName:teamList.find(x=>x.id===staffId)?.name || '',
       date:dateValue,time:timeValue,durationMinutes:totalDuration,
       clientName:client.name,clientPhone:client.phone,
+      notes:firstBooking?.notes,quotedAmount:firstBooking?.quoted_amount,
+      petTransportRequested:firstBooking?.pet_transport_requested,petTransportFee:Number(firstBooking?.pet_transport_fee||0),
+      petTransportAddress:firstBooking?.pet_transport_address,petTransportNotes:firstBooking?.pet_transport_notes,
       services:selectedServices.map(x=>({id:x.id,name:x.name,price:servicePrice(x,pet.size,dateValue)})),
       petName:pet.name,
     })
@@ -316,14 +354,16 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
         {newStep===4 && receipt ? <div className="space-y-3">
           {createdCount>1 && <p className="rounded-xl border border-brass/30 p-3 text-center text-sm text-white">{createdCount} agendamentos criados com sucesso. O comprovante abaixo corresponde ao primeiro horário.</p>}
           <ConfirmReceipt view={receipt} signedIn={true}/>
-          <a target="_blank" rel="noopener noreferrer" href={`https://wa.me/${receiptPhone.replace(/\D/g,'').replace(/^(?!55)/,'55')}?text=${encodeURIComponent(`Oi, ${receipt.clientName}! Seu horário na ${receipt.shopName} está agendado.\nPet: ${receipt.petName}\nServiço: ${receipt.services.map(s=>s.name).join(', ')}\nData: ${formatDate(receipt.date)}\nHorário: ${formatTime(receipt.time)}\nProfissional: ${receipt.barberName || 'A definir'}\nValor: ${formatPrice(receipt.services.reduce((a,s)=>a+s.price,0))}`)}`} className="block rounded-xl bg-brass px-5 py-4 text-center font-semibold text-charcoal-dark">Mandar comprovante pro cliente pelo WhatsApp</a>
+          <a target="_blank" rel="noopener noreferrer" href={`https://wa.me/${receiptPhone.replace(/\D/g,'').replace(/^(?!55)/,'55')}?text=${encodeURIComponent(`${receipt.clientName?.trim()?`Oi, ${receipt.clientName}!`:'Oi!'} Seu horário na ${receipt.shopName} está agendado.\nPet: ${receipt.petName}\nServiço: ${receipt.services.map(s=>s.name).join(', ')}\nData: ${formatDate(receipt.date)}\nHorário: ${formatTime(receipt.time)}\nProfissional: ${receipt.barberName || 'A definir'}\nValor: ${formatPrice(Number(receipt.quotedAmount ?? receipt.services.reduce((a,s)=>a+s.price,0)))}${receipt.notes?`\nObservação: ${receipt.notes}`:''}${receipt.petTransportRequested?`\nTáxi Pet: ${Number(receipt.petTransportFee)>0?formatPrice(Number(receipt.petTransportFee)):'valor a confirmar'}\nEndereço da busca: ${receipt.petTransportAddress}${receipt.petTransportNotes?`\nInstruções: ${receipt.petTransportNotes}`:''}`:''}`)}`} className="block rounded-xl bg-brass px-5 py-4 text-center font-semibold text-charcoal-dark">Mandar comprovante pro cliente pelo WhatsApp</a>
           <p className="text-center text-xs text-charcoal-muted">Abre o WhatsApp com os dados do comprovante prontos para enviar.</p>
           <button type="button" onClick={()=>setShowNew(false)} className="w-full rounded-xl border border-white/20 py-3 text-white">Concluir</button>
-        </div> : <form onSubmit={e=>{if(newStep<3){e.preventDefault();if(newStep===2&&serviceIds.length===0){setNewError('Selecione pelo menos um serviço.');return}setNewError('');setNewStep(newStep+1)}else void saveNew(e)}} className="space-y-4">
+        </div> : <form onSubmit={e=>{if(newStep<3){e.preventDefault();if(newStep===2&&serviceIds.length===0){setNewError('Selecione pelo menos um serviço.');return}if(newStep===2&&!validateDetails())return;setNewError('');setNewStep(newStep+1)}else void saveNew(e)}} className="space-y-4">
           {newStep===1 && <div className="space-y-4">
-            <p className="text-sm text-charcoal-muted">Escolha quem será atendido.</p>
-            <label className="grid gap-2 text-sm text-white">Cliente<select required value={clientId} onChange={e=>{setClientId(e.target.value);setPetId('')}} className="min-h-12 rounded-xl bg-charcoal p-3"><option value="">Selecione um cliente</option>{clients.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-            <label className="grid gap-2 text-sm text-white">Pet<select required value={petId} onChange={e=>setPetId(e.target.value)} className="min-h-12 rounded-xl bg-charcoal p-3"><option value="">Selecione o pet</option>{petsList.filter(x=>x.customer_id===clientId).map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+            <BookingCustomerPicker shopId={shopId} clients={clients} pets={petsList} clientId={clientId} petId={petId}
+              onSelection={(customer,pet)=>{if(customer!==clientId){setNewNotes('');setNewTransport(false);setNewAddress('');setNewTransportNotes('');setNewTransportFee('')}setClientId(customer);setPetId(pet)}}
+              onCustomer={customer=>setClients(current=>current.some(item=>item.id===customer.id)?current.map(item=>item.id===customer.id?customer:item):[...current,customer])}
+              onPet={pet=>setPetsList(current=>[...current.filter(item=>item.id!==pet.id),pet])}
+            />
           </div>}
           {newStep===2 && <div className="space-y-4">
             <p className="text-sm text-charcoal-muted">Selecione os serviços para {petsList.find(p=>p.id===petId)?.name}.</p>
@@ -331,9 +371,11 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
               tone="dark"
               services={shopServices.filter(service=>service.is_active!==false).map(service=>({ id:service.id,name:service.name,price:servicePrice(service,petsList.find(p=>p.id===petId)?.size||'medio',dateValue),duration:getPetServicesDuration([service],petsList.find(p=>p.id===petId)?.size||'medio',sizeRules) }))}
               selectedIds={serviceIds}
-              onToggle={id=>{setServiceIds(current=>current.includes(id)?current.filter(item=>item!==id):[...current,id]);setTimeValue('');setScheduleValid(false)}}
+              onToggle={id=>{setServiceIds(current=>current.includes(id)?current.filter(item=>item!==id):[...current,id]);setTimeValue('');setScheduleValid(false);setNewTransport(false);setNewTransportFee('')}}
             />
-            <p className="text-sm text-brass">Total: {formatPrice(shopServices.filter(x=>serviceIds.includes(x.id)).reduce((sum,x)=>sum+servicePrice(x,petsList.find(p=>p.id===petId)?.size||'medio',dateValue),0))}</p>
+            <p className="text-sm text-brass">Serviços: {formatPrice(shopServices.filter(x=>serviceIds.includes(x.id)).reduce((sum,x)=>sum+servicePrice(x,petsList.find(p=>p.id===petId)?.size||'medio',dateValue),0))}</p>
+            <label className="grid gap-2 text-sm text-white">Observação do atendimento (opcional)<textarea value={newNotes} onChange={e=>setNewNotes(e.target.value)} maxLength={1000} rows={3} placeholder="Cuidados, alergias ou orientações para este atendimento" className="w-full rounded-xl bg-charcoal p-3"/></label>
+            {transportAvailable && <BookingTransportFields enabled={newTransport} onEnabled={setNewTransport} pending={selectedTransport.some(item=>item.pricing_mode==='quote') && transportFeeOverride===null} fee={transportFeeValid ? transportFeeOverride ?? petTransportFee(new Set(serviceIds),transportSettings) : 0} address={newAddress} onAddress={setNewAddress} notes={newTransportNotes} onNotes={setNewTransportNotes} feeError={newTransport && !transportFeeValid ? 'Informe um valor válido para o Táxi Pet.' : undefined} feeInput={newTransportFee} onFeeInput={setNewTransportFee} tone="dark"/>}
           </div>}
           {newStep===3 && <div className="space-y-4">
             <BookingSchedulePicker
@@ -349,7 +391,7 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
             <label className="grid gap-2 text-sm text-white">Repetição<select value={repeatEvery} onChange={e=>setRepeatEvery(Number(e.target.value))} className="min-h-12 rounded-xl bg-charcoal p-3"><option value={0}>Não repetir</option><option value={7}>Toda semana</option><option value={14}>A cada 15 dias (quinzenal)</option></select></label>
             {repeatEvery>0 && <label className="grid gap-2 text-sm text-white">Quantidade de atendimentos (incluindo o primeiro)<select value={repeatCount} onChange={e=>setRepeatCount(Number(e.target.value))} className="min-h-12 rounded-xl bg-charcoal p-3">{Array.from({length:11},(_,i)=>i+2).map(n=><option key={n} value={n}>{n} atendimentos</option>)}</select></label>}
             {repeatEvery>0 && <p className="text-xs text-charcoal-muted">Os horários serão reservados nas próximas {repeatCount} datas. Se houver conflito, a criação para e informa quantos foram salvos.</p>}
-            <div className="rounded-xl border border-white/10 p-4 text-sm text-white">Confira: {clients.find(x=>x.id===clientId)?.name} · {petsList.find(x=>x.id===petId)?.name} · {shopServices.filter(x=>serviceIds.includes(x.id)).map(x=>x.name).join(' + ')}<p className="mt-2 font-semibold text-brass">Total: {formatPrice(shopServices.filter(x=>serviceIds.includes(x.id)).reduce((sum,x)=>sum+servicePrice(x,petsList.find(p=>p.id===petId)?.size||'medio',dateValue),0))}</p></div>
+            <div className="rounded-xl border border-white/10 p-4 text-sm text-white">Confira: {customerLabel(clients.find(x=>x.id===clientId))} · {petsList.find(x=>x.id===petId)?.name} · {shopServices.filter(x=>serviceIds.includes(x.id)).map(x=>x.name).join(' + ')}<p className="mt-2 font-semibold text-brass">Total: {formatPrice(shopServices.filter(x=>serviceIds.includes(x.id)).reduce((sum,x)=>sum+servicePrice(x,petsList.find(p=>p.id===petId)?.size||'medio',dateValue),0)+taxiFee)}</p>{newNotes.trim()&&<p className="mt-2 text-charcoal-muted">Observação: {newNotes}</p>}{newTransport&&<p className="mt-2 text-charcoal-muted">Táxi Pet: {transportPending?'valor a confirmar':formatPrice(taxiFee)} · {newAddress}</p>}</div>
           </div>}
           {newError && <p role="alert" className="text-sm text-red-300">{newError}</p>}
           <div className="flex gap-3">{newStep>1 && <button type="button" onClick={()=>setNewStep(newStep-1)} className="rounded-xl border border-white/20 px-5 py-3 text-white">Voltar</button>}<button type="submit" disabled={savingNew || (newStep===3 && !scheduleValid)} className="flex-1 rounded-xl bg-brass px-5 py-3 font-semibold text-charcoal-dark disabled:opacity-50">{savingNew?'Salvando...':newStep===3?'Confirmar agendamento':'Continuar'}</button></div>

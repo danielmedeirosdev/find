@@ -1,3 +1,4 @@
+import { customerLabel } from '../../../lib/format'
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase'
@@ -322,7 +323,7 @@ export function PetsTab({ shopId }: Props) {
               <option value="">Novo responsável…</option>
               {customers.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name} · {c.phone}
+                  {customerLabel(c)} · {c.phone}
                 </option>
               ))}
             </select>
@@ -473,8 +474,8 @@ export function PetsTab({ shopId }: Props) {
                     {pet.breed || 'Sem raça'} · {petSizeLabel(pet.size)}
                   </p>
                   <p className="text-xs text-charcoal-muted">
-                    {pet.shop_customers?.name}
-                    {pet.shop_customers?.phone ? ` · ${formatPhone(pet.shop_customers.phone)}` : ''}
+                    {customerLabel(pet.shop_customers)}
+                    {pet.shop_customers?.name?.trim() && pet.shop_customers?.phone ? ` · ${formatPhone(pet.shop_customers.phone)}` : ''}
                   </p>
                 </div>
               </button>
@@ -648,7 +649,7 @@ export function PetsTab({ shopId }: Props) {
                   <div className="rounded-xl border border-charcoal-light bg-charcoal-light/20 p-3">
                     <p className="text-xs text-charcoal-muted">Responsável</p>
                     <p className="mt-1 font-medium text-white">
-                      {selected.shop_customers?.name || 'Não informado'}
+                      {customerLabel(selected.shop_customers)}
                     </p>
                     {selected.shop_customers?.phone && (
                       <p className="mt-0.5 text-xs text-charcoal-muted">

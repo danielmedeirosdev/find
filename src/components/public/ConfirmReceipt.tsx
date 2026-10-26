@@ -26,6 +26,7 @@ export type ReceiptView = {
   petTransportRequested?: boolean
   petTransportFee?: number
   petTransportAddress?: string | null
+  petTransportNotes?: string | null
 }
 
 function ReceiptRow({
@@ -115,12 +116,12 @@ export function ConfirmReceipt({
 
           {view.notes ? <ReceiptRow label="Observação">{view.notes}</ReceiptRow> : null}
 
-          {view.petTransportRequested ? <ReceiptRow label="Táxi Dog / Táxi Pet"><p className="font-semibold">Busca em casa solicitada</p><p className="text-ink-muted">{view.petTransportAddress}</p>{transportPricePending ? <p className="mt-1 font-medium text-brass">Valor a confirmar após a análise do endereço.</p> : <p className="mt-1 text-brass">Taxa: {formatPrice(Number(view.petTransportFee))}</p>}</ReceiptRow> : null}
+          {view.petTransportRequested ? <ReceiptRow label="Táxi Dog / Táxi Pet"><p className="font-semibold">Busca em casa solicitada</p><p className="text-ink-muted">{view.petTransportAddress}</p>{view.petTransportNotes && <p className="mt-1 text-ink-muted">{view.petTransportNotes}</p>}{transportPricePending ? <p className="mt-1 font-medium text-brass">Valor a confirmar após a análise do endereço.</p> : <p className="mt-1 text-brass">Taxa: {formatPrice(Number(view.petTransportFee))}</p>}</ReceiptRow> : null}
 
           {Number(view.discountAmount || 0) > 0 || Number(view.extrasAmount || 0) > 0 ? <ReceiptRow label="Ajustes do valor">{Number(view.discountAmount || 0) > 0 ? <p className="text-emerald-700">Desconto do dia: − {formatPrice(Number(view.discountAmount))}</p> : null}{Number(view.extrasAmount || 0) > 0 ? <p>Adicionais: + {formatPrice(Number(view.extrasAmount))}</p> : null}</ReceiptRow> : null}
 
           <ReceiptRow label="Cliente">
-            <p>{view.clientName}</p>
+            {view.clientName.trim() && <p>{view.clientName}</p>}
             <p className="text-ink-muted">{view.clientPhone}</p>
           </ReceiptRow>
 

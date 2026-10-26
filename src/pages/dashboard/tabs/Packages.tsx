@@ -1,3 +1,4 @@
+import { customerLabel } from '../../../lib/format'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { formatPrice, formatDate } from '../../../lib/format'
@@ -282,7 +283,7 @@ export function PackagesTab({ shopId }: Props) {
             <option value="">Cliente</option>
             {customers.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name}
+                {customerLabel(c)}
               </option>
             ))}
           </select>
@@ -319,7 +320,7 @@ export function PackagesTab({ shopId }: Props) {
                       {pkg.service_packages?.name || 'Pacote'} · {pkg.pets?.name}
                     </p>
                     <p className="text-sm text-charcoal-muted">
-                      {pkg.shop_customers?.name} · Restantes:{' '}
+                      {customerLabel(pkg.shop_customers)} · Restantes:{' '}
                       <span className="text-brass font-mono">
                         {remaining} de {pkg.total_sessions}
                       </span>

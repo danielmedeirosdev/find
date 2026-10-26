@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { bookingTotal } from '../../../lib/finance'
 import { supabase } from '../../../lib/supabase'
-import { formatPhone, formatDate, formatTime, formatPrice, whatsappUrl, packageStatusLabel } from '../../../lib/format'
+import { customerLabel, formatPhone, formatDate, formatTime, formatPrice, whatsappUrl, packageStatusLabel } from '../../../lib/format'
 import { petSizeLabel } from '../../../lib/pet'
 import { packageRemaining } from '../../../lib/notifications'
 import { FieldLabel } from '../../../components/FormHints'
@@ -95,8 +95,8 @@ export function CustomersTab({ shopId }: Props) {
 
   const addCustomer = async () => {
     const digits = phone.replace(/\D/g, '')
-    if (!name.trim() || !/^\d{10,11}$/.test(digits)) {
-      setToast('Informe nome e WhatsApp válidos.')
+    if (!/^\d{10,11}$/.test(digits)) {
+      setToast('Informe um WhatsApp válido.')
       return
     }
     if(saving)return
@@ -121,7 +121,7 @@ export function CustomersTab({ shopId }: Props) {
 
   const saveNotes = async () => {
     if (!selectedId || saving) return
-    if(!editName.trim() || !/^\d{10,11}$/.test(editPhone.replace(/\D/g,''))){setToast('Confira o nome e WhatsApp.');return}
+    if(!/^\d{10,11}$/.test(editPhone.replace(/\D/g,''))){setToast('Confira o WhatsApp.');return}
     setSaving(true)
     const { error } = await supabase
       .from('shop_customers')
@@ -159,7 +159,7 @@ export function CustomersTab({ shopId }: Props) {
 
       <details className="of-section mb-5"><summary className="cursor-pointer font-medium text-brass">Cadastrar cliente</summary><div className="mt-4 grid gap-3 sm:grid-cols-3">
         <div>
-          <FieldLabel>Nome</FieldLabel>
+          <FieldLabel>Nome (opcional)</FieldLabel>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -206,9 +206,9 @@ export function CustomersTab({ shopId }: Props) {
                     onClick={() => setSelectedId(c.id)}
                     className="min-w-0 flex-1 rounded-lg px-2 py-2 text-left"
                   >
-                    <p className="truncate font-medium text-white">{c.name}</p>
+                    <p className="truncate font-medium text-white">{customerLabel(c)}</p>
                     <p className="mt-0.5 text-sm tabular-nums text-charcoal-muted">
-                      {formatPhone(c.phone) || 'Sem telefone'}
+                      {c.name.trim() ? formatPhone(c.phone) : 'Complete os dados quando quiser'}
                     </p>
                     <p className="mt-1 text-xs text-brass">
                       {(petsByCustomer[c.id] || []).length} pet
@@ -220,8 +220,8 @@ export function CustomersTab({ shopId }: Props) {
                       href={whatsapp}
                       target="_blank"
                       rel="noreferrer"
-                      aria-label={`Abrir WhatsApp de ${c.name}`}
-                      title={`Conversar com ${c.name} no WhatsApp`}
+                      aria-label={`Abrir WhatsApp de ${customerLabel(c)}`}
+                      title={`Conversar com ${customerLabel(c)} no WhatsApp`}
                       className="shrink-0 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/20"
                     >
                       WhatsApp
@@ -238,7 +238,7 @@ export function CustomersTab({ shopId }: Props) {
             <div>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h3 className="font-display text-xl text-brass">{selected.name}</h3>
+                  <h3 className="font-display text-xl text-brass">{customerLabel(selected)}</h3>
                   <p className="mt-1 text-sm tabular-nums text-charcoal-muted">
                     {formatPhone(selected.phone) || 'Sem telefone'}
                   </p>
@@ -328,7 +328,7 @@ export function CustomersTab({ shopId }: Props) {
 
             <div>
               <FieldLabel>Observações</FieldLabel>
-              <label className="block text-sm">Nome<input value={editName} onChange={e=>setEditName(e.target.value)} className="my-2 w-full rounded-lg border border-charcoal-light bg-charcoal p-2"/></label><label className="block text-sm">WhatsApp<input type="tel" value={editPhone} onChange={e=>setEditPhone(formatPhone(e.target.value))} className="my-2 w-full rounded-lg border border-charcoal-light bg-charcoal p-2"/></label><textarea
+              <label className="block text-sm">Nome (opcional)<input value={editName} onChange={e=>setEditName(e.target.value)} className="my-2 w-full rounded-lg border border-charcoal-light bg-charcoal p-2"/></label><label className="block text-sm">WhatsApp<input type="tel" value={editPhone} onChange={e=>setEditPhone(formatPhone(e.target.value))} className="my-2 w-full rounded-lg border border-charcoal-light bg-charcoal p-2"/></label><textarea
                 value={editNotes}
                 onChange={(e) => setEditNotes(e.target.value)}
                 rows={2}

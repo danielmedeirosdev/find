@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { bookingErrorMessage } from '../../lib/booking'
+import { BookingTransportFields } from '../../components/BookingTransportFields'
 import { BookingServicePicker } from '../../components/BookingServicePicker'
 import { BookingSchedulePicker } from '../../components/BookingSchedulePicker'
 import { getPetServicesDuration, getPetServicesPrice, petSizeLabel } from '../../lib/pet'
@@ -254,7 +255,7 @@ export function PetBooking() {
   const ensureCustomer = async (): Promise<ShopCustomer | null> => {
     if (!shopId) return null
     const digits = phone.replace(/\D/g, '')
-    if (customer) return customer
+    if (customer?.name.trim()) return customer
     if (!customerName.trim()) {
       setError('Informe seu nome.')
       return null
@@ -483,7 +484,7 @@ export function PetBooking() {
             <p className="text-sm text-ink-muted mb-4">
               Pode escolher até 2 pets no mesmo horário (só da mesma pessoa).
             </p>
-            {!customer && (
+            {(!customer || !customer.name.trim()) && (
               <div className="mb-4">
                 <label className="block text-sm mb-1">Seu nome</label>
                 <input
@@ -494,7 +495,7 @@ export function PetBooking() {
                 />
               </div>
             )}
-            {lookupDone && customer && (
+            {lookupDone && customer?.name.trim() && (
               <p className="text-sm text-ink-muted mb-4">Olá, {customer.name}!</p>
             )}
 
@@ -593,7 +594,7 @@ export function PetBooking() {
                 Voltar
               </button>
               <button
-                onClick={() => setStep(3)}
+                onClick={async () => {if(await ensureCustomer())setStep(3)}}
                 disabled={selectedPetIds.size === 0}
                 className="btn-primary flex-1"
               >
@@ -648,32 +649,8 @@ export function PetBooking() {
                 })}
               </div>
             )}
-            {transportAvailable && (
-              <div className="mt-5 rounded-2xl border border-brass/35 bg-brass/5 p-4">
-                <div>
-                  <p className="font-semibold">Precisa que busquem seu pet em casa?</p>
-                  <p className="mt-1 text-sm text-ink-muted">
-                    {transportPricePending
-                      ? 'Táxi Dog / Táxi Pet disponível. O estabelecimento confirma o valor após analisar seu endereço.'
-                      : `Táxi Dog / Táxi Pet disponível. Taxa fixa: ${formatPrice(petTransportFee(selectedServiceIds, transportSettings))}`}
-                  </p>
-                </div>
-                <div className="mt-4 grid grid-cols-2 gap-2" role="group" aria-label="Escolha do Táxi Pet">
-                  <button type="button" aria-pressed={!petTransport} onClick={() => setPetTransport(false)} className={`min-h-11 rounded-xl border px-3 text-sm font-semibold transition ${!petTransport ? 'border-ink bg-ink text-paper' : 'border-paper-dark bg-white text-ink'}`}>
-                    Não preciso
-                  </button>
-                  <button type="button" aria-pressed={petTransport} onClick={() => setPetTransport(true)} className={`min-h-11 rounded-xl border px-3 text-sm font-semibold transition ${petTransport ? 'border-brass bg-brass text-charcoal' : 'border-paper-dark bg-white text-ink'}`}>
-                    Quero que busquem
-                  </button>
-                </div>
-                {petTransport ? (
-                  <div className="mt-4 space-y-3">
-                    <label className="block text-sm font-medium">Endereço da busca<input value={transportAddress} onChange={(e) => setTransportAddress(e.target.value)} placeholder="Rua, número, bairro e cidade" maxLength={500} className="mt-1.5 min-h-11 w-full rounded-xl border border-paper-dark px-3 text-sm focus:border-brass focus:outline-none" /></label>
-                    <label className="block text-sm font-medium">Instruções para a equipe <span className="font-normal text-ink-muted">(opcional)</span><textarea value={transportNotes} onChange={(e) => setTransportNotes(e.target.value)} placeholder="Complemento, referência ou cuidados na retirada" rows={2} maxLength={500} className="mt-1.5 w-full rounded-xl border border-paper-dark px-3 py-2 text-sm focus:border-brass focus:outline-none" /></label>
-                  </div>
-                ) : null}
-              </div>
-            )}
+            {transportAvailable && <BookingTransportFields enabled={petTransport} onEnabled={setPetTransport} pending={transportPricePending} fee={petTransportFee(selectedServiceIds,transportSettings)} address={transportAddress} onAddress={setTransportAddress} notes={transportNotes} onNotes={setTransportNotes}/>}
+
             {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
             <div className="mt-6 flex gap-3">
               <button onClick={() => setStep(2)} className="btn-secondary flex-1">
@@ -705,7 +682,7 @@ export function PetBooking() {
             {error && <p role="alert" className="mt-4 text-sm text-red-600">{error}</p>}
 
             <div className="mt-6 flex gap-3">
-              <button onClick={() => setStep(3)} className="btn-secondary flex-1">
+              <button onClick={async () => {if(await ensureCustomer())setStep(3)}} className="btn-secondary flex-1">
                 Voltar
               </button>
               <button

@@ -59,6 +59,11 @@ export function whatsappUrl(value: string | null | undefined): string | null {
   return `https://wa.me/55${digits}`
 }
 
+/** A contact can be registered by phone before its name is provided. */
+export function customerLabel(customer: { name?: string | null; phone?: string | null } | null | undefined): string {
+  return customer?.name?.trim() || formatPhone(customer?.phone) || 'Cliente'
+}
+
 export function subscriptionLabel(status: string): string {
   switch (status) {
     case 'trial':
