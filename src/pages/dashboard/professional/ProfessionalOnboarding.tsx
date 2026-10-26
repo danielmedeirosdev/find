@@ -17,7 +17,6 @@ import {
 import { supabase } from '../../../lib/supabase'
 import type {
   PetBusinessType,
-  PetOnboardingMode,
   Shop,
   ShopSegment,
 } from '../../../lib/types'
@@ -35,25 +34,6 @@ const WEEK_DAYS = [
 const EMPTY_SERVICE: OnboardingServiceInput = { name: '', price: '', duration: '30' }
 const EMPTY_STAFF: OnboardingStaffInput = { name: '', role: '' }
 const CORE_ONBOARDING_STEPS = ['Informações', 'Serviços', 'Equipe', 'Horários']
-const GUIDED_STEP_DETAILS: Record<number, { title: string; description: string }> = {
-  2: {
-    title: 'Prepare as informações que o cliente verá',
-    description: 'Informe uma frase curta, o endereço completo e o WhatsApp usado pelo negócio.',
-  },
-  3: {
-    title: 'Cadastre o que pode ser agendado',
-    description: 'Para cada serviço, informe nome, preço e duração. Tudo poderá ser editado depois.',
-  },
-  4: {
-    title: 'Monte a equipe de atendimento',
-    description: 'Inclua também o proprietário caso ele atenda. Cada pessoa terá uma agenda própria.',
-  },
-  5: {
-    title: 'Defina o horário inicial da agenda',
-    description: 'Escolha dias, início e fim do expediente. Horários individuais podem ser ajustados no painel.',
-  },
-}
-
 interface Props {
   shop: Shop
   segment: ShopSegment
@@ -80,9 +60,6 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
   const [petBusinessType, setPetBusinessType] = useState<PetBusinessType | ''>(
     shop.pet_business_type || ''
   )
-  const [petOnboardingMode, setPetOnboardingMode] = useState<PetOnboardingMode | ''>(
-    shop.pet_onboarding_mode || ''
-  )
   const [slogan, setSlogan] = useState(shop.slogan || '')
   const [address, setAddress] = useState(shop.address || '')
   const [phone, setPhone] = useState(formatPhone(shop.phone))
@@ -103,7 +80,7 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
   const professionalPlaceholder = isPet ? 'Ex: Maria' : 'Ex: João'
   const rolePlaceholder = isPet ? 'Ex: Tosadora ou Banhista' : 'Ex: Barbeiro ou Cabeleireiro'
   const onboardingSteps = isPet
-    ? ['Ramo', 'Como começar', ...CORE_ONBOARDING_STEPS]
+    ? ['Ramo', ...CORE_ONBOARDING_STEPS]
     : CORE_ONBOARDING_STEPS
   const profileStep = isPet ? 2 : 0
   const servicesStep = profileStep + 1
@@ -200,7 +177,7 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
     setError('')
     setSaving(true)
     try {
-      const choice = parsePetOnboardingChoice(petBusinessType, petOnboardingMode)
+      const choice = parsePetOnboardingChoice(petBusinessType, 'self_service')
       const { data, error: updateError } = await supabase
         .from('shops')
         .update(choice)
@@ -295,14 +272,15 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
           aria-label="Progresso da configuração"
         >
           {onboardingSteps.map((label, index) => (
+            
             <li
               key={label}
               className={`rounded-lg border px-2 py-3 text-center text-xs sm:text-sm ${
-                index <= step
+                (isPet ? (index === 0 ? 0 : index + 1) : index) <= step
                   ? 'border-brass bg-brass/10 text-brass'
                   : 'border-charcoal-light text-charcoal-muted'
               }`}
-              aria-current={index === step ? 'step' : undefined}
+              aria-current={(isPet ? (index === 0 ? 0 : index + 1) : index) === step ? 'step' : undefined}
             >
               <span className="mr-1 font-mono">{index + 1}.</span> {label}
             </li>
@@ -310,20 +288,6 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
         </ol>
 
         <section className="rounded-2xl border border-charcoal-light bg-charcoal-light/30 p-5 shadow-xl sm:p-8">
-          {isPet && petOnboardingMode === 'guided' && step >= profileStep ? (
-            <aside
-              className="mb-6 rounded-xl border border-brass/40 bg-charcoal p-4"
-              aria-label="Orientação desta etapa"
-            >
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-brass">
-                Configuração guiada · Passo {step + 1} de {onboardingSteps.length}
-              </p>
-              <p className="mt-2 font-medium text-white">{GUIDED_STEP_DETAILS[step]?.title}</p>
-              <p className="mt-1 text-sm text-charcoal-muted">
-                {GUIDED_STEP_DETAILS[step]?.description}
-              </p>
-            </aside>
-          ) : null}
           {isPet && step === 0 && (
             <div>
               <h2 className="font-display text-2xl text-brass">Qual é o ramo do seu negócio?</h2>
@@ -361,81 +325,6 @@ export function ProfessionalOnboarding({ shop, segment, onComplete }: Props) {
                 error={error}
                 nextLabel="Continuar"
                 disabled={!petBusinessType}
-                onNext={() => setStep(1)}
-              />
-            </div>
-          )}
-
-          {isPet && step === 1 && (
-            <div>
-              <h2 className="font-display text-2xl text-brass">Como você quer começar?</h2>
-              <p className="mt-2 text-sm text-charcoal-muted">
-                Escolha o caminho mais confortável. Você poderá ajustar tudo depois.
-              </p>
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                {([
-                  {
-                    value: 'self_service',
-                    title: 'Configuração rápida',
-                    description: 'Preencha diretamente os dados essenciais e abra o painel.',
-                  },
-                  {
-                    value: 'guided',
-                    title: 'Configuração guiada',
-                    description: 'Veja o que preencher em cada etapa, com explicações e exemplos.',
-                    recommended: true,
-                  },
-                ] as const).map((option) => {
-                  const selected = petOnboardingMode === option.value
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      aria-pressed={selected}
-                      onClick={() => {
-                        setPetOnboardingMode(option.value)
-                        setError('')
-                      }}
-                      className={`relative rounded-xl border p-5 text-left transition-colors ${
-                        selected
-                          ? 'border-brass bg-brass/10'
-                          : 'border-charcoal-light hover:border-brass/50'
-                      }`}
-                    >
-                      {'recommended' in option && option.recommended ? (
-                        <span className="mb-3 inline-block rounded-full bg-brass/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-brass">
-                          Recomendado
-                        </span>
-                      ) : null}
-                      <span className="block font-medium text-white">{option.title}</span>
-                      <span className="mt-1 block text-sm text-charcoal-muted">
-                        {option.description}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-              {petOnboardingMode === 'guided' ? (
-                <div className="mt-4 rounded-xl border border-brass/40 bg-brass/10 p-4">
-                  <p className="font-medium text-white">Você fará seis passos simples:</p>
-                  <ol className="mt-3 grid gap-2 text-sm text-charcoal-muted sm:grid-cols-2">
-                    <li><span className="text-brass">1.</span> Escolher o ramo PET</li>
-                    <li><span className="text-brass">2.</span> Escolher como configurar</li>
-                    <li><span className="text-brass">3.</span> Informar os dados públicos</li>
-                    <li><span className="text-brass">4.</span> Cadastrar os serviços</li>
-                    <li><span className="text-brass">5.</span> Montar a equipe</li>
-                    <li><span className="text-brass">6.</span> Definir os horários</li>
-                  </ol>
-                  <p className="mt-3 text-xs text-charcoal-muted">
-                    O próprio ONEFIND orienta o preenchimento. Não há atendimento humano ou configuração feita por terceiros.
-                  </p>
-                </div>
-              ) : null}
-              <OnboardingActions
-                error={error}
-                nextLabel="Salvar e continuar"
-                disabled={!petOnboardingMode || saving}
-                onBack={() => setStep(0)}
                 onNext={savePetStart}
               />
             </div>
