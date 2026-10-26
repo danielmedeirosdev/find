@@ -17,6 +17,7 @@ import { EmptyState, InlineError, LoadingBlock } from '../../../../components/Em
 import { userFacingError } from '../../../../lib/userFacingError'
 import { ProfessionalTimeOff } from '../../../../components/ProfessionalTimeOff'
 import { ShopClosures } from '../../../../components/ShopClosures'
+import { bookingTotal } from '../../../../lib/finance'
 import { localDateIso } from '../../../../lib/booking'
 import type { BookingWithDetails, Service } from '../../../../lib/types'
 
@@ -79,47 +80,20 @@ export function PetAgenda({ shopId, barberId }: Props) {
   const [extraServiceIds, setExtraServiceIds] = useState<string[]>([])
   const [savingExtras, setSavingExtras] = useState(false)
   const [extraError, setExtraError] = useState('')
+  const [editDate,setEditDate] = useState('')
+  const [editTime,setEditTime] = useState('')
+  const [editNotes,setEditNotes] = useState('')
 
   const saveExtraServices = async () => {
-    if (!editingBooking || !extraServiceIds.length) return
-    const existing = new Set((editingBooking.booking_services || []).map(item => item.service_id))
-    const additions = shopServices.filter(service => extraServiceIds.includes(service.id) && !existing.has(service.id))
-    if (!additions.length) return
+    if (!editingBooking || savingExtras) return
     setSavingExtras(true)
     setExtraError('')
-    const addedPrice = additions.reduce((sum, service) => sum + Number(service.price || 0), 0)
-    const addedMinutes = additions.reduce((sum, service) => sum + Number(service.duration_minutes || 0), 0)
-    const previousServices = (editingBooking.booking_services || []).map(item => item.services).filter(Boolean)
-    const baseAmount = editingBooking.services_amount != null
-      ? Number(editingBooking.services_amount)
-      : previousServices.reduce((sum, service) => sum + Number(service.price || 0), 0)
-    const previousTotal = editingBooking.quoted_amount != null
-      ? Number(editingBooking.quoted_amount)
-      : baseAmount + Number(editingBooking.extras_amount || 0) + Number(editingBooking.pet_transport_fee || 0) - Number(editingBooking.discount_amount || 0)
-    const previousMinutes = editingBooking.duration_minutes != null
-      ? Number(editingBooking.duration_minutes)
-      : previousServices.reduce((sum, service) => sum + Number(service.duration_minutes || 0), 0)
-
-    const { error: insertError } = await supabase.from('booking_services').insert(
-      additions.map(service => ({ booking_id: editingBooking.id, service_id: service.id }))
-    )
-    if (insertError) {
-      setExtraError(userFacingError(insertError, 'Não foi possível adicionar os serviços.'))
-      setSavingExtras(false)
-      return
-    }
-    const { error: updateError } = await supabase.from('bookings').update({
-      services_amount: baseAmount + addedPrice,
-      quoted_amount: previousTotal + addedPrice,
-      duration_minutes: previousMinutes + addedMinutes,
-    }).eq('id', editingBooking.id).eq('shop_id', shopId)
-    if (updateError) {
-      await supabase.from('booking_services').delete()
-        .eq('booking_id', editingBooking.id).in('service_id', additions.map(service => service.id))
-      setExtraError(userFacingError(updateError, 'Não foi possível atualizar o agendamento.'))
-      setSavingExtras(false)
-      return
-    }
+    const ids = [...new Set([...(editingBooking.booking_services || []).map(s => s.service_id), ...extraServiceIds])]
+    const { error } = await supabase.rpc('edit_operational_booking', {
+      p_booking_id: editingBooking.id, p_service_ids: ids,
+      p_date: editDate, p_time: editTime, p_notes: editNotes,
+    })
+    if(error) {setExtraError(userFacingError(error,'Não foi possível salvar o atendimento.'));setSavingExtras(false);return}
     setEditingBooking(null)
     setExtraServiceIds([])
     setSavingExtras(false)
@@ -174,7 +148,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
       supabase.from('barbers').select('id,name').eq('shop_id',shopId).order('name'),
     ])
     if(a.error||b.error||d.error){setActionError('Erro ao carregar dados para agendar.');return}
-    setClients(a.data||[]);setPetsList(b.data||[]);setTeamList(d.data||[]);setNewError('');setNewStep(1);setReceipt(null);setRepeatEvery(0);setRepeatCount(4);setServiceIds([]);setShowNew(true)
+    setClients(a.data||[]);setPetsList(b.data||[]);setTeamList(d.data||[]);setNewError('');setNewStep(1);setReceipt(null);setRepeatEvery(0);setRepeatCount(4);setServiceIds([]);setClientId('');setPetId('');setTimeValue('');setStaffId(barberId||d.data?.[0]?.id||'');setShowNew(true)
   }
   const saveNew = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -182,7 +156,6 @@ export function PetAgenda({ shopId, barberId }: Props) {
     const pet=petsList.find(x=>x.id===petId&&x.customer_id===clientId)
     const selectedServices=shopServices.filter(x=>serviceIds.includes(x.id))
     const totalDuration=selectedServices.reduce((sum,x)=>sum+Number(x.duration_minutes||60),0)
-    const totalPrice=selectedServices.reduce((sum,x)=>sum+Number(x.price||0),0)
     if(!client||!pet||selectedServices.length===0||!staffId||!dateValue||!timeValue){setNewError('Preencha todos os campos.');return}
     if(dateValue<localDateIso()){setNewError('Selecione uma data futura.');return}
     setSavingNew(true);setNewError('')
@@ -205,15 +178,12 @@ export function PetAgenda({ shopId, barberId }: Props) {
         setNewError(`O profissional já tem atendimento em ${formatDate(bookingDate)} às ${formatTime(timeValue)}. ${completed} agendamento(s) já criado(s).`)
         setSavingNew(false);return
       }
-      const {data,error}=await supabase.from('bookings').insert({
-        shop_id:shopId,barber_id:staffId,service_id:selectedServices[0].id,
-        client_name:client.name,client_phone:client.phone,shop_customer_id:client.id,pet_id:pet.id,
-        date:bookingDate,time:timeValue,status:'scheduled',duration_minutes:totalDuration,quoted_amount:totalPrice
-      }).select('id').single()
-      if(error){setNewError(`${userFacingError(error,'Não foi possível agendar.')} ${completed} agendamento(s) já criado(s).`);setSavingNew(false);return}
+      const {error}=await supabase.rpc('create_operational_booking', {
+        p_shop_id:shopId,p_barber_id:staffId,p_customer_id:client.id,p_pet_id:pet.id,
+        p_date:bookingDate,p_time:timeValue,p_service_ids:selectedServices.map(s=>s.id),
+      })
+      if(error){setNewError(`${userFacingError(error,'Não foi possível agendar.')} ${completed} agendamento(s) já criado(s).`);setSavingNew(false);await load();return}
       completed++
-      const linked=await supabase.from('booking_services').insert(selectedServices.map(x=>({booking_id:data.id,service_id:x.id})))
-      if(linked.error)setActionError('Atendimento criado, mas houve erro ao vincular o serviço.')
     }
     setCreatedCount(completed)
     setReceipt({
@@ -300,7 +270,8 @@ export function PetAgenda({ shopId, barberId }: Props) {
       q = q.ilike('client_name', `%${query}%`)
     }
 
-    const { data } = await q.limit(50)
+    const { data, error } = await q.limit(50)
+    if(error) setActionError('Não foi possível pesquisar o histórico.')
     setClientHistory((data as BookingWithDetails[]) || [])
     setSearching(false)
   }
@@ -321,16 +292,6 @@ export function PetAgenda({ shopId, barberId }: Props) {
       : dayFilter === 'tomorrow'
         ? activeBookings.filter((b) => b.date === tomorrow)
         : activeBookings
-  const todayBookings = activeBookings.filter((b) => b.date === today)
-  const todayRevenue = todayBookings.reduce(
-    (sum, booking) =>
-      sum + (booking.quoted_amount != null ? Number(booking.quoted_amount) :
-      Array.from(
-        new Map((booking.booking_services || []).map((item) => [item.service_id, item.services])).values()
-      ).reduce((serviceSum, service) => serviceSum + Number(service?.price || 0), 0)),
-    0
-  )
-  const waitingToday = todayBookings.filter((b) => !['in_progress', 'awaiting_payment'].includes(b.status || '')).length
 
   return (
     <div className="overflow-x-hidden">
@@ -368,41 +329,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
           <div className="flex gap-3">{newStep>1 && <button type="button" onClick={()=>setNewStep(newStep-1)} className="rounded-xl border border-white/20 px-5 py-3 text-white">Voltar</button>}<button type="submit" disabled={savingNew} className="flex-1 rounded-xl bg-brass px-5 py-3 font-semibold text-charcoal-dark disabled:opacity-50">{savingNew?'Salvando...':newStep===3?'Confirmar agendamento':'Continuar'}</button></div>
         </form>}
       </section>}
-      <header className="mb-6 rounded-2xl border border-charcoal-light bg-gradient-to-br from-charcoal-dark via-charcoal-dark to-brass/5 p-5 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-brass">Operação do dia</p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-              {barberId ? 'Minha agenda' : 'Agenda da equipe'}
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-charcoal-muted">
-              Horários, pets, serviços e andamento reunidos em uma visão simples para a equipe.
-            </p>
-          </div>
-          <button type="button" onClick={() => setShowAvailability((current) => !current)} className="min-h-11 rounded-xl border border-brass/35 bg-brass/5 px-4 text-sm font-medium text-brass transition hover:bg-brass/10">
-            {showAvailability ? 'Fechar configurações' : barberId ? 'Configurar folgas' : 'Folgas e feriados'}
-          </button>
-        </div>
-        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <div className="rounded-xl border border-white/5 bg-black/15 p-3">
-            <p className="text-xs text-charcoal-muted">Atendimentos hoje</p>
-            <p className="mt-1 text-2xl font-semibold text-white">{todayBookings.length}</p>
-          </div>
-          <div className="rounded-xl border border-white/5 bg-black/15 p-3">
-            <p className="text-xs text-charcoal-muted">Aguardando</p>
-            <p className="mt-1 text-2xl font-semibold text-white">{waitingToday}</p>
-          </div>
-          <div className="rounded-xl border border-white/5 bg-black/15 p-3">
-            <p className="text-xs text-charcoal-muted">Em atendimento</p>
-            <p className="mt-1 text-2xl font-semibold text-white">{todayBookings.filter((b) => b.status === 'in_progress').length}</p>
-          </div>
-          <div className="rounded-xl border border-brass/20 bg-brass/5 p-3">
-            <p className="text-xs text-brass/80">Previsto hoje</p>
-            <p className="mt-1 font-mono text-xl text-brass">{formatPrice(todayRevenue)}</p>
-          </div>
-        </div>
-      </header>
-
+      <header className="mb-4 flex flex-wrap items-center justify-between gap-3"><h2>{barberId ? 'Minha agenda' : 'Agenda'}</h2><button type="button" onClick={()=>setShowAvailability(v=>!v)} className="rounded-lg border border-charcoal-light px-3 text-sm text-charcoal-muted">Folgas e feriados</button></header>
       {showAvailability ? (
         <div className="mb-6 space-y-4">
           {!barberId ? <ShopClosures shopId={shopId} /> : null}
@@ -460,7 +387,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
           <div className="mt-4 space-y-3">
             {clientHistory.map((b) => {
               const services = (b.booking_services || []).map((bs) => bs.services)
-              const total = b.quoted_amount != null ? Number(b.quoted_amount) : services.reduce((sum, s) => sum + Number(s?.price || 0), 0)
+              const total = bookingTotal(b)
               const petList = petsForBooking(b)
               const petLabel = petList.map((p) => p.name).join(' · ')
               return (
@@ -491,14 +418,14 @@ export function PetAgenda({ shopId, barberId }: Props) {
           description="Quando houver reservas, elas aparecem aqui com pet, horário e serviço."
         />
       ) : (
-        <div className="relative space-y-3 before:absolute before:bottom-6 before:left-[4.65rem] before:top-6 before:w-px before:bg-charcoal-light sm:before:left-[5.65rem]">
+        <div className="space-y-3">
           {filtered.map((b) => {
             const services = Array.from(
               new Map(
                 (b.booking_services || []).map((bs) => [bs.service_id, bs.services])
               ).values()
             )
-            const total = b.quoted_amount != null ? Number(b.quoted_amount) : services.reduce((sum, s) => sum + Number(s?.price || 0), 0)
+            const total = bookingTotal(b)
             const status = b.status || 'scheduled'
             const duration =
               b.duration_minutes ||
@@ -506,12 +433,12 @@ export function PetAgenda({ shopId, barberId }: Props) {
             const petList = petsForBooking(b)
             const mainPet = petList[0]
             return (
-              <article key={b.id} className="relative ml-0 rounded-2xl border border-charcoal-light bg-charcoal-dark/50 p-4 shadow-sm transition hover:border-brass/30 sm:ml-24">
-                <div className="absolute -left-20 top-5 w-16 text-right sm:-left-24 sm:w-20">
+              <article key={b.id} className="rounded-xl border border-charcoal-light bg-charcoal p-4">
+                <div className="mb-3 flex items-center justify-between border-b border-charcoal-light pb-3">
                   <p className="font-mono text-base text-brass">{formatTime(b.time)}</p>
                   <p className="mt-0.5 text-[10px] uppercase tracking-wider text-charcoal-muted">{formatDate(b.date)}</p>
                 </div>
-                <span className="absolute -left-[0.41rem] top-7 h-3 w-3 rounded-full border-2 border-charcoal bg-brass shadow-[0_0_0_4px_rgba(214,163,61,0.12)]" />
+                
                 <div className="flex flex-wrap justify-between gap-3">
                   <div className="flex gap-3">
                     {mainPet?.photo_url ? (
@@ -572,9 +499,9 @@ export function PetAgenda({ shopId, barberId }: Props) {
                   </div>
                   <p className="font-mono text-brass">{formatPrice(total)}</p>
                 </div>
-          <button type="button" onClick={() => { setEditingBooking(b); setExtraServiceIds([]); setExtraError('') }}
+          <button type="button" onClick={() => { setEditingBooking(b); setExtraServiceIds([]); setExtraError('');setEditDate(b.date);setEditTime(b.time.slice(0,5));setEditNotes(b.notes||'') }}
             className="min-h-11 w-full rounded-xl border border-brass/40 px-4 py-2.5 text-center text-sm font-medium text-brass hover:bg-brass/10 sm:w-auto">
-            + Adicionar serviços
+            Editar / adicionar serviços
           </button>
                 <BookingActions
                   compact
@@ -593,14 +520,14 @@ export function PetAgenda({ shopId, barberId }: Props) {
 
 
       {editingBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-label="Adicionar serviços">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-label="Editar atendimento">
           <div className="w-full max-w-md rounded-2xl border border-brass/25 bg-charcoal-dark p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-3">
-              <div><h3 className="text-lg font-semibold text-white">Adicionar serviços</h3>
+              <div><h3 className="text-lg font-semibold text-white">Editar atendimento</h3>
                 <p className="mt-1 text-sm text-charcoal-muted">{editingBooking.client_name} · {formatDate(editingBooking.date)}</p></div>
               <button type="button" onClick={() => setEditingBooking(null)} className="rounded-lg px-3 py-2 text-sm text-charcoal-muted">Fechar</button>
             </div>
-            <div className="mt-5 max-h-72 space-y-2 overflow-y-auto">
+            <div className="mt-4 grid grid-cols-2 gap-3"><label className="text-sm">Data<input className="mt-1 w-full bg-charcoal p-2" type="date" value={editDate} onChange={e=>setEditDate(e.target.value)}/></label><label className="text-sm">Horário<input className="mt-1 w-full bg-charcoal p-2" type="time" value={editTime} onChange={e=>setEditTime(e.target.value)}/></label></div><label className="mt-3 block text-sm">Observações<textarea className="mt-1 w-full bg-charcoal p-2" value={editNotes} onChange={e=>setEditNotes(e.target.value)}/></label><p className="mt-3 text-sm text-charcoal-muted">Serviços adicionais</p><div className="mt-2 max-h-72 space-y-2 overflow-y-auto">
               {shopServices.filter(service => !(editingBooking.booking_services || []).some(item => item.service_id === service.id)).map(service => (
                 <label key={service.id} className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-white/10 p-3 text-sm text-white">
                   <input type="checkbox" className="h-4 w-4 accent-amber-500" checked={extraServiceIds.includes(service.id)}
@@ -610,9 +537,9 @@ export function PetAgenda({ shopId, barberId }: Props) {
               ))}
             </div>
             {extraError && <p role="alert" className="mt-3 text-sm text-red-400">{extraError}</p>}
-            <button type="button" disabled={!extraServiceIds.length || savingExtras} onClick={() => void saveExtraServices()}
+            <button type="button" disabled={savingExtras} onClick={() => void saveExtraServices()}
               className="mt-5 min-h-12 w-full rounded-xl bg-brass px-4 py-3 text-center font-semibold text-charcoal disabled:opacity-50">
-              {savingExtras ? 'Salvando...' : 'Salvar serviços'}
+              {savingExtras ? 'Salvando...' : 'Salvar atendimento'}
             </button>
           </div>
         </div>

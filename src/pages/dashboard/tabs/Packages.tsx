@@ -23,6 +23,7 @@ export function PackagesTab({ shopId }: Props) {
   const [pets, setPets] = useState<Pet[]>([])
   const [usages, setUsages] = useState<PackageUsage[]>([])
   const [loading, setLoading] = useState(true)
+  const [assigning,setAssigning] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null)
@@ -122,6 +123,7 @@ export function PackagesTab({ shopId }: Props) {
   }
 
   const assignPackage = async () => {
+    if(assigning)return
     const tpl = templates.find((t) => t.id === assignPackageId)
     if (!tpl || !assignCustomerId || !assignPetId) {
       setToast('Selecione pacote, cliente e pet.')
@@ -133,6 +135,7 @@ export function PackagesTab({ shopId }: Props) {
       d.setDate(d.getDate() + tpl.validity_days)
       expires = d.toISOString().slice(0, 10)
     }
+    setAssigning(true)
     const { error } = await supabase.from('customer_packages').insert({
       shop_id: shopId,
       package_id: tpl.id,
@@ -144,9 +147,11 @@ export function PackagesTab({ shopId }: Props) {
       status: 'active',
     })
     if (error) {
+      setAssigning(false)
       setToast(error.message)
       return
     }
+    setAssigning(false)
     setToast('Pacote associado ao pet.')
     load()
   }
@@ -173,7 +178,7 @@ export function PackagesTab({ shopId }: Props) {
     }
     setSavingAssigned(true)
     const { error } = await supabase.from('customer_packages')
-      .update({ total_sessions: total, used_sessions: used, expires_at: assignedExpiry || null })
+      .update({ total_sessions: total, used_sessions: used, expires_at: assignedExpiry || null, status: used >= total ? 'exhausted' : assignedExpiry && assignedExpiry < new Date().toLocaleDateString('en-CA') ? 'expired' : 'active' })
       .eq('id', pkg.id).eq('shop_id', shopId)
     setSavingAssigned(false)
     if (error) { setToast(error.message); return }
@@ -304,7 +309,7 @@ export function PackagesTab({ shopId }: Props) {
             ))}
           </select>
         </div>
-        <button onClick={assignPackage} className="rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal">
+        <button disabled={assigning} onClick={assignPackage} className="rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal">
           Associar pacote
         </button>
       </div>

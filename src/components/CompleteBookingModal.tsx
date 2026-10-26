@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { formatPrice } from '../lib/format'
-import { getTotalPrice } from '../lib/booking'
+import { selectedBookingTotal } from '../lib/finance'
 import { packageRemaining } from '../lib/notifications'
 import { userFacingError } from '../lib/userFacingError'
 import type { BookingWithDetails, CustomerPackage, PaymentMethod, Service } from '../lib/types'
@@ -19,7 +19,6 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
     [booking]
   )
   const [selectedIds, setSelectedIds] = useState<Set<string>>(initialIds)
-  const [showOtherServices, setShowOtherServices] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix')
   const [packages, setPackages] = useState<CustomerPackage[]>([])
   const [selectedPackageId, setSelectedPackageId] = useState<string>('')
@@ -32,11 +31,12 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
     supabase
       .from('customer_packages')
       .select('*, service_packages(*)')
+      .eq('shop_id', booking.shop_id)
       .eq('pet_id', booking.pet_id)
       .eq('status', 'active')
       .then(({ data }) => {
         const list = ((data as CustomerPackage[]) || []).filter(
-          (p) => packageRemaining(p.total_sessions, p.used_sessions) > 0
+          (p) => packageRemaining(p.total_sessions, p.used_sessions) > 0 && (!p.expires_at || p.expires_at >= new Date().toLocaleDateString('en-CA'))
         )
         setPackages(list)
       })
@@ -44,8 +44,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
 
   const selectedServices = shopServices.filter((s) => selectedIds.has(s.id))
   const parsedTransportFee = Number(transportFee.replace(',', '.'))
-  const baseTotal = getTotalPrice(selectedServices) + Number(booking.extras_amount || 0) + Number(booking.booking_custom_field_answers?.reduce((sum, answer) => sum + Number(answer.price_delta || 0), 0) || 0) - Number(booking.discount_amount || 0)
-  const total = baseTotal + (booking.pet_transport_requested && Number.isFinite(parsedTransportFee) ? parsedTransportFee : 0)
+  const total = selectedBookingTotal(booking, selectedIds, shopServices, booking.pet_transport_requested && Number.isFinite(parsedTransportFee) ? parsedTransportFee : 0)
 
   const toggleService = (id: string) => {
     setSelectedIds((prev) => {
@@ -100,7 +99,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-0 sm:items-center sm:p-4">
+    <div role="dialog" aria-modal="true" aria-label="Finalizar atendimento" className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-0 sm:items-center sm:p-4">
       <div className="max-h-[92dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-3xl border border-charcoal-light bg-charcoal p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-h-[90vh] sm:rounded-2xl sm:p-6">
         <h3 className="font-display text-xl font-semibold text-white mb-1">Finalizar atendimento</h3>
         <p className="text-sm text-charcoal-muted mb-4">
@@ -111,7 +110,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
         <div className="mb-5">
           <p className="text-sm font-medium text-white mb-3">Serviços executados</p>
           <div className="space-y-2">
-            {shopServices.filter(s => initialIds.has(s.id) || selectedIds.has(s.id) || showOtherServices).map((s) => (
+            {shopServices.filter(s => initialIds.has(s.id) || selectedIds.has(s.id)).map((s) => (
               <label
                 key={s.id}
                 className={`flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 ${
@@ -122,6 +121,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
                   <input
                     type="checkbox"
                     checked={selectedIds.has(s.id)}
+                    disabled={initialIds.has(s.id)}
                     onChange={() => toggleService(s.id)}
                     className="accent-brass"
                   />
@@ -131,7 +131,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
               </label>
             ))}
           </div>
-          {shopServices.some(s => !initialIds.has(s.id) && !selectedIds.has(s.id)) && <button type="button" onClick={() => setShowOtherServices(v => !v)} className="mt-3 min-h-10 w-full rounded-xl border border-brass/30 px-3 py-2 text-sm font-medium text-brass">{showOtherServices ? "Ocultar outros serviços" : "+ Adicionar outro serviço"}</button>}
+          <p className="mt-3 text-xs text-charcoal-muted">Para incluir serviços, volte à agenda e use Editar / adicionar serviços.</p>
         </div>
 
         {(booking.booking_custom_field_answers?.length || booking.pet_transport_requested) ? (
@@ -186,7 +186,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
           <span className="break-all text-right text-lg font-semibold tabular-nums text-brass">{formatPrice(total)}</span>
         </div>
 
-        {error && <p className="mb-4 text-sm text-red-400">{error}</p>}
+        {error && <p role="alert" className="mb-4 text-sm text-red-400">{error}</p>}
 
         <div className="grid grid-cols-2 gap-3">
           <button

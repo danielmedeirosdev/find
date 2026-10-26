@@ -1,191 +1,32 @@
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { BusinessAccount } from '../../../components/BusinessAccount'
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { useLocation } from 'react-router-dom'
 import { SegmentProvider } from '../../../contexts/SegmentContext'
-import { BrandAccent } from '../../../components/BrandAccent'
 import type { Shop, ShopSegment } from '../../../lib/types'
 import { getSegment } from '../../../lib/segments'
 import { AppIcon, type AppIconName } from '../../../components/AppIcon'
-import { UpdatesButton } from '../../../components/UpdatesButton'
-
-export interface ProfessionalTab {
-  id: string
-  label: string
-  icon?: AppIconName
-}
-
-export interface ProfessionalTabGroup {
-  label: string
-  tabs: ProfessionalTab[]
-}
-
-interface Props {
-  shop: Shop
-  segment: ShopSegment
-  tabs: ProfessionalTab[]
-  tabGroups?: ProfessionalTabGroup[]
-  activeTab: string
-  onTabChange: (tab: string) => void
-  /** Título principal do painel (ex.: nome da loja ou "Meu Pet Shop") */
-  title: string
-  subtitle?: string
-  children: ReactNode
-}
-
-/**
- * Chrome compartilhado do painel profissional.
- * A navegação e o conteúdo vêm de ProfessionalBarbearia / ProfessionalPet.
- */
-export function ProfessionalShell({
-  shop,
-  segment,
-  tabs,
-  tabGroups,
-  activeTab,
-  onTabChange,
-  title,
-  subtitle,
-  children,
-}: Props) {
-  const meta = getSegment(segment)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const location = useLocation()
-  const contentRef = useRef<HTMLDivElement>(null)
-  const previousTab = useRef(activeTab)
-  useLayoutEffect(() => {
-    const explicitDestination = new URLSearchParams(location.search).has('aba')
-    const changed = previousTab.current !== activeTab
-    previousTab.current = activeTab
-    if (!explicitDestination && !changed) return
-    const frame = requestAnimationFrame(() => {
-      const content = contentRef.current
-      if (!content) return
-      const headerHeight = document.querySelector('.dashboard-glass-header')?.getBoundingClientRect().height || 80
-      content.focus({ preventScroll: true })
-      window.scrollTo({ top: window.scrollY + content.getBoundingClientRect().top - headerHeight - 20, behavior: 'instant' })
-    })
-    return () => cancelAnimationFrame(frame)
-  }, [activeTab, location.key, location.search])
-
-  return (
-    <SegmentProvider segment={segment}>
-      <div className={meta.themeClass} data-segment={segment} data-professional={segment}>
-        <div className="mb-5 flex flex-wrap items-center gap-3 sm:mb-8">
-          {shop.logo_url ? (
-            <img
-              src={shop.logo_url}
-              alt=""
-              className="h-11 w-11 rounded-xl object-cover border border-charcoal-light sm:h-14 sm:w-14"
-            />
-          ) : null}
-          <div className="min-w-0">
-            <p className="text-xs uppercase tracking-widest text-brass/80 mb-1">
-              {meta.panelEyebrow}
-            </p>
-            <h1 className="font-display text-xl font-semibold sm:text-4xl text-brass break-words">{title}</h1>
-            <p className="hidden text-charcoal-muted text-sm mt-1 sm:block">
-              {subtitle || meta.panelSubtitle}
-            </p>
-          </div>
-          <UpdatesButton className="ml-auto" />
-          <BusinessAccount shop={shop} />
-        </div>
-
-        <BrandAccent className="mb-3 max-w-sm sm:mb-6" height="h-1" segment={segment} />
-
-        <div className="mb-4 sm:hidden">
-          <button type="button" onClick={() => setMobileMenuOpen(open => !open)}
-            aria-expanded={mobileMenuOpen} aria-controls="onefind-mobile-navigation"
-            className="flex min-h-12 w-full items-center justify-between rounded-xl border border-white/15 bg-charcoal-light/50 px-4 text-sm font-semibold text-white">
-            <span className="flex items-center gap-2"><AppIcon name="agenda" size={18} /> {tabs.find(tab => tab.id === activeTab)?.label || 'Menu'}</span>
-            <span className="text-brass">{mobileMenuOpen ? 'Fechar' : 'Todas as áreas'}</span>
-          </button>
-          {mobileMenuOpen && (
-            <nav id="onefind-mobile-navigation" aria-label="Menu do painel" className="mt-2 max-h-[55vh] space-y-4 overflow-y-auto rounded-xl border border-white/10 bg-charcoal-dark p-3 shadow-xl">
-              {(tabGroups?.length ? tabGroups : [{ label: 'Painel', tabs }]).map(group => (
-                <div key={group.label}>
-                  <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-widest text-charcoal-muted">{group.label}</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {group.tabs.map(tab => (
-                      <button key={tab.id} type="button" onClick={() => { onTabChange(tab.id); setMobileMenuOpen(false) }}
-                        aria-current={activeTab === tab.id ? 'page' : undefined}
-                        className={`flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium ${activeTab === tab.id ? 'bg-brass text-charcoal-dark' : 'bg-white/5 text-white'}`}>
-                        {tab.icon ? <AppIcon name={tab.icon} size={16} /> : null}<span>{tab.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </nav>
-          )}
-        </div>
-        <nav className="mb-5 flex gap-2 overflow-x-auto pb-2 sm:hidden" aria-label="Acesso rápido">
-          {tabs.slice(0, 5).map(tab => (
-            <button key={tab.id} type="button" onClick={() => { onTabChange(tab.id); setMobileMenuOpen(false) }}
-              aria-current={activeTab === tab.id ? 'page' : undefined}
-              className={`min-h-10 shrink-0 rounded-full px-4 text-xs font-semibold ${activeTab === tab.id ? 'bg-brass text-charcoal-dark' : 'border border-white/15 bg-white/5 text-white'}`}>
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-        <div className="hidden sm:block">
-        {tabGroups && tabGroups.length > 0 ? (
-          <nav className="mb-8 space-y-4 border-b border-charcoal-light pb-4" aria-label={`Navegação ${meta.brandName}`}>
-            {tabGroups.map((group) => (
-              <div key={group.label}>
-                <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-charcoal-muted/80">
-                  {group.label}
-                </p>
-                <div className="flex flex-wrap gap-2 pb-1">
-                  {group.tabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => onTabChange(tab.id)}
-                      aria-current={activeTab === tab.id ? 'page' : undefined}
-                      className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-[background-color,color,transform,box-shadow] ${
-                        activeTab === tab.id
-                          ? 'bg-brass text-charcoal shadow-[0_8px_22px_rgba(0,0,0,0.18)]'
-                          : 'text-charcoal-muted hover:-translate-y-0.5 hover:bg-charcoal-light hover:text-white'
-                      }`}
-                    >
-                      {tab.icon ? <AppIcon name={tab.icon} size={17} /> : null}
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </nav>
-        ) : (
-          <nav
-            className="mb-8 flex gap-2 overflow-x-auto border-b border-charcoal-light pb-4 -mx-1 px-1"
-            aria-label={`Navegação ${meta.brandName}`}
-          >
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => onTabChange(tab.id)}
-                aria-current={activeTab === tab.id ? 'page' : undefined}
-                className={`inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-[background-color,color,transform,box-shadow] ${
-                  activeTab === tab.id
-                    ? 'bg-brass text-charcoal shadow-[0_8px_22px_rgba(0,0,0,0.18)]'
-                    : 'text-charcoal-muted hover:-translate-y-0.5 hover:bg-charcoal-light hover:text-white'
-                }`}
-              >
-                {tab.icon ? <AppIcon name={tab.icon} size={17} /> : null}
-                {tab.label}
-              </button>
-            ))}
-          </nav>
-        )}
-
-        </div>
-        <div key={activeTab} ref={contentRef} tabIndex={-1} role="region" aria-label={tabs.find(tab => tab.id === activeTab)?.label || title} className="dashboard-tab-content">
-          <div className="panel-enter">{children}</div>
-        </div>
-      </div>
-    </SegmentProvider>
-  )
+export interface ProfessionalTab { id: string; label: string; icon?: AppIconName }
+export interface ProfessionalTabGroup { label: string; tabs: ProfessionalTab[] }
+interface Props { shop: Shop; segment: ShopSegment; tabs: ProfessionalTab[]; tabGroups?: ProfessionalTabGroup[]; activeTab: string; onTabChange: (tab: string) => void; title: string; subtitle?: string; children: ReactNode }
+export function ProfessionalShell({ shop, segment, tabs, tabGroups, activeTab, onTabChange, title, children }: Props) {
+  const [menu, setMenu] = useState(false)
+  const content = useRef<HTMLDivElement>(null)
+  const previous = useRef(activeTab)
+  useEffect(() => {
+    if (previous.current !== activeTab) {
+      content.current?.focus({ preventScroll: true })
+      window.scrollTo({ top: 0, behavior: 'instant' })
+      previous.current = activeTab
+    }
+  }, [activeTab])
+  const go = (id: string) => { onTabChange(id); setMenu(false) }
+  const groups = tabGroups?.length ? tabGroups : [{ label: 'Painel', tabs }]
+  const primary = ['overview', 'agenda', 'customers', 'cashflow'].map(id => tabs.find(t => t.id === id)).filter((t): t is ProfessionalTab => !!t)
+  const nav = <>{groups.map(group => <section key={group.label}><p className="workspace-nav-label">{group.label}</p>{group.tabs.map(tab => <button key={tab.id} type="button" aria-current={activeTab === tab.id ? 'page' : undefined} onClick={() => go(tab.id)}>{tab.icon && <AppIcon name={tab.icon} size={18} />}<span>{tab.label}</span></button>)}</section>)}</>
+  return <SegmentProvider segment={segment}><div className={`workspace ${getSegment(segment).themeClass}`} data-segment={segment} data-professional={segment}>
+    <BusinessAccount shop={shop} />
+    <aside className="workspace-sidebar"><div className="workspace-shop">{shop.logo_url && <img src={shop.logo_url} alt="" />}<div><span>ESTABELECIMENTO</span><h1>{title}</h1></div></div><nav aria-label="Áreas do painel">{nav}</nav></aside>
+    <div className="workspace-main"><div className="workspace-location"><span>{title}</span><span>{tabs.find(t => t.id === activeTab)?.label}</span></div><div key={activeTab} ref={content} tabIndex={-1} role="region" aria-label={tabs.find(t => t.id === activeTab)?.label || title} className="dashboard-tab-content">{children}</div></div>
+    {menu && <div className="workspace-menu" role="dialog" aria-modal="true" aria-label="Todas as áreas"><header><strong>Áreas do onefind</strong><button type="button" onClick={() => setMenu(false)}>Fechar</button></header><nav>{nav}</nav></div>}
+    <nav className="workspace-bottom" aria-label="Acesso rápido">{primary.map(t => <button key={t.id} type="button" aria-current={activeTab === t.id ? 'page' : undefined} onClick={() => go(t.id)}>{t.icon && <AppIcon name={t.icon} size={20} />}<span>{t.id === 'overview' ? 'Início' : t.label}</span></button>)}<button type="button" aria-expanded={menu} onClick={() => setMenu(v => !v)}><AppIcon name="store" size={20} /><span>Mais</span></button></nav>
+  </div></SegmentProvider>
 }

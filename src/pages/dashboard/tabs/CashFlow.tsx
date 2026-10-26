@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { periodStart, cashTotals } from '../../../lib/finance'
+import { InlineError } from '../../../components/EmptyState'
 import { supabase } from '../../../lib/supabase'
 import { formatPrice, paymentMethodLabel } from '../../../lib/format'
 import type { FinancialTransaction, PaymentMethod } from '../../../lib/types'
@@ -9,23 +11,12 @@ interface Props {
 
 type Period = 'today' | 'week' | 'month'
 
-function getPeriodStart(period: Period): string {
-  const now = new Date()
-  if (period === 'today') {
-    return now.toISOString().slice(0, 10)
-  }
-  if (period === 'week') {
-    const start = new Date(now)
-    start.setDate(now.getDate() - now.getDay())
-    return start.toISOString().slice(0, 10)
-  }
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
-}
 
 export function CashFlowTab({ shopId }: Props) {
   const [transactions, setTransactions] = useState<FinancialTransaction[]>([])
   const [period, setPeriod] = useState<Period>('month')
   const [loading, setLoading] = useState(true)
+  const [error,setError] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
@@ -34,14 +25,15 @@ export function CashFlowTab({ shopId }: Props) {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const start = getPeriodStart(period)
-    const { data } = await supabase
+    const start = periodStart(period)
+    const { data, error: loadError } = await supabase
       .from('financial_transactions')
       .select('*')
       .eq('shop_id', shopId)
-      .gte('created_at', `${start}T00:00:00`)
+      .gte('created_at', start)
       .order('created_at', { ascending: false })
 
+    setError(loadError ? 'Não foi possível carregar o caixa. Tente novamente.' : '')
     setTransactions((data as FinancialTransaction[]) || [])
     setLoading(false)
   }, [shopId, period])
@@ -50,24 +42,22 @@ export function CashFlowTab({ shopId }: Props) {
     load()
   }, [load])
 
-  const balance = useMemo(() => {
-    return transactions.reduce((sum, t) => {
-      return t.type === 'entrada' ? sum + Number(t.amount) : sum - Number(t.amount)
-    }, 0)
-  }, [transactions])
+  const balance = useMemo(() => cashTotals(transactions).balance,[transactions])
 
   const addExpense = async () => {
     const value = parseFloat(amount.replace(',', '.'))
-    if (!description.trim() || isNaN(value) || value <= 0) return
+    if (!description.trim() || !Number.isFinite(value) || value <= 0) {setError('Informe uma descrição e um valor maior que zero.');return}
 
     setSaving(true)
-    await supabase.from('financial_transactions').insert({
+    setError('')
+    const {error: saveError} = await supabase.from('financial_transactions').insert({
       shop_id: shopId,
       type: 'saida',
       description: description.trim(),
       amount: value,
       payment_method: paymentMethod,
     })
+    if(saveError){setError('Não foi possível salvar a despesa. Tente novamente.');setSaving(false);return}
     setDescription('')
     setAmount('')
     setShowForm(false)
@@ -75,8 +65,11 @@ export function CashFlowTab({ shopId }: Props) {
     load()
   }
 
+  if(error && !loading) return <div><InlineError message={error}/><button type="button" onClick={()=>void load()} className="mt-3 text-brass">Tentar novamente</button></div>
+
   return (
     <div>
+      {error && <InlineError message={error}/>} 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-2xl text-white">Fluxo de Caixa</h2>

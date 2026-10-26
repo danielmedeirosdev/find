@@ -7,11 +7,9 @@ import { BlockedOverlay } from '../../components/BlockedOverlay'
 import { SegmentProvider } from '../../contexts/SegmentContext'
 import { normalizeSegment } from '../../lib/segments'
 import { pickDashboardMembership, type DashboardRole } from '../../lib/dashboardRole'
-import { shouldShowProfessionalOnboarding } from '../../lib/onboarding'
 import { LoadingBlock } from '../../components/EmptyState'
 import { ProfessionalBarbearia } from './professional/ProfessionalBarbearia'
 import { ProfessionalPet } from './professional/ProfessionalPet'
-import { ProfessionalOnboarding } from './professional/ProfessionalOnboarding'
 import { StaffProfessional } from './professional/StaffProfessional'
 
 /**
@@ -221,17 +219,6 @@ export function Dashboard() {
     return <StaffProfessional shop={shop} barber={barber} onUpdate={loadMembership} />
   }
 
-  if (shouldShowProfessionalOnboarding(role, shop.onboarding_completed)) {
-    return (
-      <SegmentProvider segment={isPet ? 'pet' : 'barbershop'}>
-        <ProfessionalOnboarding
-          shop={shop}
-          segment={isPet ? 'pet' : 'barbershop'}
-          onComplete={loadMembership}
-        />
-      </SegmentProvider>
-    )
-  }
 
   if (isPet) {
     return (

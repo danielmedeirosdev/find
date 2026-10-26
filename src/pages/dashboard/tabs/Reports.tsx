@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { periodStart, cashTotals } from '../../../lib/finance'
+import { InlineError } from '../../../components/EmptyState'
 import { supabase } from '../../../lib/supabase'
 import { formatPrice } from '../../../lib/format'
 import type { Barber, BookingWithDetails, FinancialTransaction } from '../../../lib/types'
@@ -9,18 +11,6 @@ interface Props {
 
 type Period = 'today' | 'week' | 'month'
 
-function getPeriodStart(period: Period): string {
-  const now = new Date()
-  if (period === 'today') {
-    return now.toISOString().slice(0, 10)
-  }
-  if (period === 'week') {
-    const start = new Date(now)
-    start.setDate(now.getDate() - now.getDay())
-    return start.toISOString().slice(0, 10)
-  }
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
-}
 
 interface BarberStats {
   barber: Barber
@@ -33,21 +23,22 @@ interface BarberStats {
 export function ReportsTab({ shopId }: Props) {
   const [period, setPeriod] = useState<Period>('month')
   const [loading, setLoading] = useState(true)
+  const [error,setError] = useState('')
   const [transactions, setTransactions] = useState<FinancialTransaction[]>([])
   const [completedBookings, setCompletedBookings] = useState<BookingWithDetails[]>([])
   const [barbers, setBarbers] = useState<Barber[]>([])
 
   const load = useCallback(async () => {
     setLoading(true)
-    const start = getPeriodStart(period)
+    const start = periodStart(period)
 
-    const [{ data: tx }, { data: bookings }, { data: barb }] = await Promise.all([
+    const [{ data: tx, error: txError }, { data: bookings, error: bookingsError }, { data: barb, error: barbersError }] = await Promise.all([
       supabase
         .from('financial_transactions')
         .select('*')
         .eq('shop_id', shopId)
         .eq('type', 'entrada')
-        .gte('created_at', `${start}T00:00:00`),
+        .gte('created_at', start),
       supabase
         .from('bookings')
         .select(`
@@ -57,10 +48,11 @@ export function ReportsTab({ shopId }: Props) {
         `)
         .eq('shop_id', shopId)
         .eq('status', 'completed')
-        .gte('completed_at', `${start}T00:00:00`),
+        .gte('completed_at', start),
       supabase.from('barbers').select('*').eq('shop_id', shopId).order('name'),
     ])
 
+    setError(txError || bookingsError || barbersError ? 'Não foi possível carregar os relatórios. Tente novamente.' : '')
     setTransactions((tx as FinancialTransaction[]) || [])
     setCompletedBookings((bookings as BookingWithDetails[]) || [])
     setBarbers(barb || [])
@@ -72,7 +64,7 @@ export function ReportsTab({ shopId }: Props) {
   }, [load])
 
   const revenue = useMemo(
-    () => transactions.reduce((sum, t) => sum + Number(t.amount), 0),
+    () => cashTotals(transactions).income,
     [transactions]
   )
 
@@ -99,7 +91,7 @@ export function ReportsTab({ shopId }: Props) {
 
       entry.completedCount += 1
       const services = (booking.booking_services || []).map((bs) => bs.services)
-      const bookingTotal = services.reduce((sum, s) => sum + Number(s.price), 0)
+      const bookingTotal = cashTotals(transactions.filter(t => t.booking_id === booking.id)).income
       entry.revenue += bookingTotal
 
       for (const s of services) {
@@ -115,10 +107,13 @@ export function ReportsTab({ shopId }: Props) {
     }
 
     return Array.from(statsMap.values()).filter((s) => s.completedCount > 0 || barbers.length <= 4)
-  }, [barbers, completedBookings])
+  }, [barbers, completedBookings, transactions])
+
+  if(error && !loading) return <div><InlineError message={error}/><button type="button" onClick={()=>void load()} className="mt-3 text-brass">Tentar novamente</button></div>
 
   return (
     <div>
+      {error && <InlineError message={error}/>} 
       <h2 className="font-display text-2xl text-white mb-6">Relatórios</h2>
 
       <div className="mb-6 flex gap-2">

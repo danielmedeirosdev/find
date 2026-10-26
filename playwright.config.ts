@@ -1,0 +1,2 @@
+import { defineConfig } from '@playwright/test'
+export default defineConfig({testDir:'tests/e2e',testMatch:'*.spec.ts',timeout:60000,workers:1,reporter:'list',use:{baseURL:process.env.ONEFIND_BASE_URL || 'http://localhost:5173',headless:true,trace:'off',screenshot:'only-on-failure'},webServer:process.env.ONEFIND_BASE_URL ? undefined : {command:'npm run dev -- --host 127.0.0.1',port:5173,reuseExistingServer:true}})

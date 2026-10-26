@@ -18,6 +18,7 @@ export function PetTeam({ shopId }: Props) {
   const [newRole, setNewRole] = useState('')
   const [newSpecialty, setNewSpecialty] = useState('')
   const [loading, setLoading] = useState(true)
+  const [saving,setSaving]=useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [uploadingId, setUploadingId] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
@@ -49,13 +50,17 @@ export function PetTeam({ shopId }: Props) {
   }, [load])
 
   const addBarber = async () => {
-    if (!newName.trim()) return
-    await supabase.from('barbers').insert({
+    if (!newName.trim() || saving) return
+    setSaving(true)
+    const {error} = await supabase.from('barbers').insert({
       shop_id: shopId,
       name: newName.trim(),
       role: newRole.trim() || null,
       specialty: newSpecialty.trim() || null,
     })
+    setSaving(false)
+    if(error){setToast('Não foi possível cadastrar o profissional. Tente novamente.');return}
+    setToast('Profissional cadastrado.')
     setNewName('')
     setNewRole('')
     setNewSpecialty('')
@@ -65,7 +70,8 @@ export function PetTeam({ shopId }: Props) {
   const removeBarber = async (barber: Barber) => {
     if (!confirm('Remover este funcionário?')) return
     if (barber.photo_url) await deleteShopMedia(barber.photo_url)
-    await supabase.from('barbers').delete().eq('id', barber.id)
+    const {error} = await supabase.from('barbers').delete().eq('id', barber.id).eq('shop_id',shopId)
+    if(error){setToast('Não foi possível remover: confira os atendimentos vinculados.');return}
     load()
   }
 
@@ -198,7 +204,7 @@ export function PetTeam({ shopId }: Props) {
           className="w-48 rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
         />
         <button
-          onClick={addBarber}
+          disabled={saving} onClick={addBarber}
           className="rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal"
         >
           Adicionar

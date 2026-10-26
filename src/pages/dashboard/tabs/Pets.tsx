@@ -19,6 +19,7 @@ export function PetsTab({ shopId }: Props) {
   const [pets, setPets] = useState<Pet[]>([])
   const [customers, setCustomers] = useState<ShopCustomer[]>([])
   const [loading, setLoading] = useState(true)
+  const [search,setSearch] = useState('')
   const [selected, setSelected] = useState<Pet | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -260,6 +261,7 @@ export function PetsTab({ shopId }: Props) {
         </button>
       </div>
 
+      <label className="mb-4 block text-sm text-charcoal-muted">Buscar pet<input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Pet, raça ou tutor" className="mt-2 w-full rounded-lg border border-charcoal-light bg-charcoal p-3"/></label>
       {showForm && (
         <div className="mb-8 rounded-lg border border-charcoal-light p-5 space-y-3">
           <h3 className="font-medium text-white">Cadastrar pet</h3>
@@ -442,7 +444,7 @@ export function PetsTab({ shopId }: Props) {
           {pets.length === 0 ? (
             <p className="text-charcoal-muted">Nenhum pet cadastrado ainda.</p>
           ) : (
-            pets.map((pet) => (
+            pets.filter(p=>`${p.name} ${p.breed||''} ${p.shop_customers?.name||''}`.toLocaleLowerCase().includes(search.toLocaleLowerCase())).map((pet) => (
               <button
                 key={pet.id}
                 type="button"

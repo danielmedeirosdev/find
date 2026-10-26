@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { invokeFunction, supabase } from '../../lib/supabase'
 import { prepareImage } from '../../lib/media'
 import { PET_BUSINESS_TYPES } from '../../lib/onboarding'
+import type { Shop, Service, Barber, ServicePackage, ServicePetTransport } from '../../lib/types'
 import { ImageDropzone } from '../../components/MediaUI'
 
 type ServiceRow = {
@@ -110,7 +111,7 @@ export function AssistedSetup() {
     setBusy(true)
     setError('')
     try {
-      const data = await invokeFunction<any>('create-assisted-shop', { action: 'details_full', shopId: id })
+      const data = await invokeFunction<{ shop: Shop & {owner_email?:string}; services:(Service & {is_active?:boolean;transport?:ServicePetTransport})[]; professionals:(Barber & {schedules?:ScheduleRow[]})[]; packages:(ServicePackage & {description?:string})[]; photos:PhotoRow[]; closures:ClosureRow[] }>('create-assisted-shop', { action: 'details_full', shopId: id })
       setShopId(id)
       setShopName(data.shop.name || name || '')
       setEmail(data.shop.owner_email || '')
@@ -122,7 +123,7 @@ export function AssistedSetup() {
       setHoursText(data.shop.hours_text || '')
       setSlug(data.shop.slug || '')
       setLogoUrl(data.shop.logo_url || '')
-      setServices((data.services || []).length ? data.services.map((s:any) => ({
+      setServices((data.services || []).length ? data.services.map((s) => ({
         id: s.id,
         name: s.name || '',
         price: String(s.price ?? ''),
@@ -132,7 +133,7 @@ export function AssistedSetup() {
         transportFee: String(s.transport?.fee ?? 0),
         transportMode: s.transport?.pricing_mode === 'quote' ? 'quote' : 'fixed',
       })) : [blankService()])
-      setStaff((data.professionals || []).length ? data.professionals.map((p:any) => ({
+      setStaff((data.professionals || []).length ? data.professionals.map((p) => ({
         id: p.id,
         name: p.name || '',
         role: p.role || '',
@@ -140,7 +141,7 @@ export function AssistedSetup() {
         commission: p.commission_percent == null ? '' : String(p.commission_percent),
         photo_url: p.photo_url || '',
         schedules: DAYS.map(([, day]) => {
-          const row = (p.schedules || []).find((x:any) => Number(x.day_of_week) === day)
+          const row = (p.schedules || []).find((x) => Number(x.day_of_week) === day)
           return {
             day_of_week: day,
             is_active: row?.is_active === true,
@@ -149,7 +150,7 @@ export function AssistedSetup() {
           }
         }),
       })) : [blankStaff()])
-      setPackages((data.packages || []).map((p:any) => ({
+      setPackages((data.packages || []).map((p) => ({
         id: p.id,
         name: p.name || '',
         description: p.description || '',
@@ -158,8 +159,8 @@ export function AssistedSetup() {
         validity_days: p.validity_days == null ? '' : String(p.validity_days),
         active: p.active !== false,
       })))
-      setPhotos((data.photos || []).map((p:any) => ({ id: p.id, url: p.url })))
-      setClosures((data.closures || []).map((c:any) => ({ id: c.id, starts_on: c.starts_on, ends_on: c.ends_on, label: c.label || 'Fechado' })))
+      setPhotos((data.photos || []).map((p) => ({ id: p.id, url: p.url })))
+      setClosures((data.closures || []).map((c) => ({ id: c.id, starts_on: c.starts_on, ends_on: c.ends_on, label: c.label || 'Fechado' })))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível carregar a loja.')
     } finally {
@@ -235,7 +236,7 @@ export function AssistedSetup() {
     finally { setBusy(false) }
   }
 
-  const payload = useMemo(() => ({
+  const payload = ({
     action:'save_full',
     shopId,
     businessType,
@@ -268,7 +269,7 @@ export function AssistedSetup() {
     })),
     photos,
     closures,
-  }), [shopId,businessType,shopName,slogan,description,address,phone,hoursText,slug,logoUrl,services,staff,packages,photos,closures])
+  })
 
   async function saveAll() {
     setBusy(true); setError(''); setSaved('')

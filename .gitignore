@@ -9,3 +9,7 @@ supabase/.temp/
 .env.local
 .vercel
 .env*
+
+.audit-*
+test-results/
+playwright-report/

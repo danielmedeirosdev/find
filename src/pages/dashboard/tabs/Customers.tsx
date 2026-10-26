@@ -3,7 +3,7 @@ import { supabase } from '../../../lib/supabase'
 import { formatPhone, formatDate, formatTime, formatPrice, whatsappUrl, packageStatusLabel } from '../../../lib/format'
 import { petSizeLabel } from '../../../lib/pet'
 import { packageRemaining } from '../../../lib/notifications'
-import { FieldHint, FieldLabel } from '../../../components/FormHints'
+import { FieldLabel } from '../../../components/FormHints'
 import { DefaultAvatar, Toast } from '../../../components/MediaUI'
 import type {
   BookingWithDetails,
@@ -20,6 +20,11 @@ export function CustomersTab({ shopId }: Props) {
   const [customers, setCustomers] = useState<ShopCustomer[]>([])
   const [petsByCustomer, setPetsByCustomer] = useState<Record<string, Pet[]>>({})
   const [loading, setLoading] = useState(true)
+  const [search,setSearch] = useState('')
+  const [saving,setSaving] = useState(false)
+  const [editName,setEditName] = useState('')
+  const [editPhone,setEditPhone] = useState('')
+  const [loadError,setLoadError] = useState('')
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [notes, setNotes] = useState('')
@@ -30,10 +35,11 @@ export function CustomersTab({ shopId }: Props) {
   const [history, setHistory] = useState<BookingWithDetails[]>([])
 
   const load = useCallback(async () => {
-    const [{ data: c }, { data: p }] = await Promise.all([
+    const [{ data: c, error: cError }, { data: p, error: pError }] = await Promise.all([
       supabase.from('shop_customers').select('*').eq('shop_id', shopId).order('name'),
       supabase.from('pets').select('*').eq('shop_id', shopId).order('name'),
     ])
+    setLoadError(cError || pError ? 'Não foi possível carregar os clientes.' : '')
     const list = (c as ShopCustomer[]) || []
     setCustomers(list)
     const map: Record<string, Pet[]> = {}
@@ -58,6 +64,8 @@ export function CustomersTab({ shopId }: Props) {
     }
     const selected = customers.find((c) => c.id === selectedId)
     setEditNotes(selected?.notes || '')
+    setEditName(selected?.name || '')
+    setEditPhone(formatPhone(selected?.phone || ''))
 
     Promise.all([
       supabase
@@ -90,12 +98,15 @@ export function CustomersTab({ shopId }: Props) {
       setToast('Informe nome e WhatsApp válidos.')
       return
     }
+    if(saving)return
+    setSaving(true)
     const { error } = await supabase.from('shop_customers').insert({
       shop_id: shopId,
       name: name.trim(),
       phone: digits,
       notes: notes.trim() || null,
     })
+    setSaving(false)
     if (error) {
       setToast(/unique|duplicate/i.test(error.message) ? 'Já existe cliente com este telefone.' : error.message)
       return
@@ -108,22 +119,27 @@ export function CustomersTab({ shopId }: Props) {
   }
 
   const saveNotes = async () => {
-    if (!selectedId) return
+    if (!selectedId || saving) return
+    if(!editName.trim() || !/^\d{10,11}$/.test(editPhone.replace(/\D/g,''))){setToast('Confira o nome e WhatsApp.');return}
+    setSaving(true)
     const { error } = await supabase
       .from('shop_customers')
-      .update({ notes: editNotes.trim() || null })
+      .update({ name:editName.trim(),phone:editPhone.replace(/\D/g,''),notes: editNotes.trim() || null })
       .eq('id', selectedId)
     if (error) {
+      setSaving(false)
       setToast(error.message)
       return
     }
-    setToast('Observações salvas.')
+    setSaving(false)
+    setToast('Cliente atualizado.')
     load()
   }
 
   const removeCustomer = async (id: string) => {
     if (!confirm('Remover cliente e todos os pets vinculados?')) return
-    await supabase.from('shop_customers').delete().eq('id', id)
+    const {error} = await supabase.from('shop_customers').delete().eq('id', id).eq('shop_id',shopId)
+    if(error){setToast('Não foi possível remover o cliente.');return}
     if (selectedId === id) setSelectedId(null)
     load()
   }
@@ -140,7 +156,7 @@ export function CustomersTab({ shopId }: Props) {
         Cada cliente pode ter vários pets, pacotes e histórico de atendimentos.
       </p>
 
-      <div className="mb-8 grid gap-3 sm:grid-cols-3">
+      <details className="of-section mb-5"><summary className="cursor-pointer font-medium text-brass">Cadastrar cliente</summary><div className="mt-4 grid gap-3 sm:grid-cols-3">
         <div>
           <FieldLabel>Nome</FieldLabel>
           <input
@@ -161,21 +177,21 @@ export function CustomersTab({ shopId }: Props) {
         </div>
         <div className="flex items-end">
           <button
-            onClick={addCustomer}
+            disabled={saving} onClick={addCustomer}
             className="w-full rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal"
           >
             Adicionar
           </button>
         </div>
       </div>
-      <FieldHint>Observações opcionais podem ser editadas no perfil do cliente.</FieldHint>
+      </details><label className="block text-sm text-charcoal-muted">Buscar cliente<input value={search} onChange={e=>setSearch(e.target.value)} type="search" placeholder="Nome ou WhatsApp" className="mt-2 w-full rounded-lg border border-charcoal-light bg-charcoal p-3"/></label>{loadError && <p role="alert">{loadError}</p>}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="space-y-2">
           {customers.length === 0 ? (
             <p className="text-charcoal-muted">Nenhum cliente ainda.</p>
           ) : (
-            customers.map((c) => {
+            customers.filter(c=>`${c.name} ${c.phone}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()) || (!!search.replace(/\D/g,'') && c.phone.includes(search.replace(/\D/g,'')))).map((c) => {
               const whatsapp = whatsappUrl(c.phone)
               return (
                 <div
@@ -311,17 +327,17 @@ export function CustomersTab({ shopId }: Props) {
 
             <div>
               <FieldLabel>Observações</FieldLabel>
-              <textarea
+              <label className="block text-sm">Nome<input value={editName} onChange={e=>setEditName(e.target.value)} className="my-2 w-full rounded-lg border border-charcoal-light bg-charcoal p-2"/></label><label className="block text-sm">WhatsApp<input type="tel" value={editPhone} onChange={e=>setEditPhone(formatPhone(e.target.value))} className="my-2 w-full rounded-lg border border-charcoal-light bg-charcoal p-2"/></label><textarea
                 value={editNotes}
                 onChange={(e) => setEditNotes(e.target.value)}
                 rows={2}
                 className="w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2 text-white"
               />
               <button
-                onClick={saveNotes}
+                disabled={saving} onClick={saveNotes}
                 className="mt-2 rounded-lg border border-charcoal-light px-3 py-1.5 text-sm text-charcoal-muted hover:text-white"
               >
-                Salvar observações
+                Salvar cliente
               </button>
             </div>
 
