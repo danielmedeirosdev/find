@@ -321,7 +321,6 @@ export function PetAgenda({ shopId, barberId }: Props) {
       : dayFilter === 'tomorrow'
         ? activeBookings.filter((b) => b.date === tomorrow)
         : activeBookings
-  const nextUp = activeBookings[0] || null
   const todayBookings = activeBookings.filter((b) => b.date === today)
   const todayRevenue = todayBookings.reduce(
     (sum, booking) =>
