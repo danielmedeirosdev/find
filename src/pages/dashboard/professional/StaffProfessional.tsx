@@ -37,7 +37,7 @@ export function StaffProfessional({ shop, barber, onUpdate }: Props) {
     >
       {activeTab === 'agenda' &&
         (isPet ? (
-          <PetAgenda shopId={shop.id} barberId={barber.id} />
+          <PetAgenda shopId={shop.id} shopName={shop.name} barberId={barber.id} />
         ) : (
           <AgendaTab shopId={shop.id} barberId={barber.id} />
         ))}

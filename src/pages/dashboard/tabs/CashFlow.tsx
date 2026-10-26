@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { periodStart, cashTotals } from '../../../lib/finance'
-import { InlineError } from '../../../components/EmptyState'
+import { InlineError, LoadingBlock } from '../../../components/EmptyState'
 import { supabase } from '../../../lib/supabase'
 import { formatPrice, paymentMethodLabel } from '../../../lib/format'
 import type { FinancialTransaction, PaymentMethod } from '../../../lib/types'
@@ -65,6 +65,7 @@ export function CashFlowTab({ shopId }: Props) {
     load()
   }
 
+  if(loading) return <LoadingBlock label="Carregando caixa..."/>
   if(error && !loading) return <div><InlineError message={error}/><button type="button" onClick={()=>void load()} className="mt-3 text-brass">Tentar novamente</button></div>
 
   return (

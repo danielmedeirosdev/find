@@ -115,7 +115,7 @@ export function ProfessionalPet({
       {activeTab === 'info' && <PetShopInfo shop={shop} onUpdate={onUpdate} />}
       {activeTab === 'team' && <PetTeam shopId={shop.id} />}
       {activeTab === 'services' && <PetServices shopId={shop.id} />}
-      {activeTab === 'agenda' && <PetAgenda shopId={shop.id} />}
+      {activeTab === 'agenda' && <PetAgenda shopId={shop.id} shopName={shop.name} />}
       {activeTab === 'customers' && <CustomersTab shopId={shop.id} />}
       {activeTab === 'pets' && <PetsTab shopId={shop.id} />}
       {activeTab === 'packages' && <PackagesTab shopId={shop.id} />}

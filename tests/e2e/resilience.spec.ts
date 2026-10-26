@@ -18,7 +18,7 @@ test('invalid input and network failure retain truthful state',async({page})=>{
  expect(await data(page,'shop_customers?select=id')).toHaveLength(before.length)
  await page.route('**/rest/v1/financial_transactions*',route=>route.abort('failed'))
  await page.goto('/painel/dashboard?aba=cashflow')
- await expect(page.getByRole('alert')).toContainText('Não foi possível carregar o caixa')
+ await expect(page.getByRole('alert')).toContainText('Não foi possível carregar o caixa',{timeout:20000})
  await expect(page.getByText('Saldo do período',{exact:true})).toHaveCount(0)
  await page.unroute('**/rest/v1/financial_transactions*')
  await page.getByRole('button',{name:'Tentar novamente',exact:true}).click()

@@ -22,6 +22,8 @@ test('real operational flow persists after editing, payment and relogin',async({
  await expect.poll(async()=>(await check()).status,{timeout:20000}).toBe('in_progress')
  await card.getByRole('button',{name:'Editar / adicionar serviços'}).click()
  const dialog=page.getByRole('dialog',{name:'Editar atendimento'})
+ for(const width of [320,375,390,430]){await page.setViewportSize({width,height:568});const box=await dialog.locator(':scope > div').boundingBox();expect(box!.height).toBeLessThanOrEqual(568);expect(box!.width).toBeLessThanOrEqual(width)}
+ await page.setViewportSize({width:375,height:812})
  await dialog.locator(`input[value="${fixture.serviceIds[2]}"]`).check()
  await dialog.getByLabel('Observações').fill('QA atualizado durante atendimento')
  await dialog.getByRole('button',{name:'Salvar atendimento'}).click()

@@ -25,6 +25,7 @@ import type { BookingWithDetails, Service, ServiceSizeRule, PetSize, ServiceWeek
 
 interface Props {
   shopId: string
+  shopName: string
   barberId?: string
 }
 
@@ -45,7 +46,7 @@ function addDaysIso(days: number): string {
   return localDateIso(d)
 }
 
-export function PetAgenda({ shopId, barberId }: Props) {
+export function PetAgenda({ shopId, shopName, barberId }: Props) {
   const [showNew, setShowNew] = useState(false)
   const [newStep, setNewStep] = useState(1)
   const [receipt, setReceipt] = useState<ReceiptView | null>(null)
@@ -194,7 +195,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
     }
     setCreatedCount(completed)
     setReceipt({
-      isPet:true,shopId,shopName:'Pet shop',
+      isPet:true,shopId,shopName,
       barberName:teamList.find(x=>x.id===staffId)?.name || '',
       date:dateValue,time:timeValue,durationMinutes:totalDuration,
       clientName:client.name,clientPhone:client.phone,

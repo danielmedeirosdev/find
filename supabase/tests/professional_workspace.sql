@@ -1,6 +1,6 @@
 -- Isolated fixtures; rollback leaves no tenant data behind.
 do $$
-declare u uuid:=gen_random_uuid(); sh uuid:=gen_random_uuid(); c uuid:=gen_random_uuid(); pet uuid:=gen_random_uuid(); staff uuid:=gen_random_uuid(); s1 uuid:=gen_random_uuid(); s2 uuid:=gen_random_uuid(); b uuid; n int;
+declare u uuid:=gen_random_uuid(); sh uuid:=gen_random_uuid(); c uuid:=gen_random_uuid(); pet uuid:=gen_random_uuid(); staff uuid:=gen_random_uuid(); s1 uuid:=gen_random_uuid(); s2 uuid:=gen_random_uuid(); b uuid; b2 uuid; tpl uuid:=gen_random_uuid(); cp uuid:=gen_random_uuid(); n int;
 begin
  insert into auth.users(id) values(u);
  insert into shops(id,owner_user_id,name,segment) values(sh,u,'QA rollback only','pet');
@@ -34,6 +34,19 @@ begin
   perform update_booking_status(b,'scheduled');
   raise exception 'FAIL reopened settled booking';
  exception when others then if sqlerrm='FAIL reopened settled booking' then raise; end if; end;
+ insert into service_size_rules(service_id,size,duration_minutes,price) values(s1,'medio',60,70);
+ insert into service_weekday_discounts(service_id,shop_id,day_of_week,discount_percent) values(s1,sh,extract(dow from current_date+2),10);
+ b2:=create_operational_booking(sh,staff,c,pet,current_date+2,'11:00',array[s1]);
+ if (select quoted_amount from bookings where id=b2)<>63 or (select duration_minutes from bookings where id=b2)<>60 then raise exception 'FAIL size/weekday pricing'; end if;
+ insert into service_packages(id,shop_id,name,total_sessions,price,active) values(tpl,sh,'QA Package',4,200,true);
+ perform assign_operational_package(cp,sh,tpl,c,pet,true);
+ perform assign_operational_package(cp,sh,tpl,c,pet,true);
+ if (select count(*) from financial_transactions where shop_id=sh and booking_id is null)<>1 then raise exception 'FAIL package payment retry'; end if;
+ update bookings set extras_amount=5,quoted_amount=68 where id=b2;
+ perform complete_booking(b2,array[s1],'pix',5,cp);
+ perform complete_booking(b2,array[s1],'pix',5,cp);
+ if (select used_sessions from customer_packages where id=cp)<>1 or (select count(*) from package_usages where booking_id=b2)<>1 then raise exception 'FAIL package duplicate consumption'; end if;
+ if (select sum(amount) from financial_transactions where booking_id=b2)<>5 then raise exception 'FAIL package-covered charge'; end if;
  perform set_config('request.jwt.claim.sub',gen_random_uuid()::text,true);
  begin
   perform edit_operational_booking(b,array[s1],current_date+1,'11:00',null);
