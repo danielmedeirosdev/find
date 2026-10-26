@@ -25,6 +25,8 @@ export function PackagesTab({ shopId }: Props) {
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState<string | null>(null)
 
+  const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null)
+  const [savingTemplate, setSavingTemplate] = useState(false)
   const [tplName, setTplName] = useState('Pacote Banho')
   const [tplSessions, setTplSessions] = useState('10')
   const [tplPrice, setTplPrice] = useState('400')
@@ -76,26 +78,46 @@ export function PackagesTab({ shopId }: Props) {
     [pets, assignCustomerId]
   )
 
+  const editTemplate = (tpl: ServicePackage) => {
+    setEditingTemplateId(tpl.id)
+    setTplName(tpl.name)
+    setTplSessions(String(tpl.total_sessions))
+    setTplPrice(String(tpl.price))
+    setTplDays(tpl.validity_days == null ? '' : String(tpl.validity_days))
+  }
+
+  const cancelEdit = () => {
+    setEditingTemplateId(null)
+    setTplName('Pacote Banho')
+    setTplSessions('10')
+    setTplPrice('400')
+    setTplDays('90')
+  }
+
   const createTemplate = async () => {
     const sessions = Number(tplSessions)
     const price = Number(tplPrice)
-    if (!tplName.trim() || !sessions || sessions < 1) {
+    if (!tplName.trim() || !Number.isInteger(sessions) || sessions < 1 || !Number.isFinite(price) || price < 0 || (tplDays !== '' && (!Number.isInteger(Number(tplDays)) || Number(tplDays) < 1))) {
       setToast('Informe nome e quantidade de sessões.')
       return
     }
-    const { error } = await supabase.from('service_packages').insert({
-      shop_id: shopId,
+    setSavingTemplate(true)
+    const values = {
       name: tplName.trim(),
       total_sessions: sessions,
-      price: Number.isFinite(price) ? price : 0,
+      price,
       validity_days: tplDays ? Number(tplDays) : null,
-      active: true,
-    })
+    }
+    const { error } = editingTemplateId
+      ? await supabase.from('service_packages').update(values).eq('id', editingTemplateId).eq('shop_id', shopId)
+      : await supabase.from('service_packages').insert({ ...values, shop_id: shopId, active: true })
+    setSavingTemplate(false)
     if (error) {
       setToast(error.message)
       return
     }
-    setToast('Modelo de pacote criado.')
+    setToast(editingTemplateId ? 'Modelo de pacote atualizado.' : 'Modelo de pacote criado.')
+    cancelEdit()
     load()
   }
 
@@ -157,7 +179,7 @@ export function PackagesTab({ shopId }: Props) {
       </div>
 
       <div className="rounded-lg border border-charcoal-light p-4 space-y-3">
-        <h3 className="font-medium text-white">Novo modelo</h3>
+        <h3 className="font-medium text-white">{editingTemplateId ? 'Editar modelo de pacote' : 'Novo modelo'}</h3>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <FieldLabel>Nome</FieldLabel>
@@ -199,9 +221,13 @@ export function PackagesTab({ shopId }: Props) {
             <FieldHint>Deixe vazio se não expirar.</FieldHint>
           </div>
         </div>
-        <button onClick={createTemplate} className="rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal">
-          Criar modelo
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button onClick={createTemplate} disabled={savingTemplate} className="rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal disabled:opacity-50">
+            {savingTemplate ? 'Salvando...' : editingTemplateId ? 'Salvar alterações' : 'Criar modelo'}
+          </button>
+          {editingTemplateId && <button onClick={cancelEdit} className="rounded-lg border border-charcoal-light px-4 py-2 text-white">Cancelar</button>}
+        </div>
+        {editingTemplateId && <p className="text-xs text-charcoal-muted">Alterações no modelo não modificam sessões já utilizadas ou a validade de pacotes anteriormente associados.</p>}
       </div>
 
       <div className="rounded-lg border border-charcoal-light p-4 space-y-3">
@@ -324,7 +350,10 @@ export function PackagesTab({ shopId }: Props) {
                 <span className="text-white">
                   {t.name} · {t.total_sessions} sessões
                 </span>
-                <span className="font-mono text-brass">{formatPrice(Number(t.price))}</span>
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-brass">{formatPrice(Number(t.price))}</span>
+                  <button onClick={() => editTemplate(t)} className="rounded-lg border border-charcoal-light px-3 py-1 text-white hover:border-brass">Editar</button>
+                </div>
               </div>
             ))}
           </div>
