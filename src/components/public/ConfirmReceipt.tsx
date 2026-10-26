@@ -1,7 +1,7 @@
 import { BrandLogo } from '../BrandLogo'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { formatDate, formatDuration, formatPrice, formatTime } from '../../lib/format'
+import { customerLabel, formatDate, formatDuration, formatPhone, formatPrice, formatTime } from '../../lib/format'
 import { BrandAccent } from '../BrandAccent'
 import { publicBookingPathForSegment } from '../../lib/segments'
 
@@ -121,8 +121,8 @@ export function ConfirmReceipt({
           {Number(view.discountAmount || 0) > 0 || Number(view.extrasAmount || 0) > 0 ? <ReceiptRow label="Ajustes do valor">{Number(view.discountAmount || 0) > 0 ? <p className="text-emerald-700">Desconto do dia: − {formatPrice(Number(view.discountAmount))}</p> : null}{Number(view.extrasAmount || 0) > 0 ? <p>Adicionais: + {formatPrice(Number(view.extrasAmount))}</p> : null}</ReceiptRow> : null}
 
           <ReceiptRow label="Cliente">
-            {view.clientName.trim() && <p>{view.clientName}</p>}
-            <p className="text-ink-muted">{view.clientPhone}</p>
+            <p>{customerLabel({name:view.clientName,phone:view.clientPhone})}</p>
+            <p className="text-ink-muted">WhatsApp: {formatPhone(view.clientPhone)}</p>
           </ReceiptRow>
 
           <div className="flex items-baseline justify-between py-4">

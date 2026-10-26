@@ -352,6 +352,7 @@ export interface BookingService {
 }
 
 export interface BookingWithDetails extends Booking {
+  shop_customers?: Pick<ShopCustomer, 'name' | 'phone'> | null
   barbers?: Pick<Barber, 'name'> & Partial<Omit<PublicBarber, 'name'>>
   shops?: Shop
   pets?: Pet

@@ -3,6 +3,7 @@ import { supabase } from "../../../../lib/supabase";
 import { localDateIso } from "../../../../lib/booking";
 import { cashTotals, periodStart } from "../../../../lib/finance";
 import {
+  customerLabel,
   formatPrice,
   formatTime,
   bookingStatusLabel,
@@ -34,7 +35,7 @@ export function PetOverview({ shopId, onNavigate }: Props) {
       supabase
         .from("bookings")
         .select(
-          "*,barbers(name),pets!bookings_pet_id_fkey(name),booking_services(service_id,services(name,price))",
+          "*,barbers(name),shop_customers(name,phone),pets!bookings_pet_id_fkey(name),booking_services(service_id,services(name,price))",
         )
         .eq("shop_id", shopId)
         .eq("date", localDateIso())
@@ -132,10 +133,10 @@ export function PetOverview({ shopId, onNavigate }: Props) {
               </span>
               <span>
                 <strong className="text-sm">
-                  {b.pets?.name || b.client_name}
+                  {b.pets?.name || customerLabel({name:b.shop_customers?.name ?? b.client_name,phone:b.client_phone})}
                 </strong>
                 <small>
-                  {b.client_name}
+                  {customerLabel({name:b.shop_customers?.name ?? b.client_name,phone:b.client_phone})}
                   {b.barbers?.name ? ` · ${b.barbers.name}` : ""}
                 </small>
                 <small>

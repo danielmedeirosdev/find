@@ -1,0 +1,48 @@
+-- Isolated shop and scoped worker; no real establishment is processed.
+do $$
+declare u uuid:=gen_random_uuid(); st uuid:=gen_random_uuid(); sh uuid; c uuid:=gen_random_uuid(); pet uuid:=gen_random_uuid(); staff uuid:=gen_random_uuid(); svc uuid:=gen_random_uuid(); b uuid; b2 uuid; starts timestamp:=date_trunc('hour',now() at time zone 'America/Sao_Paulo')+interval '2 hours'; rejected boolean; sent timestamptz;
+begin
+ insert into auth.users(id,email,raw_user_meta_data) values(u,'qa.reminder.'||u||'@example.com','{"role":"barber","segment":"pet","shop_name":"QA reminders"}'),(st,'qa.reminder.staff.'||st||'@example.com','{}');
+ select id into sh from public.shops where owner_user_id=u;
+ perform set_config('request.jwt.claim.role','service_role',true);
+ insert into public.barbers(id,shop_id,user_id,name) values(staff,sh,st,'QA Staff');
+ insert into public.barber_schedule(barber_id,day_of_week,is_active,start_time,end_time) select staff,day,true,'00:00','23:59' from generate_series(0,6) day;
+ insert into public.shop_customers(id,shop_id,name,phone) values(c,sh,'Tutor QA','19999990000');
+ insert into public.pets(id,shop_id,customer_id,name) values(pet,sh,c,'Laura QA');
+ insert into public.services(id,shop_id,name,price,duration_minutes) values(svc,sh,'Banho QA',50,15);
+ perform set_config('request.jwt.claim.role','authenticated',true);
+ perform set_config('request.jwt.claim.sub',u::text,true);
+ perform set_config('request.jwt.claims',json_build_object('sub',u,'role','authenticated')::text,true);
+ b:=public.create_operational_booking(sh,staff,c,pet,starts::date,starts::time,array[svc]);
+ perform public.set_booking_confirmation_reminder(b,30);
+ if private.process_confirmation_reminders(sh)<>0 then raise exception 'FAIL reminder fired early'; end if;
+ rejected:=false; begin perform public.set_booking_confirmation_reminder(b,45); exception when others then rejected:=true; end;
+ if not rejected then raise exception 'FAIL invalid reminder interval'; end if;
+ perform public.set_booking_confirmation_reminder(b,1440);
+ if private.process_confirmation_reminders(sh)<>1 then raise exception 'FAIL reminder not generated'; end if;
+ if private.process_confirmation_reminders(sh)<>0 then raise exception 'FAIL duplicate reminder'; end if;
+ select confirmation_reminder_sent_at into sent from public.bookings where id=b;
+ perform public.set_booking_confirmation_reminder(b,1440);
+ if (select confirmation_reminder_sent_at from public.bookings where id=b) is distinct from sent then raise exception 'FAIL repeated setting resets sent state'; end if;
+ execute 'set local role authenticated';
+ if jsonb_array_length(public.get_pending_confirmation_reminders(sh))<>1 then raise exception 'FAIL owner cannot see pending reminder'; end if;
+ execute 'reset role';
+ perform public.edit_operational_booking(b,array[svc],starts::date+2,starts::time,null);
+ if (select confirmation_reminder_sent_at from public.bookings where id=b) is not null then raise exception 'FAIL rescheduling did not reset reminder'; end if;
+ if private.process_confirmation_reminders(sh)<>0 then raise exception 'FAIL rescheduled reminder fired before its lead time'; end if;
+ if jsonb_array_length(public.get_pending_confirmation_reminders(sh))<>0 then raise exception 'FAIL stale reminder visible after rescheduling'; end if;
+ perform public.set_booking_confirmation_reminder(b,null);
+ if (select confirmation_reminder_minutes from public.bookings where id=b) is not null then raise exception 'FAIL disabling reminder'; end if;
+ b2:=public.create_operational_booking(sh,staff,c,pet,(starts+interval '1 hour')::date,(starts+interval '1 hour')::time,array[svc]);
+ perform set_config('request.jwt.claim.sub',st::text,true);
+ perform set_config('request.jwt.claims',json_build_object('sub',st,'role','authenticated')::text,true);
+ execute 'set local role authenticated';
+ perform public.set_booking_confirmation_reminder(b2,60);
+ if jsonb_array_length(public.get_pending_confirmation_reminders(sh))<>0 then raise exception 'FAIL staff read owner-only reminders'; end if;
+ perform set_config('request.jwt.claim.sub',gen_random_uuid()::text,true);
+ rejected:=false; begin perform public.set_booking_confirmation_reminder(b2,120); exception when others then rejected:=true; end;
+ if not rejected then raise exception 'FAIL cross-tenant reminder mutation'; end if;
+ execute 'reset role';
+ if has_function_privilege('anon','public.set_booking_confirmation_reminder(uuid,integer)','EXECUTE') or has_function_privilege('authenticated','private.process_confirmation_reminders(uuid)','EXECUTE') then raise exception 'FAIL privileged reminder worker exposed'; end if;
+ if not exists(select 1 from cron.job where jobname='onefind-confirmation-reminders' and active) then raise exception 'FAIL reminder cron inactive'; end if;
+end; $$;

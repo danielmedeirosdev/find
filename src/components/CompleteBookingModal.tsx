@@ -1,7 +1,7 @@
 import { Modal } from './Modal'
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { formatPrice } from '../lib/format'
+import { customerLabel, formatPrice } from '../lib/format'
 import { amountDue, selectedBookingTotal } from '../lib/finance'
 import { packageRemaining } from '../lib/notifications'
 import { userFacingError } from '../lib/userFacingError'
@@ -106,7 +106,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
         <h3 className="font-display text-xl font-semibold text-white mb-1">Finalizar atendimento</h3>
         <p className="text-sm text-charcoal-muted mb-4">
           {booking.pets?.name ? `${booking.pets.name} · ` : ''}
-          {booking.client_name} · {booking.barbers?.name}
+          {customerLabel({name:booking.shop_customers?.name ?? booking.client_name,phone:booking.client_phone})} · {booking.barbers?.name}
         </p>
 
         <div className="mb-5">

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useCallback, useEffect, useState } from 'react'
 import { notificationKindLabel } from '../../../lib/notifications'
 import { supabase } from '../../../lib/supabase'
@@ -9,16 +10,19 @@ interface Props {
 
 export function NotificationsTab({ shopId }: Props) {
   const [items, setItems] = useState<AppNotification[]>([])
+  const [error,setError]=useState('')
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
-    const { data } = await supabase
+    const { data,error:loadError } = await supabase
       .from('notifications')
       .select('*')
       .eq('shop_id', shopId)
       .eq('audience', 'owner')
       .order('created_at', { ascending: false })
       .limit(80)
+    if(loadError){setError('Não foi possível carregar as notificações. Tente novamente.');setLoading(false);return}
+    setError('')
     setItems((data as AppNotification[]) || [])
     setLoading(false)
   }, [shopId])
@@ -28,16 +32,18 @@ export function NotificationsTab({ shopId }: Props) {
   }, [load])
 
   const markRead = async (id: string) => {
-    await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', id)
+    const {error:readError}=await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', id).eq('shop_id',shopId)
+    if(readError){setError('Não foi possível marcar a notificação como lida. Tente novamente.');return}
     load()
   }
 
   const markAllRead = async () => {
-    await supabase
+    const {error:readError}=await supabase
       .from('notifications')
       .update({ read_at: new Date().toISOString() })
       .eq('shop_id', shopId)
       .is('read_at', null)
+    if(readError){setError('Não foi possível atualizar as notificações. Tente novamente.');return}
     load()
   }
 
@@ -51,7 +57,7 @@ export function NotificationsTab({ shopId }: Props) {
         <div>
           <h2 className="font-display text-2xl text-white mb-1">Notificações</h2>
           <p className="text-sm text-charcoal-muted">
-            {unread > 0 ? `${unread} não lida(s)` : 'Tudo em dia'}
+            {error ? 'Não foi possível conferir as notificações' : unread > 0 ? `${unread} não lida(s)` : 'Tudo em dia'}
           </p>
         </div>
         {unread > 0 && (
@@ -64,15 +70,13 @@ export function NotificationsTab({ shopId }: Props) {
         )}
       </div>
 
-      {items.length === 0 ? (
+      {error ? <p role="alert" className="text-sm text-red-300">{error}<button type="button" onClick={()=>void load()} className="ml-2 text-brass">Tentar novamente</button></p> : items.length === 0 ? (
         <p className="text-charcoal-muted">Nenhuma notificação ainda.</p>
       ) : (
         <div className="space-y-3">
           {items.map((n) => (
-            <button
+            <article
               key={n.id}
-              type="button"
-              onClick={() => !n.read_at && markRead(n.id)}
               className={`w-full rounded-lg border p-4 text-left transition-colors ${
                 n.read_at
                   ? 'border-charcoal-light/60 opacity-70'
@@ -94,7 +98,11 @@ export function NotificationsTab({ shopId }: Props) {
               <p className="mt-2 text-[10px] uppercase tracking-widest text-charcoal-muted">
                 {notificationKindLabel(n.kind)}
               </p>
-            </button>
+              <div className="mt-3 flex flex-wrap gap-3">
+                {n.booking_id && <Link to={`/painel/dashboard?aba=agenda&atendimento=${n.booking_id}`} className="inline-flex min-h-11 items-center rounded-lg border border-brass/40 px-3 text-sm text-brass">Ver na agenda</Link>}
+                {!n.read_at && <button type="button" onClick={()=>void markRead(n.id)} className="min-h-11 text-sm text-charcoal-muted">Marcar como lida</button>}
+              </div>
+            </article>
           ))}
         </div>
       )}

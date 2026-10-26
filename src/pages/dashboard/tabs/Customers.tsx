@@ -208,7 +208,7 @@ export function CustomersTab({ shopId }: Props) {
                   >
                     <p className="truncate font-medium text-white">{customerLabel(c)}</p>
                     <p className="mt-0.5 text-sm tabular-nums text-charcoal-muted">
-                      {c.name.trim() ? formatPhone(c.phone) : 'Complete os dados quando quiser'}
+                      WhatsApp: {formatPhone(c.phone)}
                     </p>
                     <p className="mt-1 text-xs text-brass">
                       {(petsByCustomer[c.id] || []).length} pet

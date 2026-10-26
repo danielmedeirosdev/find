@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { customerLabel, formatPhone } from '../lib/format'
 import { userFacingError } from '../lib/userFacingError'
+import { upsertPetCustomer } from '../lib/secureBooking'
 import { PET_SIZES, type PetSize } from '../lib/types'
 
 export type BookingCustomer = { id: string; name: string; phone: string }
@@ -25,6 +26,12 @@ export function BookingCustomerPicker({ shopId, clients, pets, clientId, petId, 
   const [newPet, setNewPet] = useState(false)
   const [petName, setPetName] = useState('')
   const [petSize, setPetSize] = useState<PetSize>('medio')
+  const [clientName, setClientName] = useState('')
+  const selectedClient = clients.find(client => client.id === clientId)
+  const clientOption = (client: BookingCustomer) => {
+    const petNames = pets.filter(pet => pet.customer_id === client.id).map(pet => pet.name).join(' · ')
+    return client.name.trim() ? customerLabel(client) : petNames ? `Responsável por ${petNames}` : 'Nome não informado'
+  }
   const register = async () => {
     if (saving) return
     setSaving(true); setError(''); setNotice('')
@@ -32,8 +39,20 @@ export function BookingCustomerPicker({ shopId, clients, pets, clientId, petId, 
     setSaving(false)
     if (registerError) { setError(userFacingError(registerError, 'Não foi possível cadastrar o cliente.')); return }
     const client = data as BookingCustomer
-    onCustomer(client); onSelection(client.id, ''); setQuick(false); setPhone(''); setNewPet(false)
-    setNotice(client.name.trim() ? `Cliente encontrado: ${client.name}.` : 'Contato salvo pelo WhatsApp. Você pode completar os dados na área Clientes.')
+    onCustomer(client); onSelection(client.id, ''); setQuick(false); setPhone(''); setNewPet(false); setClientName('')
+    setNotice(client.name.trim() ? `Cliente encontrado: ${client.name}.` : 'Cadastro vinculado ao WhatsApp. O nome pode ser informado abaixo ou depois na área Clientes.')
+  }
+  const saveClientName = async () => {
+    if (saving || !selectedClient) return
+    if (clientName.trim().length < 2) { setError('Informe o nome do cliente com pelo menos 2 caracteres.'); return }
+    setSaving(true); setError('')
+    try {
+      const client = await upsertPetCustomer(shopId, selectedClient.phone, clientName.trim())
+      if (client.id !== selectedClient.id) throw new Error('O cadastro foi alterado. Busque o cliente novamente pelo WhatsApp.')
+      onCustomer(client)
+      setClientName(''); setNotice('Nome salvo. Os pets e o histórico continuam no mesmo cadastro.')
+    } catch (err) { setError(userFacingError(err, 'Não foi possível salvar o nome do cliente.')) }
+    finally { setSaving(false) }
   }
   const registerPet = async () => {
     if (saving || !clientId) return
@@ -46,7 +65,15 @@ export function BookingCustomerPicker({ shopId, clients, pets, clientId, petId, 
     setNotice('Pet cadastrado e selecionado.')
   }
   return <div className="space-y-4">
-    <label className="grid gap-2 text-sm text-white">Cliente<select required value={clientId} disabled={saving} onChange={e => { onSelection(e.target.value, ''); setNewPet(false); setError(''); setNotice('') }} className="min-h-12 rounded-xl bg-charcoal p-3"><option value="">Selecione um cliente</option>{clients.map(client => <option key={client.id} value={client.id}>{customerLabel(client)}</option>)}</select></label>
+    <label className="grid gap-2 text-sm text-white">Cliente<select required value={clientId} disabled={saving} onChange={e => { onSelection(e.target.value, ''); setNewPet(false); setError(''); setNotice(''); setClientName('') }} className="min-h-12 rounded-xl bg-charcoal p-3"><option value="">Selecione um cliente</option>{clients.map(client => <option key={client.id} value={client.id}>{clientOption(client)}</option>)}</select></label>
+    {selectedClient && <div className="space-y-3 rounded-xl border border-white/10 p-3">
+      <div data-testid="customer-contact"><p className="text-xs text-charcoal-muted">WhatsApp do cadastro</p><p className="mt-1 text-sm text-white">{formatPhone(selectedClient.phone)}</p></div>
+      {!selectedClient.name.trim() && <div className="space-y-2">
+        <label className="grid gap-2 text-sm text-white">Nome do cliente (opcional)<input value={clientName} onChange={e => setClientName(e.target.value)} maxLength={120} placeholder="Como o cliente se chama?" className="min-h-12 w-full rounded-xl bg-charcoal p-3" onKeyDown={e => { if(e.key==='Enter'){e.preventDefault();void saveClientName()} }}/></label>
+        <p className="text-xs text-charcoal-muted">O telefone localiza este cadastro e mantém os dados vinculados. Ele não substitui o nome.</p>
+        <button type="button" disabled={saving || !clientName.trim()} onClick={() => void saveClientName()} className="min-h-11 rounded-xl border border-brass/40 px-4 py-2 text-sm font-semibold text-brass disabled:opacity-50">{saving?'Salvando...':'Salvar nome do cliente'}</button>
+      </div>}
+    </div>}
     <button type="button" className="min-h-11 text-sm font-medium text-brass" onClick={() => { setQuick(!quick); setError('') }}>{quick ? 'Fechar cadastro rápido' : '+ Buscar ou cadastrar por WhatsApp'}</button>
     {quick && <div className="space-y-3 rounded-xl border border-brass/30 p-3">
       <label className="grid gap-2 text-sm text-white">WhatsApp do cliente<input type="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={e => setPhone(formatPhone(e.target.value))} placeholder="(19) 99999-9999" className="min-h-12 w-full rounded-xl bg-charcoal p-3" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); void register() } }}/></label>

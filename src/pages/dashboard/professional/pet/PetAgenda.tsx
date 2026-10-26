@@ -1,7 +1,8 @@
+import { BookingConfirmationReminder } from '../../../../components/BookingConfirmationReminder'
 import { applyWeekdayDiscount, petTransportFee } from '../../../../lib/servicePricing'
 import { Modal } from '../../../../components/Modal'
 import { ConfirmReceipt, type ReceiptView } from '../../../../components/public/ConfirmReceipt'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 import { supabase } from '../../../../lib/supabase'
 import {
   formatPrice,
@@ -33,6 +34,9 @@ interface Props {
   shopId: string
   shopName: string
   barberId?: string
+  pendingReminderIds?: string[]
+  focusBookingId?: string
+  onReminderUpdate?: () => void
 }
 
 type DayFilter = 'today' | 'tomorrow' | 'upcoming'
@@ -40,6 +44,7 @@ type DayFilter = 'today' | 'tomorrow' | 'upcoming'
 const PET_BOOKING_SELECT = `
   *,
   barbers(name),
+  shop_customers(name,phone),
   pets!bookings_pet_id_fkey(id, name, size, photo_url, breed),
   booking_pets(pet_id, pets(id, name, size, photo_url, breed)),
   booking_services(service_id, services(name, price, duration_minutes)),
@@ -52,7 +57,8 @@ function addDaysIso(days: number): string {
   return localDateIso(d)
 }
 
-export function PetAgenda({ shopId, shopName, barberId }: Props) {
+export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [], focusBookingId, onReminderUpdate }: Props) {
+  const focusedBooking=useRef('')
   const [showNew, setShowNew] = useState(false)
   const [newStep, setNewStep] = useState(1)
   const [receipt, setReceipt] = useState<ReceiptView | null>(null)
@@ -182,6 +188,13 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
   useEffect(() => {
     load()
   }, [load])
+
+  useEffect(()=>{if(focusBookingId)setDayFilter('upcoming')},[focusBookingId])
+  useEffect(()=>{
+    if(!focusBookingId || loading || dayFilter!=='upcoming' || focusedBooking.current===focusBookingId)return
+    const target=document.getElementById(`booking-${focusBookingId}`)
+    if(target){target.scrollIntoView({block:'center',behavior:'smooth'});target.focus({preventScroll:true});focusedBooking.current=focusBookingId}
+  },[focusBookingId,loading,dayFilter,bookings])
 
   const openNew = async () => {
     if(loadError){setActionError(loadError);return}
@@ -462,7 +475,7 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
                 <div key={b.id} className="rounded-lg bg-charcoal-light/30 p-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-white">
-                      {petLabel ? `${petLabel} · ${b.client_name}` : b.client_name}
+                      {petLabel ? `${petLabel} · ${customerLabel({name:b.shop_customers?.name ?? b.client_name,phone:b.client_phone})}` : customerLabel({name:b.shop_customers?.name ?? b.client_name,phone:b.client_phone})}
                     </span>
                     <span className="font-mono text-brass">{formatPrice(total)}</span>
                   </div>
@@ -501,7 +514,7 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
             const petList = petsForBooking(b)
             const mainPet = petList[0]
             return (
-              <article data-testid={`booking-${b.id}`} key={b.id} className="rounded-xl border border-charcoal-light bg-charcoal p-4">
+              <article id={`booking-${b.id}`} tabIndex={-1} data-testid={`booking-${b.id}`} key={b.id} className="rounded-xl border border-charcoal-light bg-charcoal p-4">
                 <div className="mb-3 flex items-center justify-between border-b border-charcoal-light pb-3">
                   <p className="font-mono text-base text-brass">{formatTime(b.time)}</p>
                   <p className="mt-0.5 text-[10px] uppercase tracking-wider text-charcoal-muted">{formatDate(b.date)}</p>
@@ -544,12 +557,12 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
                             .map((p) => `${p.breed || 'Pet'} · ${petSizeLabel(p.size)}`)
                             .join(' · ')}
                         </p>
-                        <p className="text-sm text-white mt-1">Cliente: {b.client_name}</p>
+                        <p className="text-sm text-white mt-1">Cliente: {customerLabel({name:b.shop_customers?.name ?? b.client_name,phone:b.client_phone})}</p>
                         <p className="text-sm text-charcoal-muted">{b.client_phone}</p>
                       </>
                     ) : (
                       <>
-                        <p className="font-medium text-white">{b.client_name}</p>
+                        <p className="font-medium text-white">{customerLabel({name:b.shop_customers?.name ?? b.client_name,phone:b.client_phone})}</p>
                         <p className="text-sm text-charcoal-muted">{b.client_phone}</p>
                       </>
                     )}
@@ -567,6 +580,7 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
                   </div>
                   <p className="font-mono text-brass">{formatPrice(total)}</p>
                 </div>
+          <BookingConfirmationReminder booking={b} shopName={shopName} due={pendingReminderIds.includes(b.id)} onUpdate={async()=>{await load();onReminderUpdate?.()}}/>
           <button type="button" onClick={() => { setEditingBooking(b); setExtraServiceIds([]); setExtraError('');setEditScheduleValid(false);setEditDate(b.date);setEditTime(b.time.slice(0,5));setEditNotes(b.notes||'') }}
             className="min-h-11 w-full rounded-xl border border-brass/40 px-4 py-2.5 text-center text-sm font-medium text-brass hover:bg-brass/10 sm:w-auto">
             Editar / adicionar serviços
@@ -592,7 +606,7 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
           <div className="w-full max-w-md rounded-2xl border border-brass/25 bg-charcoal-dark p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-3">
               <div><h3 className="text-lg font-semibold text-white">Editar atendimento</h3>
-                <p className="mt-1 text-sm text-charcoal-muted">{editingBooking.client_name} · {formatDate(editingBooking.date)}</p></div>
+                <p className="mt-1 text-sm text-charcoal-muted">{customerLabel({name:editingBooking.shop_customers?.name ?? editingBooking.client_name,phone:editingBooking.client_phone})} · {formatDate(editingBooking.date)}</p></div>
               <button type="button" onClick={() => setEditingBooking(null)} className="rounded-lg px-3 py-2 text-sm text-charcoal-muted">Fechar</button>
             </div>
             <div className="mt-4">{['in_progress','awaiting_payment'].includes(editingBooking.status || '') ? <p className="text-sm text-charcoal-muted">Atendimento iniciado em {formatDate(editingBooking.date)} às {formatTime(editingBooking.time)}. Você pode acrescentar serviços abaixo.</p> : <BookingSchedulePicker

@@ -1,4 +1,6 @@
-import { lazy, Suspense } from 'react'
+import { ConfirmationReminderBanner } from '../../../components/ConfirmationReminderBanner'
+import { NotificationsTab } from '../tabs/Notifications'
+import { lazy, Suspense, useState, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { Shop, SubscribeHandler } from '../../../lib/types'
 import { ProfessionalShell } from './ProfessionalShell'
@@ -31,6 +33,7 @@ const PET_TAB_GROUPS: ProfessionalTabGroup[] = [
     tabs: [
       { id: 'overview', label: 'Visão geral', icon: 'home' },
       { id: 'agenda', label: 'Agenda', icon: 'agenda' },
+      { id: 'notifications', label: 'Notificações', icon: 'bell' },
     ],
   },
   {
@@ -76,6 +79,10 @@ export function ProfessionalPet({
   subscribeError,
 }: Props) {
   const [searchParams, setSearchParams] = useSearchParams()
+  const [pendingReminders,setPendingReminders]=useState<string[]>([])
+  const [reminderVersion,setReminderVersion]=useState(0)
+  const onPendingChange=useCallback((ids:string[])=>setPendingReminders(previous=>previous.join(',')===ids.join(',')?previous:ids),[])
+  const reminderChanged=()=>setReminderVersion(version=>version+1)
   const resourceTabs: ProfessionalTab[] = []
   if (shop.pet_business_type === 'veterinary_clinic' || shop.pet_business_type === 'mixed') {
     resourceTabs.push({ id: 'clinical', label: 'Consultas e vacinas', icon: 'stethoscope' })
@@ -109,13 +116,15 @@ export function ProfessionalPet({
       title={shop.name?.trim() || 'Meu Pet Shop'}
       subtitle="Gestão profissional para negócios PET"
     >
+      <ConfirmationReminderBanner shopId={shop.id} refreshKey={reminderVersion} onPendingChange={onPendingChange} onOpen={bookingId=>setSearchParams({aba:'agenda',atendimento:bookingId})}/>
+      {activeTab === 'notifications' && <NotificationsTab shopId={shop.id} />}
       {activeTab === 'overview' && (
         <PetOverview shopId={shop.id} businessType={shop.pet_business_type} onNavigate={setTab} />
       )}
       {activeTab === 'info' && <PetShopInfo shop={shop} onUpdate={onUpdate} />}
       {activeTab === 'team' && <PetTeam shopId={shop.id} />}
       {activeTab === 'services' && <PetServices shopId={shop.id} />}
-      {activeTab === 'agenda' && <PetAgenda shopId={shop.id} shopName={shop.name} />}
+      {activeTab === 'agenda' && <PetAgenda shopId={shop.id} shopName={shop.name} pendingReminderIds={pendingReminders} focusBookingId={searchParams.get('atendimento') || undefined} onReminderUpdate={reminderChanged}/>}
       {activeTab === 'customers' && <CustomersTab shopId={shop.id} />}
       {activeTab === 'pets' && <PetsTab shopId={shop.id} />}
       {activeTab === 'packages' && <PackagesTab shopId={shop.id} />}
