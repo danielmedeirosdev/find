@@ -151,6 +151,37 @@ export function PackagesTab({ shopId }: Props) {
     load()
   }
 
+  const [editingAssignedId, setEditingAssignedId] = useState<string | null>(null)
+  const [assignedSessions, setAssignedSessions] = useState('')
+  const [assignedUsed, setAssignedUsed] = useState('')
+  const [assignedExpiry, setAssignedExpiry] = useState('')
+  const [savingAssigned, setSavingAssigned] = useState(false)
+
+  const editAssigned = (pkg: CustomerPackage) => {
+    setEditingAssignedId(pkg.id)
+    setAssignedSessions(String(pkg.total_sessions))
+    setAssignedUsed(String(pkg.used_sessions))
+    setAssignedExpiry(pkg.expires_at || '')
+  }
+
+  const saveAssigned = async (pkg: CustomerPackage) => {
+    const total = Number(assignedSessions)
+    const used = Number(assignedUsed)
+    if (!Number.isInteger(total) || total < 1 || !Number.isInteger(used) || used < 0 || used > total) {
+      setToast('Confira as sessões totais e utilizadas.')
+      return
+    }
+    setSavingAssigned(true)
+    const { error } = await supabase.from('customer_packages')
+      .update({ total_sessions: total, used_sessions: used, expires_at: assignedExpiry || null })
+      .eq('id', pkg.id).eq('shop_id', shopId)
+    setSavingAssigned(false)
+    if (error) { setToast(error.message); return }
+    setEditingAssignedId(null)
+    setToast('Pacote ativo atualizado.')
+    load()
+  }
+
   const consumeOne = async (pkg: CustomerPackage) => {
     const { error } = await supabase.rpc('consume_package_session', {
       p_customer_package_id: pkg.id,
@@ -302,6 +333,7 @@ export function PackagesTab({ shopId }: Props) {
                     <p className="text-xs text-charcoal-muted mt-1 uppercase tracking-wide">{pkg.status}</p>
                   </div>
                   <div className="flex gap-2">
+                    <button onClick={() => editAssigned(pkg)} className="rounded-lg border border-brass px-3 py-1.5 text-sm text-brass">Editar</button>
                     <button
                       onClick={() => setSelectedPkgId(pkg.id)}
                       className="rounded-lg border border-charcoal-light px-3 py-1.5 text-sm text-charcoal-muted hover:text-white"
@@ -318,6 +350,21 @@ export function PackagesTab({ shopId }: Props) {
                     )}
                   </div>
                 </div>
+                {editingAssignedId === pkg.id && (
+                  <div className="mt-3 border-t border-charcoal-light pt-3 space-y-3">
+                    <p className="text-sm text-white">Editar pacote ativo</p>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <label className="text-sm text-charcoal-muted">Total de sessões<input type="number" min="1" value={assignedSessions} onChange={e => setAssignedSessions(e.target.value)} className="mt-1 w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2 text-white" /></label>
+                      <label className="text-sm text-charcoal-muted">Sessões utilizadas<input type="number" min="0" value={assignedUsed} onChange={e => setAssignedUsed(e.target.value)} className="mt-1 w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2 text-white" /></label>
+                      <label className="text-sm text-charcoal-muted">Validade<input type="date" value={assignedExpiry} onChange={e => setAssignedExpiry(e.target.value)} className="mt-1 w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2 text-white" /></label>
+                    </div>
+                    <p className="text-xs text-charcoal-muted">O histórico de usos permanece registrado. Ajustar sessões utilizadas corrige o saldo do pacote.</p>
+                    <div className="flex gap-2">
+                      <button disabled={savingAssigned} onClick={() => saveAssigned(pkg)} className="rounded-lg bg-brass px-3 py-2 text-sm font-semibold text-charcoal disabled:opacity-50">Salvar alterações</button>
+                      <button onClick={() => setEditingAssignedId(null)} className="rounded-lg border border-charcoal-light px-3 py-2 text-sm text-white">Cancelar</button>
+                    </div>
+                  </div>
+                )}
                 {selectedPkgId === pkg.id && (
                   <div className="mt-3 border-t border-charcoal-light pt-3 space-y-2">
                     {usages.length === 0 ? (
