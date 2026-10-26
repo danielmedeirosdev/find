@@ -328,6 +328,12 @@ export function AgendaTab({ shopId, barberId }: Props) {
               {bookingStatusLabel(nextUp.status || 'scheduled')}
             </span>
           </div>
+          {['scheduled', 'confirmed'].includes(nextUp.status || 'scheduled') && (
+            <button type="button" onClick={() => { setEditingBooking(nextUp); setSelectedExtraIds([]) }}
+              className="mt-3 min-h-10 rounded-lg border border-brass/40 px-3 py-2 text-sm font-medium text-brass">
+              Adicionar serviços
+            </button>
+          )}
           <BookingActions
             status={nextUp.status}
             busy={statusUpdatingId === nextUp.id}
