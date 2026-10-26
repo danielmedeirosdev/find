@@ -52,7 +52,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
   const [teamList, setTeamList] = useState<{id:string;name:string}[]>([])
   const [clientId, setClientId] = useState('')
   const [petId, setPetId] = useState('')
-  const [serviceId, setServiceId] = useState('')
+  const [serviceIds, setServiceIds] = useState<string[]>([])
   const [staffId, setStaffId] = useState(barberId || '')
   const [dateValue, setDateValue] = useState(localDateIso())
   const [timeValue, setTimeValue] = useState('')
@@ -123,14 +123,16 @@ export function PetAgenda({ shopId, barberId }: Props) {
       supabase.from('barbers').select('id,name').eq('shop_id',shopId).order('name'),
     ])
     if(a.error||b.error||d.error){setActionError('Erro ao carregar dados para agendar.');return}
-    setClients(a.data||[]);setPetsList(b.data||[]);setTeamList(d.data||[]);setNewError('');setNewStep(1);setReceipt(null);setRepeatEvery(0);setRepeatCount(4);setShowNew(true)
+    setClients(a.data||[]);setPetsList(b.data||[]);setTeamList(d.data||[]);setNewError('');setNewStep(1);setReceipt(null);setRepeatEvery(0);setRepeatCount(4);setServiceIds([]);setShowNew(true)
   }
   const saveNew = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const client=clients.find(x=>x.id===clientId)
     const pet=petsList.find(x=>x.id===petId&&x.customer_id===clientId)
-    const service=shopServices.find(x=>x.id===serviceId)
-    if(!client||!pet||!service||!staffId||!dateValue||!timeValue){setNewError('Preencha todos os campos.');return}
+    const selectedServices=shopServices.filter(x=>serviceIds.includes(x.id))
+    const totalDuration=selectedServices.reduce((sum,x)=>sum+Number(x.duration_minutes||60),0)
+    const totalPrice=selectedServices.reduce((sum,x)=>sum+Number(x.price||0),0)
+    if(!client||!pet||selectedServices.length===0||!staffId||!dateValue||!timeValue){setNewError('Preencha todos os campos.');return}
     if(dateValue<localDateIso()){setNewError('Selecione uma data futura.');return}
     setSavingNew(true);setNewError('')
     const count=repeatEvery===0?1:Math.min(12,Math.max(2,repeatCount))
@@ -147,28 +149,28 @@ export function PetAgenda({ shopId, barberId }: Props) {
       if(busyError){setNewError(`Não foi possível conferir os horários. ${completed} agendamento(s) já criado(s).`);setSavingNew(false);return}
       const minutes=(value:string)=>{const [h,m]=value.split(':').map(Number);return h*60+m}
       const start=minutes(timeValue)
-      const duration=service.duration_minutes||60
+      const duration=totalDuration
       if((busy||[]).some(x=>start<minutes(x.time)+Number(x.duration_minutes||60)&&minutes(x.time)<start+duration)){
         setNewError(`O profissional já tem atendimento em ${formatDate(bookingDate)} às ${formatTime(timeValue)}. ${completed} agendamento(s) já criado(s).`)
         setSavingNew(false);return
       }
       const {data,error}=await supabase.from('bookings').insert({
-        shop_id:shopId,barber_id:staffId,service_id:service.id,
+        shop_id:shopId,barber_id:staffId,service_id:selectedServices[0].id,
         client_name:client.name,client_phone:client.phone,shop_customer_id:client.id,pet_id:pet.id,
-        date:bookingDate,time:timeValue,status:'scheduled',duration_minutes:service.duration_minutes
+        date:bookingDate,time:timeValue,status:'scheduled',duration_minutes:totalDuration,quoted_amount:totalPrice
       }).select('id').single()
       if(error){setNewError(`${userFacingError(error,'Não foi possível agendar.')} ${completed} agendamento(s) já criado(s).`);setSavingNew(false);return}
       completed++
-      const linked=await supabase.from('booking_services').insert({booking_id:data.id,service_id:service.id})
+      const linked=await supabase.from('booking_services').insert(selectedServices.map(x=>({booking_id:data.id,service_id:x.id})))
       if(linked.error)setActionError('Atendimento criado, mas houve erro ao vincular o serviço.')
     }
     setCreatedCount(completed)
     setReceipt({
       isPet:true,shopId,shopName:'Pet shop',
       barberName:teamList.find(x=>x.id===staffId)?.name || '',
-      date:dateValue,time:timeValue,durationMinutes:service.duration_minutes || 0,
+      date:dateValue,time:timeValue,durationMinutes:totalDuration,
       clientName:client.name,clientPhone:client.phone,
-      services:[{id:service.id,name:service.name,price:Number(service.price||0)}],
+      services:selectedServices.map(x=>({id:x.id,name:x.name,price:Number(x.price||0)})),
       petName:pet.name,
     })
     setReceiptPhone(client.phone)
@@ -292,7 +294,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
           <a target="_blank" rel="noopener noreferrer" href={`https://wa.me/${receiptPhone.replace(/\D/g,'').replace(/^(?!55)/,'55')}?text=${encodeURIComponent(`Oi, ${receipt.clientName}! Seu horário na ${receipt.shopName} está agendado.\nPet: ${receipt.petName}\nServiço: ${receipt.services.map(s=>s.name).join(', ')}\nData: ${formatDate(receipt.date)}\nHorário: ${formatTime(receipt.time)}\nProfissional: ${receipt.barberName || 'A definir'}\nValor: ${formatPrice(receipt.services.reduce((a,s)=>a+s.price,0))}`)}`} className="block rounded-xl bg-brass px-5 py-4 text-center font-semibold text-charcoal-dark">Mandar comprovante pro cliente pelo WhatsApp</a>
           <p className="text-center text-xs text-charcoal-muted">Abre o WhatsApp com os dados do comprovante prontos para enviar.</p>
           <button type="button" onClick={()=>setShowNew(false)} className="w-full rounded-xl border border-white/20 py-3 text-white">Concluir</button>
-        </div> : <form onSubmit={e=>{if(newStep<3){e.preventDefault();setNewError('');setNewStep(newStep+1)}else void saveNew(e)}} className="space-y-4">
+        </div> : <form onSubmit={e=>{if(newStep<3){e.preventDefault();if(newStep===2&&serviceIds.length===0){setNewError('Selecione pelo menos um serviço.');return}setNewError('');setNewStep(newStep+1)}else void saveNew(e)}} className="space-y-4">
           {newStep===1 && <div className="space-y-4">
             <p className="text-sm text-charcoal-muted">Escolha quem será atendido.</p>
             <label className="grid gap-2 text-sm text-white">Cliente<select required value={clientId} onChange={e=>{setClientId(e.target.value);setPetId('')}} className="min-h-12 rounded-xl bg-charcoal p-3"><option value="">Selecione um cliente</option>{clients.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
@@ -300,7 +302,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
           </div>}
           {newStep===2 && <div className="space-y-4">
             <p className="text-sm text-charcoal-muted">Selecione o serviço e quem vai realizar o atendimento.</p>
-            <label className="grid gap-2 text-sm text-white">Serviço<select required value={serviceId} onChange={e=>setServiceId(e.target.value)} className="min-h-12 rounded-xl bg-charcoal p-3"><option value="">Selecione um serviço</option>{shopServices.map(x=><option key={x.id} value={x.id}>{x.name} · {formatPrice(Number(x.price||0))}</option>)}</select></label>
+            <fieldset className="space-y-2"><legend className="text-sm font-medium text-white">Serviços (selecione um ou mais)</legend>{shopServices.map(x=><label key={x.id} className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-charcoal p-3 text-sm text-white"><input type="checkbox" checked={serviceIds.includes(x.id)} onChange={e=>setServiceIds(current=>e.target.checked?[...current,x.id]:current.filter(id=>id!==x.id))} className="h-4 w-4 accent-amber-500"/><span className="flex-1">{x.name}</span><span className="text-brass">{formatPrice(Number(x.price||0))}</span></label>)}{shopServices.length===0&&<p className="text-xs text-charcoal-muted">Cadastre um serviço antes de agendar.</p>}<p className="text-sm text-brass">Total: {formatPrice(shopServices.filter(x=>serviceIds.includes(x.id)).reduce((sum,x)=>sum+Number(x.price||0),0))}</p></fieldset>
             <label className="grid gap-2 text-sm text-white">Profissional<select required value={staffId} onChange={e=>setStaffId(e.target.value)} className="min-h-12 rounded-xl bg-charcoal p-3"><option value="">Selecione</option>{teamList.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
           </div>}
           {newStep===3 && <div className="space-y-4">
@@ -310,7 +312,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
             <label className="grid gap-2 text-sm text-white">Repetição<select value={repeatEvery} onChange={e=>setRepeatEvery(Number(e.target.value))} className="min-h-12 rounded-xl bg-charcoal p-3"><option value={0}>Não repetir</option><option value={7}>Toda semana</option><option value={14}>A cada 15 dias (quinzenal)</option></select></label>
             {repeatEvery>0 && <label className="grid gap-2 text-sm text-white">Quantidade de atendimentos (incluindo o primeiro)<select value={repeatCount} onChange={e=>setRepeatCount(Number(e.target.value))} className="min-h-12 rounded-xl bg-charcoal p-3">{Array.from({length:11},(_,i)=>i+2).map(n=><option key={n} value={n}>{n} atendimentos</option>)}</select></label>}
             {repeatEvery>0 && <p className="text-xs text-charcoal-muted">Os horários serão reservados nas próximas {repeatCount} datas. Se houver conflito, a criação para e informa quantos foram salvos.</p>}
-            <div className="rounded-xl border border-white/10 p-4 text-sm text-white">Confira: {clients.find(x=>x.id===clientId)?.name} · {petsList.find(x=>x.id===petId)?.name} · {shopServices.find(x=>x.id===serviceId)?.name}</div>
+            <div className="rounded-xl border border-white/10 p-4 text-sm text-white">Confira: {clients.find(x=>x.id===clientId)?.name} · {petsList.find(x=>x.id===petId)?.name} · {shopServices.filter(x=>serviceIds.includes(x.id)).map(x=>x.name).join(' + ')}</div>
           </div>}
           {newError && <p role="alert" className="text-sm text-red-300">{newError}</p>}
           <div className="flex gap-3">{newStep>1 && <button type="button" onClick={()=>setNewStep(newStep-1)} className="rounded-xl border border-white/20 px-5 py-3 text-white">Voltar</button>}<button type="submit" disabled={savingNew} className="flex-1 rounded-xl bg-brass px-5 py-3 font-semibold text-charcoal-dark disabled:opacity-50">{savingNew?'Salvando...':newStep===3?'Confirmar agendamento':'Continuar'}</button></div>
