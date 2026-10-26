@@ -67,6 +67,7 @@ export interface Service {
   name: string
   price: number
   duration_minutes: number
+  is_active?: boolean
 }
 
 export interface Barber {

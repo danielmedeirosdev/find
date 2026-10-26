@@ -1,0 +1,26 @@
+import {test,expect} from '@playwright/test'
+import fs from 'node:fs'
+import {data} from './api'
+const account=JSON.parse(fs.readFileSync(process.env.ONEFIND_QA_ACCOUNT||'/tmp/onefind-qa-account.json','utf8'))
+test('invalid input and network failure retain truthful state',async({page})=>{
+ await page.goto('/painel')
+ await page.getByPlaceholder('Ex: contato@negocio.com').fill(account.email)
+ await page.getByPlaceholder('Sua senha').fill(account.password)
+ await page.getByRole('button',{name:'Entrar',exact:true}).click()
+ await expect(page.getByRole('heading',{name:'Seu dia no onefind'})).toBeVisible({timeout:30000})
+ const before=await data(page,'shop_customers?select=id')
+ await page.goto('/painel/dashboard?aba=customers')
+ await page.getByText('Cadastrar cliente',{exact:true}).click()
+ await page.getByPlaceholder('Ex: Maria Silva').fill('QA inválido')
+ await page.getByPlaceholder('Ex: (11) 99999-9999').fill('12')
+ await page.getByRole('button',{name:'Adicionar',exact:true}).click()
+ await expect(page.getByText('Informe nome e WhatsApp válidos.',{exact:true})).toBeVisible()
+ expect(await data(page,'shop_customers?select=id')).toHaveLength(before.length)
+ await page.route('**/rest/v1/financial_transactions*',route=>route.abort('failed'))
+ await page.goto('/painel/dashboard?aba=cashflow')
+ await expect(page.getByRole('alert')).toContainText('Não foi possível carregar o caixa')
+ await expect(page.getByText('Saldo do período',{exact:true})).toHaveCount(0)
+ await page.unroute('**/rest/v1/financial_transactions*')
+ await page.getByRole('button',{name:'Tentar novamente',exact:true}).click()
+ await expect(page.getByText('Saldo do período',{exact:true})).toBeVisible()
+})

@@ -15,6 +15,7 @@
   --color-pet: #3d7a5f;
   --color-pet-light: #5a9a78;
   --color-charcoal: #1a1a1a;
+  --color-charcoal-dark: #151619;
   --color-charcoal-light: #2a2a2a;
   --color-charcoal-muted: #8a8a8a;
 }
@@ -256,6 +257,7 @@ html {
   --color-brass: #c9a227;
   --color-brass-light: #e0c04a;
   --color-charcoal: #1a1a1a;
+  --color-charcoal-dark: #151619;
   --color-charcoal-light: #2a2a2a;
   --color-charcoal-muted: #8a8a8a;
 }
@@ -323,121 +325,7 @@ html {
   --color-charcoal-muted: #aaa094;
 }
 
-/*
-  Tailwind v4 pode compilar utilitários com hex fixo.
-  Força a paleta PET em qualquer superfície com data-segment=pet.
-*/
-.segment-pet .bg-brass.text-charcoal,
-[data-segment='pet'] .bg-brass.text-charcoal,
-.segment-pet .bg-brass.text-white,
-[data-segment='pet'] .bg-brass.text-white {
-  color: #171613 !important;
-}
-.segment-pet .bg-brass,
-[data-segment='pet'] .bg-brass {
-  background-color: #d39a3b !important;
-}
-.segment-pet .hover\:bg-brass:hover,
-[data-segment='pet'] .hover\:bg-brass:hover,
-.segment-pet .hover\:bg-brass-light:hover,
-[data-segment='pet'] .hover\:bg-brass-light:hover {
-  background-color: #e3b662 !important;
-}
-.segment-pet .bg-brass-light,
-[data-segment='pet'] .bg-brass-light {
-  background-color: #e3b662 !important;
-}
-.segment-pet .text-brass,
-[data-segment='pet'] .text-brass {
-  color: #d39a3b !important;
-}
-.segment-pet .hover\:text-brass:hover,
-[data-segment='pet'] .hover\:text-brass:hover {
-  color: #e3b662 !important;
-}
-.segment-pet .border-brass,
-[data-segment='pet'] .border-brass {
-  border-color: #d39a3b !important;
-}
-.segment-pet .hover\:border-brass:hover,
-[data-segment='pet'] .hover\:border-brass:hover,
-.segment-pet .hover\:border-brass\/40:hover,
-[data-segment='pet'] .hover\:border-brass\/40:hover,
-.segment-pet .hover\:border-brass\/50:hover,
-[data-segment='pet'] .hover\:border-brass\/50:hover {
-  border-color: rgba(211, 154, 59, 0.58) !important;
-}
-.segment-pet .ring-brass\/20,
-[data-segment='pet'] .ring-brass\/20 {
-  --tw-ring-color: rgba(211, 154, 59, 0.25) !important;
-}
-.segment-pet .accent-brass,
-[data-segment='pet'] .accent-brass {
-  accent-color: #d39a3b !important;
-}
-.segment-pet .bg-brass\/5,
-[data-segment='pet'] .bg-brass\/5,
-.segment-pet .bg-brass\/10,
-[data-segment='pet'] .bg-brass\/10,
-.segment-pet .bg-brass\/15,
-[data-segment='pet'] .bg-brass\/15 {
-  background-color: rgba(211, 154, 59, 0.12) !important;
-}
-.segment-pet .text-brass\/70,
-[data-segment='pet'] .text-brass\/70,
-.segment-pet .text-brass\/80,
-[data-segment='pet'] .text-brass\/80 {
-  color: rgba(227, 182, 98, 0.9) !important;
-}
-.segment-pet .focus\:border-brass:focus,
-[data-segment='pet'] .focus\:border-brass:focus {
-  border-color: #d39a3b !important;
-}
-.segment-pet .bg-paper,
-[data-segment='pet'] .bg-paper {
-  background-color: #f5f1e8 !important;
-}
-.segment-pet .bg-paper-dark,
-[data-segment='pet'] .bg-paper-dark {
-  background-color: #e8dfd0 !important;
-}
-.segment-pet .border-paper-dark,
-[data-segment='pet'] .border-paper-dark {
-  border-color: #e8dfd0 !important;
-}
-.segment-pet .text-ink,
-[data-segment='pet'] .text-ink {
-  color: #211d18 !important;
-}
-.segment-pet .text-ink-muted,
-[data-segment='pet'] .text-ink-muted {
-  color: #6d6255 !important;
-}
-
-/* Painel dark PET */
-.segment-pet.bg-charcoal,
-[data-segment='pet'].bg-charcoal,
-.segment-pet .bg-charcoal,
-[data-segment='pet'] .bg-charcoal {
-  background-color: #171613 !important;
-}
-.segment-pet .bg-charcoal-light,
-[data-segment='pet'] .bg-charcoal-light,
-.segment-pet .bg-charcoal-light\/30,
-[data-segment='pet'] .bg-charcoal-light\/30,
-.segment-pet .bg-charcoal-light\/40,
-[data-segment='pet'] .bg-charcoal-light\/40 {
-  background-color: #292620 !important;
-}
-.segment-pet .border-charcoal-light,
-[data-segment='pet'] .border-charcoal-light {
-  border-color: #403a31 !important;
-}
-.segment-pet .text-charcoal-muted,
-[data-segment='pet'] .text-charcoal-muted {
-  color: #aaa094 !important;
-}
-
+/* PET colors are defined by theme tokens; utility overrides are no longer needed. */
 .pet-accent-stripe {
   background: linear-gradient(
     90deg,
@@ -1460,5 +1348,3 @@ html {
   .mobile-signup-bar p { color: #474f5b; font-size: .875rem; text-align: center; }
   .editorial-home .pricing-action { min-width: 0; }
 }
-
-

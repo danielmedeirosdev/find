@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { bookingTotal } from '../../../lib/finance'
 import { supabase } from '../../../lib/supabase'
 import { formatPhone, formatDate, formatTime, formatPrice, whatsappUrl, packageStatusLabel } from '../../../lib/format'
 import { petSizeLabel } from '../../../lib/pet'
@@ -94,7 +95,7 @@ export function CustomersTab({ shopId }: Props) {
 
   const addCustomer = async () => {
     const digits = phone.replace(/\D/g, '')
-    if (!name.trim() || digits.length < 10) {
+    if (!name.trim() || !/^\d{10,11}$/.test(digits)) {
       setToast('Informe nome e WhatsApp válidos.')
       return
     }
@@ -307,7 +308,7 @@ export function CustomersTab({ shopId }: Props) {
                 <div className="max-h-48 space-y-2 overflow-y-auto">
                   {history.map((b) => {
                     const services = (b.booking_services || []).map((bs) => bs.services)
-                    const total = services.reduce((s, x) => s + Number(x.price), 0)
+                    const total = bookingTotal(b)
                     return (
                       <div key={b.id} className="rounded bg-charcoal-light/30 p-2 text-sm">
                         <p className="text-white">

@@ -1,7 +1,8 @@
+import { Modal } from './Modal'
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { formatPrice } from '../lib/format'
-import { selectedBookingTotal } from '../lib/finance'
+import { amountDue, selectedBookingTotal } from '../lib/finance'
 import { packageRemaining } from '../lib/notifications'
 import { userFacingError } from '../lib/userFacingError'
 import type { BookingWithDetails, CustomerPackage, PaymentMethod, Service } from '../lib/types'
@@ -40,11 +41,12 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
         )
         setPackages(list)
       })
-  }, [booking.pet_id])
+  }, [booking.pet_id,booking.shop_id])
 
   const selectedServices = shopServices.filter((s) => selectedIds.has(s.id))
   const parsedTransportFee = Number(transportFee.replace(',', '.'))
-  const total = selectedBookingTotal(booking, selectedIds, shopServices, booking.pet_transport_requested && Number.isFinite(parsedTransportFee) ? parsedTransportFee : 0)
+  const quotedTotal = selectedBookingTotal(booking, selectedIds, shopServices, booking.pet_transport_requested && Number.isFinite(parsedTransportFee) ? parsedTransportFee : 0)
+  const total = amountDue(quotedTotal,Number(booking.services_amount ?? booking.booking_services?.reduce((sum,s)=>sum+Number(s.services.price),0) ?? 0),Boolean(selectedPackageId))
 
   const toggleService = (id: string) => {
     setSelectedIds((prev) => {
@@ -99,7 +101,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
   }
 
   return (
-    <div role="dialog" aria-modal="true" aria-label="Finalizar atendimento" className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-0 sm:items-center sm:p-4">
+    <Modal label="Finalizar atendimento" onClose={onClose} busy={submitting} className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-0 sm:items-center sm:p-4">
       <div className="max-h-[92dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-3xl border border-charcoal-light bg-charcoal p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-h-[90vh] sm:rounded-2xl sm:p-6">
         <h3 className="font-display text-xl font-semibold text-white mb-1">Finalizar atendimento</h3>
         <p className="text-sm text-charcoal-muted mb-4">
@@ -144,7 +146,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
 
         {packages.length > 0 && (
           <div className="mb-6">
-            <p className="text-sm font-medium text-white mb-2">Debitar pacote (opcional)</p>
+            <p className="text-sm font-medium text-white mb-2">Usar sessão de pacote</p>
             <select
               value={selectedPackageId}
               onChange={(e) => setSelectedPackageId(e.target.value)}
@@ -161,6 +163,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
           </div>
         )}
 
+        {selectedPackageId && <p className="mb-4 text-sm text-brass">Os serviços serão cobertos por uma sessão. Apenas adicionais e transporte serão cobrados agora.</p>}
         <div className="mb-6">
           <p className="text-sm font-medium text-white mb-3">Forma de pagamento</p>
           <div className="grid grid-cols-3 gap-2">
@@ -182,7 +185,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
         </div>
 
         <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-brass/25 bg-brass/10 p-4">
-          <span className="text-white">Total</span>
+          <span className="text-white">A receber agora</span>
           <span className="break-all text-right text-lg font-semibold tabular-nums text-brass">{formatPrice(total)}</span>
         </div>
 
@@ -205,6 +208,6 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   )
 }

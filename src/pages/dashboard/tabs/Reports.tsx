@@ -69,7 +69,8 @@ export function ReportsTab({ shopId }: Props) {
   )
 
   const completedCount = completedBookings.length
-  const averageTicket = completedCount > 0 ? revenue / completedCount : 0
+  const paidBookings = new Set(transactions.filter(t=>t.booking_id).map(t=>t.booking_id)).size
+  const averageTicket = paidBookings > 0 ? cashTotals(transactions.filter(t=>t.booking_id)).income / paidBookings : 0
 
   const barberStats = useMemo(() => {
     const statsMap = new Map<string, BarberStats>()
@@ -113,7 +114,7 @@ export function ReportsTab({ shopId }: Props) {
 
   return (
     <div>
-      {error && <InlineError message={error}/>} 
+      {error && <InlineError message={error}/>}
       <h2 className="font-display text-2xl text-white mb-6">Relatórios</h2>
 
       <div className="mb-6 flex gap-2">
@@ -142,7 +143,7 @@ export function ReportsTab({ shopId }: Props) {
         <>
           <div className="mb-8 grid gap-4 sm:grid-cols-3">
             <div className="rounded-lg border border-charcoal-light p-4">
-              <p className="text-sm text-charcoal-muted">Faturamento</p>
+              <p className="text-sm text-charcoal-muted">Recebimentos</p>
               <p className="font-mono text-2xl text-brass">{formatPrice(revenue)}</p>
             </div>
             <div className="rounded-lg border border-charcoal-light p-4">

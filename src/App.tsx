@@ -1,3 +1,5 @@
+import { lazy, Suspense } from 'react'
+import { LoadingBlock } from './components/EmptyState'
 import { BrowserRouter, Navigate, Routes, Route, useParams } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { ReferralCapture } from './components/ReferralCapture'
@@ -18,11 +20,11 @@ import { AuthCallback } from './pages/AuthCallback'
 import { ActivateShop } from './pages/ActivateShop'
 import { ResetPassword } from './pages/ResetPassword'
 import { BusinessAuth } from './pages/dashboard/BusinessAuth'
-import { Dashboard } from './pages/dashboard/Dashboard'
+const Dashboard=lazy(()=>import('./pages/dashboard/Dashboard').then(m=>({default:m.Dashboard})))
 import { AccountSecurity } from './pages/dashboard/AccountSecurity'
-import { AssistedSetup } from './pages/dashboard/AssistedSetup'
-import { AdminHome } from './pages/dashboard/AdminHome'
-import { AdminShopDetail } from './pages/dashboard/AdminShopDetail'
+const AssistedSetup=lazy(()=>import('./pages/dashboard/AssistedSetup').then(m=>({default:m.AssistedSetup})))
+const AdminHome=lazy(()=>import('./pages/dashboard/AdminHome').then(m=>({default:m.AdminHome})))
+const AdminShopDetail=lazy(()=>import('./pages/dashboard/AdminShopDetail').then(m=>({default:m.AdminShopDetail})))
 import { MetaPixelTracker } from './components/MetaPixelTracker'
 
 export default function App() {
@@ -31,7 +33,7 @@ export default function App() {
       <BrowserRouter>
         <MetaPixelTracker />
         <ReferralCapture />
-        <Routes>
+        <Suspense fallback={<LoadingBlock label="Carregando..."/>}><Routes>
           <Route index element={<MarketingLanding />} />
           <Route path="apresentacao" element={<MarketingLanding />} />
           <Route path="pet" element={<MarketingLanding />} />
@@ -69,7 +71,7 @@ export default function App() {
           </Route>
 
           <Route path="*" element={<NotFound />} />
-        </Routes>
+        </Routes></Suspense>
       </BrowserRouter>
     </AuthProvider>
   )

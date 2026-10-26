@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { formatPrice, formatDate } from '../../../lib/format'
 import { packageRemaining } from '../../../lib/notifications'
@@ -33,6 +33,8 @@ export function PackagesTab({ shopId }: Props) {
   const [tplPrice, setTplPrice] = useState('400')
   const [tplDays, setTplDays] = useState('90')
 
+  const assignmentId=useRef(crypto.randomUUID())
+  const [recordPayment,setRecordPayment]=useState(false)
   const [assignPackageId, setAssignPackageId] = useState('')
   const [assignCustomerId, setAssignCustomerId] = useState('')
   const [assignPetId, setAssignPetId] = useState('')
@@ -129,22 +131,9 @@ export function PackagesTab({ shopId }: Props) {
       setToast('Selecione pacote, cliente e pet.')
       return
     }
-    let expires: string | null = null
-    if (tpl.validity_days) {
-      const d = new Date()
-      d.setDate(d.getDate() + tpl.validity_days)
-      expires = d.toISOString().slice(0, 10)
-    }
     setAssigning(true)
-    const { error } = await supabase.from('customer_packages').insert({
-      shop_id: shopId,
-      package_id: tpl.id,
-      customer_id: assignCustomerId,
-      pet_id: assignPetId,
-      total_sessions: tpl.total_sessions,
-      used_sessions: 0,
-      expires_at: expires,
-      status: 'active',
+    const {error}=await supabase.rpc('assign_operational_package',{
+      p_id:assignmentId.current,p_shop_id:shopId,p_template_id:tpl.id,p_customer_id:assignCustomerId,p_pet_id:assignPetId,p_record_payment:recordPayment,
     })
     if (error) {
       setAssigning(false)
@@ -152,6 +141,7 @@ export function PackagesTab({ shopId }: Props) {
       return
     }
     setAssigning(false)
+    assignmentId.current=crypto.randomUUID()
     setToast('Pacote associado ao pet.')
     load()
   }
@@ -309,7 +299,7 @@ export function PackagesTab({ shopId }: Props) {
             ))}
           </select>
         </div>
-        <button disabled={assigning} onClick={assignPackage} className="rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal">
+        <label className="flex items-center gap-3 text-sm text-charcoal-muted"><input type="checkbox" checked={recordPayment} onChange={e=>setRecordPayment(e.target.checked)}/>Registrar recebimento do pacote por Pix agora</label><p className="text-xs text-charcoal-muted">Marque somente se recebeu o pagamento agora. Para pacotes pagos anteriormente, mantenha desmarcado.</p><button disabled={assigning} onClick={assignPackage} className="rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal">
           Associar pacote
         </button>
       </div>
@@ -360,10 +350,10 @@ export function PackagesTab({ shopId }: Props) {
                     <p className="text-sm text-white">Editar pacote ativo</p>
                     <div className="grid gap-3 sm:grid-cols-3">
                       <label className="text-sm text-charcoal-muted">Total de sessões<input type="number" min="1" value={assignedSessions} onChange={e => setAssignedSessions(e.target.value)} className="mt-1 w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2 text-white" /></label>
-                      <label className="text-sm text-charcoal-muted">Sessões utilizadas<input type="number" min="0" value={assignedUsed} onChange={e => setAssignedUsed(e.target.value)} className="mt-1 w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2 text-white" /></label>
+                      <label className="text-sm text-charcoal-muted">Sessões utilizadas<input type="number" readOnly min="0" value={assignedUsed} onChange={e => setAssignedUsed(e.target.value)} className="mt-1 w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2 text-white" /></label>
                       <label className="text-sm text-charcoal-muted">Validade<input type="date" value={assignedExpiry} onChange={e => setAssignedExpiry(e.target.value)} className="mt-1 w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2 text-white" /></label>
                     </div>
-                    <p className="text-xs text-charcoal-muted">O histórico de usos permanece registrado. Ajustar sessões utilizadas corrige o saldo do pacote.</p>
+                    <p className="text-xs text-charcoal-muted">As sessões utilizadas são preservadas pelo histórico. Você pode alterar o total de sessões e a validade.</p>
                     <div className="flex gap-2">
                       <button disabled={savingAssigned} onClick={() => saveAssigned(pkg)} className="rounded-lg bg-brass px-3 py-2 text-sm font-semibold text-charcoal disabled:opacity-50">Salvar alterações</button>
                       <button onClick={() => setEditingAssignedId(null)} className="rounded-lg border border-charcoal-light px-3 py-2 text-sm text-white">Cancelar</button>

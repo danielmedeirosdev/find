@@ -69,7 +69,7 @@ export function CashFlowTab({ shopId }: Props) {
 
   return (
     <div>
-      {error && <InlineError message={error}/>} 
+      {error && <InlineError message={error}/>}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-2xl text-white">Fluxo de Caixa</h2>

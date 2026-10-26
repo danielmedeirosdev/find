@@ -1,3 +1,5 @@
+import { applyWeekdayDiscount } from '../../../../lib/servicePricing'
+import { Modal } from '../../../../components/Modal'
 import { ConfirmReceipt, type ReceiptView } from '../../../../components/public/ConfirmReceipt'
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../../../lib/supabase'
@@ -9,7 +11,7 @@ import {
   bookingStatusLabel,
   paymentMethodLabel,
 } from '../../../../lib/format'
-import { petSizeLabel } from '../../../../lib/pet'
+import { getPetServicesDuration, getPetServicesPrice, petSizeLabel } from '../../../../lib/pet'
 import { CompleteBookingModal } from '../../../../components/CompleteBookingModal'
 import { BookingActions, type BookingActionStatus } from '../../../../components/BookingActions'
 import { DefaultAvatar } from '../../../../components/MediaUI'
@@ -19,7 +21,7 @@ import { ProfessionalTimeOff } from '../../../../components/ProfessionalTimeOff'
 import { ShopClosures } from '../../../../components/ShopClosures'
 import { bookingTotal } from '../../../../lib/finance'
 import { localDateIso } from '../../../../lib/booking'
-import type { BookingWithDetails, Service } from '../../../../lib/types'
+import type { BookingWithDetails, Service, ServiceSizeRule, PetSize, ServiceWeekdayDiscount } from '../../../../lib/types'
 
 interface Props {
   shopId: string
@@ -49,7 +51,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
   const [receipt, setReceipt] = useState<ReceiptView | null>(null)
   const [receiptPhone, setReceiptPhone] = useState('')
   const [clients, setClients] = useState<{id:string;name:string;phone:string}[]>([])
-  const [petsList, setPetsList] = useState<{id:string;name:string;customer_id:string}[]>([])
+  const [petsList, setPetsList] = useState<{id:string;name:string;customer_id:string;size:PetSize}[]>([])
   const [teamList, setTeamList] = useState<{id:string;name:string}[]>([])
   const [clientId, setClientId] = useState('')
   const [petId, setPetId] = useState('')
@@ -64,6 +66,9 @@ export function PetAgenda({ shopId, barberId }: Props) {
   const [createdCount, setCreatedCount] = useState(1)
   const [bookings, setBookings] = useState<BookingWithDetails[]>([])
   const [shopServices, setShopServices] = useState<Service[]>([])
+  const [sizeRules,setSizeRules]=useState<ServiceSizeRule[]>([])
+  const [weekdayDiscounts,setWeekdayDiscounts]=useState<ServiceWeekdayDiscount[]>([])
+  const servicePrice=(service:Service,size:PetSize,date:string)=>Math.round(applyWeekdayDiscount(getPetServicesPrice([service],size,sizeRules),service.id,date,weekdayDiscounts)*100)/100
   const [loading, setLoading] = useState(true)
   const [completingBooking, setCompletingBooking] = useState<BookingWithDetails | null>(null)
   const [confirmingTransportBooking, setConfirmingTransportBooking] = useState<BookingWithDetails | null>(null)
@@ -134,6 +139,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
       setBookings((data as BookingWithDetails[]) || [])
     }
     setShopServices(svc || [])
+    if(svc?.length){const [rules,discounts]=await Promise.all([supabase.from('service_size_rules').select('*').in('service_id',svc.map(s=>s.id)),supabase.from('service_weekday_discounts').select('*').in('service_id',svc.map(s=>s.id))]);setSizeRules(rules.data||[]);setWeekdayDiscounts(discounts.data||[]);if(rules.error||discounts.error)setLoadError('Não foi possível carregar as regras de preços. Atualize a agenda.')}
     setLoading(false)
   }, [shopId, barberId, today])
 
@@ -142,9 +148,10 @@ export function PetAgenda({ shopId, barberId }: Props) {
   }, [load])
 
   const openNew = async () => {
+    if(loadError){setActionError(loadError);return}
     const [a,b,d] = await Promise.all([
       supabase.from('shop_customers').select('id,name,phone').eq('shop_id',shopId).order('name'),
-      supabase.from('pets').select('id,name,customer_id').eq('shop_id',shopId).order('name'),
+      supabase.from('pets').select('id,name,customer_id,size').eq('shop_id',shopId).order('name'),
       supabase.from('barbers').select('id,name').eq('shop_id',shopId).order('name'),
     ])
     if(a.error||b.error||d.error){setActionError('Erro ao carregar dados para agendar.');return}
@@ -155,7 +162,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
     const client=clients.find(x=>x.id===clientId)
     const pet=petsList.find(x=>x.id===petId&&x.customer_id===clientId)
     const selectedServices=shopServices.filter(x=>serviceIds.includes(x.id))
-    const totalDuration=selectedServices.reduce((sum,x)=>sum+Number(x.duration_minutes||60),0)
+    const totalDuration=getPetServicesDuration(selectedServices,pet?.size||'medio',sizeRules)
     if(!client||!pet||selectedServices.length===0||!staffId||!dateValue||!timeValue){setNewError('Preencha todos os campos.');return}
     if(dateValue<localDateIso()){setNewError('Selecione uma data futura.');return}
     setSavingNew(true);setNewError('')
@@ -191,7 +198,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
       barberName:teamList.find(x=>x.id===staffId)?.name || '',
       date:dateValue,time:timeValue,durationMinutes:totalDuration,
       clientName:client.name,clientPhone:client.phone,
-      services:selectedServices.map(x=>({id:x.id,name:x.name,price:Number(x.price||0)})),
+      services:selectedServices.map(x=>({id:x.id,name:x.name,price:servicePrice(x,pet.size,dateValue)})),
       petName:pet.name,
     })
     setReceiptPhone(client.phone)
@@ -313,7 +320,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
           </div>}
           {newStep===2 && <div className="space-y-4">
             <p className="text-sm text-charcoal-muted">Selecione o serviço e quem vai realizar o atendimento.</p>
-            <fieldset className="space-y-2"><legend className="text-sm font-medium text-white">Serviços (selecione um ou mais)</legend>{shopServices.map(x=><label key={x.id} className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-charcoal p-3 text-sm text-white"><input type="checkbox" checked={serviceIds.includes(x.id)} onChange={e=>setServiceIds(current=>e.target.checked?[...current,x.id]:current.filter(id=>id!==x.id))} className="h-4 w-4 accent-amber-500"/><span className="flex-1">{x.name}</span><span className="text-brass">{formatPrice(Number(x.price||0))}</span></label>)}{shopServices.length===0&&<p className="text-xs text-charcoal-muted">Cadastre um serviço antes de agendar.</p>}<p className="text-sm text-brass">Total: {formatPrice(shopServices.filter(x=>serviceIds.includes(x.id)).reduce((sum,x)=>sum+Number(x.price||0),0))}</p></fieldset>
+            <fieldset className="space-y-2"><legend className="text-sm font-medium text-white">Serviços (selecione um ou mais)</legend>{shopServices.filter(s=>s.is_active!==false).map(x=><label key={x.id} className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-charcoal p-3 text-sm text-white"><input type="checkbox" checked={serviceIds.includes(x.id)} onChange={e=>setServiceIds(current=>e.target.checked?[...current,x.id]:current.filter(id=>id!==x.id))} className="h-4 w-4 accent-amber-500"/><span className="flex-1">{x.name}</span><span className="text-brass">{formatPrice(servicePrice(x,petsList.find(p=>p.id===petId)?.size||'medio',dateValue))}</span></label>)}{shopServices.length===0&&<p className="text-xs text-charcoal-muted">Cadastre um serviço antes de agendar.</p>}<p className="text-sm text-brass">Total: {formatPrice(shopServices.filter(x=>serviceIds.includes(x.id)).reduce((sum,x)=>sum+servicePrice(x,petsList.find(p=>p.id===petId)?.size||'medio',dateValue),0))}</p></fieldset>
             <label className="grid gap-2 text-sm text-white">Profissional<select required value={staffId} onChange={e=>setStaffId(e.target.value)} className="min-h-12 rounded-xl bg-charcoal p-3"><option value="">Selecione</option>{teamList.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
           </div>}
           {newStep===3 && <div className="space-y-4">
@@ -433,24 +440,24 @@ export function PetAgenda({ shopId, barberId }: Props) {
             const petList = petsForBooking(b)
             const mainPet = petList[0]
             return (
-              <article key={b.id} className="rounded-xl border border-charcoal-light bg-charcoal p-4">
+              <article data-testid={`booking-${b.id}`} key={b.id} className="rounded-xl border border-charcoal-light bg-charcoal p-4">
                 <div className="mb-3 flex items-center justify-between border-b border-charcoal-light pb-3">
                   <p className="font-mono text-base text-brass">{formatTime(b.time)}</p>
                   <p className="mt-0.5 text-[10px] uppercase tracking-wider text-charcoal-muted">{formatDate(b.date)}</p>
                 </div>
-                
+
                 <div className="flex flex-wrap justify-between gap-3">
                   <div className="flex gap-3">
                     {mainPet?.photo_url ? (
                       <img
                         src={mainPet.photo_url}
                         alt=""
-                        className="h-14 w-14 rounded-xl object-cover"
+                        className="h-10 w-10 rounded-xl object-cover"
                       />
                     ) : mainPet ? (
                       <DefaultAvatar
                         name={mainPet.name}
-                        className="h-14 w-14 rounded-xl text-lg"
+                        className="h-10 w-10 rounded-xl text-lg"
                       />
                     ) : null}
                     <div>
@@ -520,7 +527,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
 
 
       {editingBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-label="Editar atendimento">
+        <Modal label="Editar atendimento" onClose={()=>setEditingBooking(null)} busy={savingExtras} className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
           <div className="w-full max-w-md rounded-2xl border border-brass/25 bg-charcoal-dark p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-3">
               <div><h3 className="text-lg font-semibold text-white">Editar atendimento</h3>
@@ -530,9 +537,9 @@ export function PetAgenda({ shopId, barberId }: Props) {
             <div className="mt-4 grid grid-cols-2 gap-3"><label className="text-sm">Data<input className="mt-1 w-full bg-charcoal p-2" type="date" value={editDate} onChange={e=>setEditDate(e.target.value)}/></label><label className="text-sm">Horário<input className="mt-1 w-full bg-charcoal p-2" type="time" value={editTime} onChange={e=>setEditTime(e.target.value)}/></label></div><label className="mt-3 block text-sm">Observações<textarea className="mt-1 w-full bg-charcoal p-2" value={editNotes} onChange={e=>setEditNotes(e.target.value)}/></label><p className="mt-3 text-sm text-charcoal-muted">Serviços adicionais</p><div className="mt-2 max-h-72 space-y-2 overflow-y-auto">
               {shopServices.filter(service => !(editingBooking.booking_services || []).some(item => item.service_id === service.id)).map(service => (
                 <label key={service.id} className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-white/10 p-3 text-sm text-white">
-                  <input type="checkbox" className="h-4 w-4 accent-amber-500" checked={extraServiceIds.includes(service.id)}
+                  <input type="checkbox" value={service.id} className="h-4 w-4 accent-amber-500" checked={extraServiceIds.includes(service.id)}
                     onChange={event => setExtraServiceIds(current => event.target.checked ? [...current, service.id] : current.filter(id => id !== service.id))} />
-                  <span className="flex-1">{service.name}</span><span className="text-brass">{formatPrice(Number(service.price || 0))}</span>
+                  <span className="flex-1">{service.name}</span><span className="text-brass">{formatPrice(servicePrice(service,editingBooking.pets?.size||'medio',editDate))}</span>
                 </label>
               ))}
             </div>
@@ -542,7 +549,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
               {savingExtras ? 'Salvando...' : 'Salvar atendimento'}
             </button>
           </div>
-        </div>
+        </Modal>
       )}
       {completingBooking && (
         <CompleteBookingModal

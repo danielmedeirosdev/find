@@ -29,6 +29,7 @@ export function BusinessAuth() {
   const [shopName, setShopName] = useState('')
   const [segment] = useState<ShopSegment>('pet')
   const [error, setError] = useState('')
+  const [googleError,setGoogleError]=useState('')
   const [info, setInfo] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
@@ -250,9 +251,10 @@ export function BusinessAuth() {
         )}
 
         <div>
-          <FieldLabel>E-mail</FieldLabel>
+          <FieldLabel htmlFor="business-email">E-mail</FieldLabel>
           <input
             type="email"
+            id="business-email" autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -263,9 +265,10 @@ export function BusinessAuth() {
         </div>
 
         {!resetMode && <div>
-          <FieldLabel>Senha</FieldLabel>
+          <FieldLabel htmlFor="business-password">Senha</FieldLabel>
           <input
             type="password"
+            id="business-password" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -302,10 +305,10 @@ export function BusinessAuth() {
           disabled={loading || googleLoading}
           onCredential={handleGoogleCredential}
           onError={(message) => {
-            setError(message)
+            setGoogleError(message)
             setGoogleLoading(false)
           }}
-        />}
+        />}{googleError && <p className="text-center text-xs text-charcoal-muted">Login com Google indisponível. Use e-mail e senha.</p>}
       </form>
 
       {!resetMode && <p className="mt-4 text-center text-sm text-charcoal-muted">
