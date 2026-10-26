@@ -39,7 +39,7 @@ export function BookingActions({
           type="button"
           disabled={busy}
           onClick={() => onStatusChange('confirmed')}
-          className={`${compact ? "min-h-10 px-3 py-2 text-xs" : "min-h-[44px] px-4 py-2.5 text-sm"} rounded-lg border border-charcoal-light text-charcoal-muted hover:text-white disabled:cursor-wait disabled:opacity-50"
+          className={`${compact ? "min-h-10 px-3 py-2 text-xs" : "min-h-[44px] px-4 py-2.5 text-sm"} rounded-lg border border-charcoal-light text-charcoal-muted hover:text-white disabled:cursor-wait disabled:opacity-50`}
         >
           Confirmar
         </button>
@@ -49,7 +49,7 @@ export function BookingActions({
           type="button"
           disabled={busy}
           onClick={() => onStatusChange('in_progress')}
-          className={`${compact ? "min-h-10 px-3 py-2 text-xs" : "min-h-[44px] px-4 py-2.5 text-sm"} rounded-lg border border-charcoal-light text-charcoal-muted hover:text-white disabled:cursor-wait disabled:opacity-50"
+          className={`${compact ? "min-h-10 px-3 py-2 text-xs" : "min-h-[44px] px-4 py-2.5 text-sm"} rounded-lg border border-charcoal-light text-charcoal-muted hover:text-white disabled:cursor-wait disabled:opacity-50`}
         >
           Iniciar
         </button>
@@ -59,7 +59,7 @@ export function BookingActions({
           type="button"
           disabled={busy}
           onClick={() => onStatusChange('awaiting_payment')}
-          className={`${compact ? "min-h-10 px-3 py-2 text-xs" : "min-h-[44px] px-4 py-2.5 text-sm"} rounded-lg border border-charcoal-light text-charcoal-muted hover:text-white disabled:cursor-wait disabled:opacity-50"
+          className={`${compact ? "min-h-10 px-3 py-2 text-xs" : "min-h-[44px] px-4 py-2.5 text-sm"} rounded-lg border border-charcoal-light text-charcoal-muted hover:text-white disabled:cursor-wait disabled:opacity-50`}
         >
           Aguardando pagamento
         </button>
@@ -68,7 +68,7 @@ export function BookingActions({
         type="button"
         disabled={busy}
         onClick={onComplete}
-        className={`${compact ? "min-h-10 px-3 py-2 text-xs" : "min-h-[44px] px-4 py-2.5 text-sm"} rounded-lg bg-brass font-semibold text-charcoal disabled:cursor-wait disabled:opacity-50"
+        className={`${compact ? "min-h-10 px-3 py-2 text-xs" : "min-h-[44px] px-4 py-2.5 text-sm"} rounded-lg bg-brass font-semibold text-charcoal disabled:cursor-wait disabled:opacity-50`}
       >
         Finalizar atendimento
       </button>
@@ -76,7 +76,7 @@ export function BookingActions({
         type="button"
         disabled={busy}
         onClick={() => onStatusChange('no_show')}
-        className={`${compact ? "min-h-10 px-3 py-2 text-xs" : "min-h-[44px] px-4 py-2.5 text-sm"} rounded-lg border border-charcoal-light text-charcoal-muted hover:text-white disabled:cursor-wait disabled:opacity-50"
+        className={`${compact ? "min-h-10 px-3 py-2 text-xs" : "min-h-[44px] px-4 py-2.5 text-sm"} rounded-lg border border-charcoal-light text-charcoal-muted hover:text-white disabled:cursor-wait disabled:opacity-50`}
       >
         Não compareceu
       </button>
@@ -84,7 +84,7 @@ export function BookingActions({
         type="button"
         disabled={busy}
         onClick={() => onStatusChange('cancelled')}
-        className={`${compact ? "min-h-10 px-3 py-2 text-xs" : "min-h-[44px] px-4 py-2.5 text-sm"} rounded-lg border border-red-400/50 text-red-400 hover:bg-red-400/10 disabled:cursor-wait disabled:opacity-50"
+        className={`${compact ? "min-h-10 px-3 py-2 text-xs" : "min-h-[44px] px-4 py-2.5 text-sm"} rounded-lg border border-red-400/50 text-red-400 hover:bg-red-400/10 disabled:cursor-wait disabled:opacity-50`}
       >
         Cancelar
       </button>
