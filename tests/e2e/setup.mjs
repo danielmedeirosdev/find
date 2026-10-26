@@ -20,6 +20,7 @@ const customer=ok(await api.from('shop_customers').insert({shop_id:shop.id,name:
 const pet=ok(await api.from('pets').insert({shop_id:shop.id,customer_id:customer.id,name:'Luna QA',size:'medio',species:'cao'}).select().single());
 const services=ok(await api.from('services').insert([{shop_id:shop.id,name:'Banho QA',price:59.90,duration_minutes:30},{shop_id:shop.id,name:'Hidratação QA',price:20.10,duration_minutes:15},{shop_id:shop.id,name:'Unhas QA',price:10,duration_minutes:15}]).select());
 const staff=ok(await api.from('barbers').insert({shop_id:shop.id,name:'Profissional QA'}).select().single());
+ok(await api.from('barber_schedule').insert(Array.from({length:7},(_,day)=>({barber_id:staff.id,day_of_week:day,is_active:true,start_time:'09:00',end_time:'18:00'}))));
 const tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);const date=tomorrow.toISOString().slice(0,10);
 console.log('Customer, pet and catalogue ready');
 const bookingId=ok(await api.rpc('create_operational_booking',{p_shop_id:shop.id,p_barber_id:staff.id,p_customer_id:customer.id,p_pet_id:pet.id,p_date:date,p_time:'10:00',p_service_ids:services.slice(0,2).map(s=>s.id)}));
@@ -42,7 +43,7 @@ const consumed=ok(await api.from('customer_packages').select('*').eq('id',pkg.id
 ok(await api.from('customer_packages').update({total_sessions:6}).eq('id',pkg.id));
 assert.equal(ok(await api.from('customer_packages').select('*').eq('id',pkg.id).single()).total_sessions,6);
 // A second operational booking is reserved for browser interactions.
-const interactiveId=ok(await api.rpc('create_operational_booking',{p_shop_id:shop.id,p_barber_id:staff.id,p_customer_id:customer.id,p_pet_id:pet.id,p_date:new Date().toISOString().slice(0,10),p_time:'16:00',p_service_ids:services.slice(0,2).map(s=>s.id)}));
+const interactiveId=ok(await api.rpc('create_operational_booking',{p_shop_id:shop.id,p_barber_id:staff.id,p_customer_id:customer.id,p_pet_id:pet.id,p_date:date,p_time:'16:00',p_service_ids:services.slice(0,2).map(s=>s.id)}));
 fixture={...fixture,customerId:customer.id,petId:pet.id,staffId:staff.id,serviceIds:services.map(s=>s.id),bookingId,interactiveId,packageId:pkg.id};
 fs.writeFileSync('/tmp/onefind-qa-fixture.json',JSON.stringify(fixture));
 ok(await api.auth.signOut());ok(await api.auth.signInWithPassword({email:account.email,password:account.password}));

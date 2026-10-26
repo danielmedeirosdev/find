@@ -20,7 +20,10 @@ import { userFacingError } from '../../../../lib/userFacingError'
 import { ProfessionalTimeOff } from '../../../../components/ProfessionalTimeOff'
 import { ShopClosures } from '../../../../components/ShopClosures'
 import { bookingTotal } from '../../../../lib/finance'
-import { localDateIso } from '../../../../lib/booking'
+import { bookingClock, loadBookingAvailability, availableBookingTimes, eligibleProfessionals, localDateIso } from '../../../../lib/booking'
+import { BookingSchedulePicker } from '../../../../components/BookingSchedulePicker'
+import { BookingServicePicker } from '../../../../components/BookingServicePicker'
+import { BookingStepper } from '../../../../components/public/BookingStepper'
 import type { BookingWithDetails, Service, ServiceSizeRule, PetSize, ServiceWeekdayDiscount } from '../../../../lib/types'
 
 interface Props {
@@ -60,6 +63,7 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
   const [staffId, setStaffId] = useState(barberId || '')
   const [dateValue, setDateValue] = useState(localDateIso())
   const [timeValue, setTimeValue] = useState('')
+  const [scheduleValid, setScheduleValid] = useState(false)
   const [newError, setNewError] = useState('')
   const [savingNew, setSavingNew] = useState(false)
   const [repeatEvery, setRepeatEvery] = useState(0)
@@ -89,9 +93,11 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
   const [editDate,setEditDate] = useState('')
   const [editTime,setEditTime] = useState('')
   const [editNotes,setEditNotes] = useState('')
+  const [editScheduleValid,setEditScheduleValid] = useState(false)
 
   const saveExtraServices = async () => {
     if (!editingBooking || savingExtras) return
+    if (!['in_progress','awaiting_payment'].includes(editingBooking.status || '') && !editScheduleValid) { setExtraError('Escolha um horário disponível.'); return }
     setSavingExtras(true)
     setExtraError('')
     const ids = [...new Set([...(editingBooking.booking_services || []).map(s => s.service_id), ...extraServiceIds])]
@@ -156,7 +162,7 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
       supabase.from('barbers').select('id,name').eq('shop_id',shopId).order('name'),
     ])
     if(a.error||b.error||d.error){setActionError('Erro ao carregar dados para agendar.');return}
-    setClients(a.data||[]);setPetsList(b.data||[]);setTeamList(d.data||[]);setNewError('');setNewStep(1);setReceipt(null);setRepeatEvery(0);setRepeatCount(4);setServiceIds([]);setClientId('');setPetId('');setTimeValue('');setStaffId(barberId||d.data?.[0]?.id||'');setShowNew(true)
+    setClients(a.data||[]);setPetsList(b.data||[]);setTeamList(d.data||[]);setNewError('');setNewStep(1);setReceipt(null);setRepeatEvery(0);setRepeatCount(4);setServiceIds([]);setClientId('');setPetId('');setTimeValue('');setDateValue('');setScheduleValid(false);setStaffId(barberId||d.data?.[0]?.id||'');setShowNew(true)
   }
   const saveNew = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -165,7 +171,8 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
     const selectedServices=shopServices.filter(x=>serviceIds.includes(x.id))
     const totalDuration=getPetServicesDuration(selectedServices,pet?.size||'medio',sizeRules)
     if(!client||!pet||selectedServices.length===0||!staffId||!dateValue||!timeValue){setNewError('Preencha todos os campos.');return}
-    if(dateValue<localDateIso()){setNewError('Selecione uma data futura.');return}
+    if(dateValue<bookingClock().date){setNewError('Selecione uma data futura.');return}
+    if(savingNew || !scheduleValid){setNewError('Escolha um horário disponível.');return}
     setSavingNew(true);setNewError('')
     const count=repeatEvery===0?1:Math.min(12,Math.max(2,repeatCount))
     const dates=Array.from({length:count},(_,i)=>{
@@ -174,18 +181,17 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
       return d.toISOString().slice(0,10)
     })
     let completed=0
+    let availability
+    try { availability = await loadBookingAvailability(shopId, [staffId]) }
+    catch (error) { setNewError(userFacingError(error,'Não foi possível conferir os horários.')); setSavingNew(false); return }
+    if (!eligibleProfessionals(teamList, serviceIds, availability.mappings).some(staff => staff.id === staffId)) {
+      setNewError('O profissional não atende essa combinação de serviços.'); setSavingNew(false); return
+    }
+    // Validate every occurrence before creating the first one. The server also
+    // checks each reservation inside its transaction to handle simultaneous use.
+    const unavailableDate = dates.find(date => !availableBookingTimes(availability, staffId, date, totalDuration).includes(timeValue))
+    if (unavailableDate) { setNewError(`Não há disponibilidade em ${formatDate(unavailableDate)} às ${formatTime(timeValue)}. Nenhum agendamento foi criado.`); setTimeValue(''); setScheduleValid(false); setSavingNew(false); return }
     for(const bookingDate of dates){
-      const {data:busy,error:busyError}=await supabase.from('bookings').select('id,time,duration_minutes,status')
-        .eq('shop_id',shopId).eq('barber_id',staffId).eq('date',bookingDate)
-        .not('status','in','("cancelled","no_show")')
-      if(busyError){setNewError(`Não foi possível conferir os horários. ${completed} agendamento(s) já criado(s).`);setSavingNew(false);return}
-      const minutes=(value:string)=>{const [h,m]=value.split(':').map(Number);return h*60+m}
-      const start=minutes(timeValue)
-      const duration=totalDuration
-      if((busy||[]).some(x=>start<minutes(x.time)+Number(x.duration_minutes||60)&&minutes(x.time)<start+duration)){
-        setNewError(`O profissional já tem atendimento em ${formatDate(bookingDate)} às ${formatTime(timeValue)}. ${completed} agendamento(s) já criado(s).`)
-        setSavingNew(false);return
-      }
       const {error}=await supabase.rpc('create_operational_booking', {
         p_shop_id:shopId,p_barber_id:staffId,p_customer_id:client.id,p_pet_id:pet.id,
         p_date:bookingDate,p_time:timeValue,p_service_ids:selectedServices.map(s=>s.id),
@@ -306,7 +312,7 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
       <div className="mb-5 flex justify-stretch sm:justify-end"><button type="button" onClick={()=>void openNew()} className="min-h-12 w-full rounded-xl bg-brass px-5 py-3 text-sm font-semibold text-charcoal-dark shadow-[0_8px_24px_rgba(0,0,0,0.2)] sm:w-auto">+ Novo agendamento</button></div>
       {showNew && <section className="mb-4 rounded-xl border border-white/10 bg-charcoal-dark p-3 sm:p-4">
         <div className="mb-3 flex items-center justify-between gap-3"><h3 className="text-lg font-semibold text-white">Novo agendamento</h3><button type="button" onClick={()=>setShowNew(false)} className="text-sm text-charcoal-muted">Fechar</button></div>
-        <div className="mb-5 grid grid-cols-4 gap-1">{['Cliente e pet','Serviços','Data e hora','Concluído'].map((label,i)=><div key={label} className={`rounded-lg px-1 py-2 text-center text-[11px] font-medium ${newStep===i+1?'bg-brass text-charcoal-dark':'bg-white/5 text-charcoal-muted'}`}>{i+1}. {label}</div>)}</div>
+        <BookingStepper steps={['Cliente e pet','Serviços','Horário','Concluído'].map((label,i)=>({n:i+1,label}))} current={newStep} tone="dark"/>
         {newStep===4 && receipt ? <div className="space-y-3">
           {createdCount>1 && <p className="rounded-xl border border-brass/30 p-3 text-center text-sm text-white">{createdCount} agendamentos criados com sucesso. O comprovante abaixo corresponde ao primeiro horário.</p>}
           <ConfirmReceipt view={receipt} signedIn={true}/>
@@ -320,21 +326,33 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
             <label className="grid gap-2 text-sm text-white">Pet<select required value={petId} onChange={e=>setPetId(e.target.value)} className="min-h-12 rounded-xl bg-charcoal p-3"><option value="">Selecione o pet</option>{petsList.filter(x=>x.customer_id===clientId).map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
           </div>}
           {newStep===2 && <div className="space-y-4">
-            <p className="text-sm text-charcoal-muted">Selecione o serviço e quem vai realizar o atendimento.</p>
-            <fieldset className="space-y-2"><legend className="text-sm font-medium text-white">Serviços (selecione um ou mais)</legend>{shopServices.filter(s=>s.is_active!==false).map(x=><label key={x.id} className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-charcoal p-3 text-sm text-white"><input type="checkbox" checked={serviceIds.includes(x.id)} onChange={e=>setServiceIds(current=>e.target.checked?[...current,x.id]:current.filter(id=>id!==x.id))} className="h-4 w-4 accent-amber-500"/><span className="flex-1">{x.name}</span><span className="text-brass">{formatPrice(servicePrice(x,petsList.find(p=>p.id===petId)?.size||'medio',dateValue))}</span></label>)}{shopServices.length===0&&<p className="text-xs text-charcoal-muted">Cadastre um serviço antes de agendar.</p>}<p className="text-sm text-brass">Total: {formatPrice(shopServices.filter(x=>serviceIds.includes(x.id)).reduce((sum,x)=>sum+servicePrice(x,petsList.find(p=>p.id===petId)?.size||'medio',dateValue),0))}</p></fieldset>
-            <label className="grid gap-2 text-sm text-white">Profissional<select required value={staffId} onChange={e=>setStaffId(e.target.value)} className="min-h-12 rounded-xl bg-charcoal p-3"><option value="">Selecione</option>{teamList.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+            <p className="text-sm text-charcoal-muted">Selecione os serviços para {petsList.find(p=>p.id===petId)?.name}.</p>
+            <BookingServicePicker
+              tone="dark"
+              services={shopServices.filter(service=>service.is_active!==false).map(service=>({ id:service.id,name:service.name,price:servicePrice(service,petsList.find(p=>p.id===petId)?.size||'medio',dateValue),duration:getPetServicesDuration([service],petsList.find(p=>p.id===petId)?.size||'medio',sizeRules) }))}
+              selectedIds={serviceIds}
+              onToggle={id=>{setServiceIds(current=>current.includes(id)?current.filter(item=>item!==id):[...current,id]);setTimeValue('');setScheduleValid(false)}}
+            />
+            <p className="text-sm text-brass">Total: {formatPrice(shopServices.filter(x=>serviceIds.includes(x.id)).reduce((sum,x)=>sum+servicePrice(x,petsList.find(p=>p.id===petId)?.size||'medio',dateValue),0))}</p>
           </div>}
           {newStep===3 && <div className="space-y-4">
-            <p className="text-sm text-charcoal-muted">Defina quando o pet será atendido.</p>
-            <label className="grid gap-2 text-sm text-white">Data<input type="date" required min={localDateIso()} value={dateValue} onChange={e=>setDateValue(e.target.value)} className="min-h-12 rounded-xl bg-charcoal p-3"/></label>
-            <label className="grid gap-2 text-sm text-white">Horário<input type="time" required value={timeValue} onChange={e=>setTimeValue(e.target.value)} className="min-h-12 rounded-xl bg-charcoal p-3"/></label>
+            <BookingSchedulePicker
+              shopId={shopId}
+              professionals={barberId?teamList.filter(staff=>staff.id===barberId):teamList}
+              serviceIds={serviceIds}
+              duration={getPetServicesDuration(shopServices.filter(service=>serviceIds.includes(service.id)),petsList.find(p=>p.id===petId)?.size||'medio',sizeRules)}
+              value={{professionalId:staffId,date:dateValue,time:timeValue}}
+              onChange={selection=>{setStaffId(selection.professionalId);setDateValue(selection.date);setTimeValue(selection.time);setNewError('')}}
+              onValidityChange={setScheduleValid}
+              tone="dark"
+            />
             <label className="grid gap-2 text-sm text-white">Repetição<select value={repeatEvery} onChange={e=>setRepeatEvery(Number(e.target.value))} className="min-h-12 rounded-xl bg-charcoal p-3"><option value={0}>Não repetir</option><option value={7}>Toda semana</option><option value={14}>A cada 15 dias (quinzenal)</option></select></label>
             {repeatEvery>0 && <label className="grid gap-2 text-sm text-white">Quantidade de atendimentos (incluindo o primeiro)<select value={repeatCount} onChange={e=>setRepeatCount(Number(e.target.value))} className="min-h-12 rounded-xl bg-charcoal p-3">{Array.from({length:11},(_,i)=>i+2).map(n=><option key={n} value={n}>{n} atendimentos</option>)}</select></label>}
             {repeatEvery>0 && <p className="text-xs text-charcoal-muted">Os horários serão reservados nas próximas {repeatCount} datas. Se houver conflito, a criação para e informa quantos foram salvos.</p>}
-            <div className="rounded-xl border border-white/10 p-4 text-sm text-white">Confira: {clients.find(x=>x.id===clientId)?.name} · {petsList.find(x=>x.id===petId)?.name} · {shopServices.filter(x=>serviceIds.includes(x.id)).map(x=>x.name).join(' + ')}</div>
+            <div className="rounded-xl border border-white/10 p-4 text-sm text-white">Confira: {clients.find(x=>x.id===clientId)?.name} · {petsList.find(x=>x.id===petId)?.name} · {shopServices.filter(x=>serviceIds.includes(x.id)).map(x=>x.name).join(' + ')}<p className="mt-2 font-semibold text-brass">Total: {formatPrice(shopServices.filter(x=>serviceIds.includes(x.id)).reduce((sum,x)=>sum+servicePrice(x,petsList.find(p=>p.id===petId)?.size||'medio',dateValue),0))}</p></div>
           </div>}
           {newError && <p role="alert" className="text-sm text-red-300">{newError}</p>}
-          <div className="flex gap-3">{newStep>1 && <button type="button" onClick={()=>setNewStep(newStep-1)} className="rounded-xl border border-white/20 px-5 py-3 text-white">Voltar</button>}<button type="submit" disabled={savingNew} className="flex-1 rounded-xl bg-brass px-5 py-3 font-semibold text-charcoal-dark disabled:opacity-50">{savingNew?'Salvando...':newStep===3?'Confirmar agendamento':'Continuar'}</button></div>
+          <div className="flex gap-3">{newStep>1 && <button type="button" onClick={()=>setNewStep(newStep-1)} className="rounded-xl border border-white/20 px-5 py-3 text-white">Voltar</button>}<button type="submit" disabled={savingNew || (newStep===3 && !scheduleValid)} className="flex-1 rounded-xl bg-brass px-5 py-3 font-semibold text-charcoal-dark disabled:opacity-50">{savingNew?'Salvando...':newStep===3?'Confirmar agendamento':'Continuar'}</button></div>
         </form>}
       </section>}
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3"><h2>{barberId ? 'Minha agenda' : 'Agenda'}</h2><button type="button" onClick={()=>setShowAvailability(v=>!v)} className="rounded-lg border border-charcoal-light px-3 text-sm text-charcoal-muted">Folgas e feriados</button></header>
@@ -507,7 +525,7 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
                   </div>
                   <p className="font-mono text-brass">{formatPrice(total)}</p>
                 </div>
-          <button type="button" onClick={() => { setEditingBooking(b); setExtraServiceIds([]); setExtraError('');setEditDate(b.date);setEditTime(b.time.slice(0,5));setEditNotes(b.notes||'') }}
+          <button type="button" onClick={() => { setEditingBooking(b); setExtraServiceIds([]); setExtraError('');setEditScheduleValid(false);setEditDate(b.date);setEditTime(b.time.slice(0,5));setEditNotes(b.notes||'') }}
             className="min-h-11 w-full rounded-xl border border-brass/40 px-4 py-2.5 text-center text-sm font-medium text-brass hover:bg-brass/10 sm:w-auto">
             Editar / adicionar serviços
           </button>
@@ -535,8 +553,19 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
                 <p className="mt-1 text-sm text-charcoal-muted">{editingBooking.client_name} · {formatDate(editingBooking.date)}</p></div>
               <button type="button" onClick={() => setEditingBooking(null)} className="rounded-lg px-3 py-2 text-sm text-charcoal-muted">Fechar</button>
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-3"><label className="text-sm">Data<input className="mt-1 w-full bg-charcoal p-2" type="date" value={editDate} onChange={e=>setEditDate(e.target.value)}/></label><label className="text-sm">Horário<input className="mt-1 w-full bg-charcoal p-2" type="time" value={editTime} onChange={e=>setEditTime(e.target.value)}/></label></div><label className="mt-3 block text-sm">Observações<textarea className="mt-1 w-full bg-charcoal p-2" value={editNotes} onChange={e=>setEditNotes(e.target.value)}/></label><p className="mt-3 text-sm text-charcoal-muted">Serviços adicionais</p><div className="mt-2 max-h-72 space-y-2 overflow-y-auto">
-              {shopServices.filter(service => !(editingBooking.booking_services || []).some(item => item.service_id === service.id)).map(service => (
+            <div className="mt-4">{['in_progress','awaiting_payment'].includes(editingBooking.status || '') ? <p className="text-sm text-charcoal-muted">Atendimento iniciado em {formatDate(editingBooking.date)} às {formatTime(editingBooking.time)}. Você pode acrescentar serviços abaixo.</p> : <BookingSchedulePicker
+              shopId={shopId}
+              professionals={[{id:editingBooking.barber_id,name:editingBooking.barbers?.name || 'Profissional'}]}
+              serviceIds={[...(editingBooking.booking_services || []).map(item=>item.service_id),...extraServiceIds]}
+              duration={(editingBooking.duration_minutes || 30)+getPetServicesDuration(shopServices.filter(service=>extraServiceIds.includes(service.id)),editingBooking.pets?.size||'medio',sizeRules)}
+              value={{professionalId:editingBooking.barber_id,date:editDate,time:editTime}}
+              excludeBooking={{professionalId:editingBooking.barber_id,date:editingBooking.date,time:editingBooking.time}}
+              onChange={selection=>{setEditDate(selection.date);setEditTime(selection.time)}}
+              onValidityChange={setEditScheduleValid}
+              tone="dark"
+            />}</div>
+            <label className="mt-3 block text-sm">Observações<textarea className="mt-1 w-full bg-charcoal p-2" value={editNotes} onChange={e=>setEditNotes(e.target.value)}/></label><p className="mt-3 text-sm text-charcoal-muted">Serviços adicionais</p><div className="mt-2 max-h-72 space-y-2 overflow-y-auto">
+              {shopServices.filter(service => service.is_active!==false && !(editingBooking.booking_services || []).some(item => item.service_id === service.id)).map(service => (
                 <label key={service.id} className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-white/10 p-3 text-sm text-white">
                   <input type="checkbox" value={service.id} className="h-4 w-4 accent-amber-500" checked={extraServiceIds.includes(service.id)}
                     onChange={event => setExtraServiceIds(current => event.target.checked ? [...current, service.id] : current.filter(id => id !== service.id))} />
@@ -545,7 +574,7 @@ export function PetAgenda({ shopId, shopName, barberId }: Props) {
               ))}
             </div>
             {extraError && <p role="alert" className="mt-3 text-sm text-red-400">{extraError}</p>}
-            <button type="button" disabled={savingExtras} onClick={() => void saveExtraServices()}
+            <button type="button" disabled={savingExtras || (!['in_progress','awaiting_payment'].includes(editingBooking.status || '') && !editScheduleValid)} onClick={() => void saveExtraServices()}
               className="mt-5 min-h-12 w-full rounded-xl bg-brass px-4 py-3 text-center font-semibold text-charcoal disabled:opacity-50">
               {savingExtras ? 'Salvando...' : 'Salvar atendimento'}
             </button>

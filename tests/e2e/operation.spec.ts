@@ -11,9 +11,12 @@ test('real operational flow persists after editing, payment and relogin',async({
  await page.getByRole('button',{name:'Entrar',exact:true}).click()
  await expect(page.getByRole('heading',{name:'Seu dia no onefind'})).toBeVisible({timeout:30000})
  const professionals=await data(page,'barbers','POST',{shop_id:fixture.shopId,name:'UI QA '+Date.now()})
- const bookingId=await data(page,'rpc/create_operational_booking','POST',{p_shop_id:fixture.shopId,p_barber_id:professionals[0].id,p_customer_id:fixture.customerId,p_pet_id:fixture.petId,p_date:new Date().toISOString().slice(0,10),p_time:'16:00',p_service_ids:fixture.serviceIds.slice(0,2)})
+ const tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1)
+ await data(page,'barber_schedule','POST',{barber_id:professionals[0].id,day_of_week:tomorrow.getDay(),is_active:true,start_time:'09:00',end_time:'18:00'})
+ const bookingId=await data(page,'rpc/create_operational_booking','POST',{p_shop_id:fixture.shopId,p_barber_id:professionals[0].id,p_customer_id:fixture.customerId,p_pet_id:fixture.petId,p_date:tomorrow.toISOString().slice(0,10),p_time:'10:00',p_service_ids:fixture.serviceIds.slice(0,2)})
  const check=async()=>(await data(page,`bookings?id=eq.${bookingId}&select=*,booking_services(*)`))[0]
  await page.goto('/painel/dashboard?aba=agenda')
+ await page.getByRole('button',{name:'Próximos',exact:true}).click()
  const card=page.getByTestId(`booking-${bookingId}`)
  await expect(card).toBeVisible()
  await card.getByRole('button',{name:'Confirmar',exact:true}).click()

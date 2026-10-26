@@ -1,6 +1,6 @@
 import { timeToMinutes, minutesToTime } from './format'
 import { supabase } from './supabase'
-import type { BarberSchedule, BarberTimeOff, PublicBookingSlot, Service, ShopClosure } from './types'
+import type { BarberSchedule, BarberTimeOff, PublicBookingSlot, Service, ServiceBarber, ShopClosure } from './types'
 
 export function localDateIso(date = new Date()): string {
   const year = date.getFullYear()
@@ -29,7 +29,7 @@ export function bookingErrorMessage(err: unknown): string {
 
 /** Horários que ainda ocupam a agenda (alinhado a bookings_active_slot_uidx). */
 export async function loadOccupiedSlots(shopId: string): Promise<PublicBookingSlot[]> {
-  const today = localDateIso()
+  const today = bookingClock().date
   const { data, error } = await supabase
     .from('public_booking_slots')
     .select('shop_id, barber_id, date, time, duration_minutes')
@@ -43,7 +43,7 @@ export async function loadOccupiedSlots(shopId: string): Promise<PublicBookingSl
 }
 
 export async function loadPublicTimeOff(shopId: string): Promise<BarberTimeOff[]> {
-  const today = localDateIso()
+  const today = bookingClock().date
   const { data, error } = await supabase
     .from('barber_time_off')
     .select('id, shop_id, barber_id, starts_on, ends_on, start_time, end_time')
@@ -57,7 +57,7 @@ export async function loadPublicTimeOff(shopId: string): Promise<BarberTimeOff[]
 }
 
 export async function loadPublicShopClosures(shopId: string): Promise<ShopClosure[]> {
-  const today = localDateIso()
+  const today = bookingClock().date
   const { data, error } = await supabase
     .from('shop_closures')
     .select('id, shop_id, starts_on, ends_on, label')
@@ -66,10 +66,7 @@ export async function loadPublicShopClosures(shopId: string): Promise<ShopClosur
     .order('starts_on')
 
   if (error) {
-    // O banco continua impedindo reservas em dias fechados. Na página pública,
-    // uma falha isolada desta consulta não deve expor um erro técnico nem
-    // interromper as outras etapas do agendamento.
-    return []
+    throw new Error('Não foi possível carregar os dias de fechamento. Tente novamente.')
   }
   return (data as ShopClosure[]) || []
 }
@@ -122,9 +119,9 @@ export function getAvailableSlots(
     overrideDurationMinutes != null && overrideDurationMinutes > 0
       ? overrideDurationMinutes
       : getTotalDuration(selectedServices)
-  if (totalDuration === 0 || getShopClosureForDate(shopClosures, date)) return []
+  if (!schedule.is_active || totalDuration <= 0 || getShopClosureForDate(shopClosures, date)) return []
 
-  const daySlots = occupiedSlots.filter((s) => s.date === date)
+  const daySlots = occupiedSlots.filter((s) => s.date === date && s.barber_id === schedule.barber_id)
   const workStart = timeToMinutes(schedule.start_time)
   const workEnd = timeToMinutes(schedule.end_time)
 
@@ -155,9 +152,9 @@ export function getAvailableSlots(
   return slots
 }
 
-export function getNextDatesForDay(dayOfWeek: number, count = 8): string[] {
+export function getNextDatesForDay(dayOfWeek: number, count = 8, from = bookingClock().date): string[] {
   const dates: string[] = []
-  const today = new Date()
+  const today = new Date(`${from}T12:00:00`)
   today.setHours(0, 0, 0, 0)
 
   for (let i = 0; i < 60 && dates.length < count; i++) {
@@ -168,6 +165,54 @@ export function getNextDatesForDay(dayOfWeek: number, count = 8): string[] {
     }
   }
   return dates
+}
+
+/** The establishment's calendar, matching the server's booking timezone. */
+export function bookingClock(now = new Date()): { date: string; time: string } {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(now)
+  const part = (type: string) => parts.find(item => item.type === type)!.value
+  return { date: `${part('year')}-${part('month')}-${part('day')}`, time: `${part('hour')}:${part('minute')}` }
+}
+
+export function eligibleProfessionals<T extends { id: string }>(
+  professionals: T[], serviceIds: string[], mappings: ServiceBarber[]
+): T[] {
+  return professionals.filter(professional => serviceIds.every(serviceId => {
+    const assigned = mappings.filter(mapping => mapping.service_id === serviceId)
+    return assigned.length === 0 || assigned.some(mapping => mapping.barber_id === professional.id)
+  }))
+}
+
+export interface BookingAvailability {
+  schedules: BarberSchedule[]
+  occupiedSlots: PublicBookingSlot[]
+  timeOff: BarberTimeOff[]
+  closures: ShopClosure[]
+  mappings: ServiceBarber[]
+}
+
+export async function loadBookingAvailability(shopId: string, professionalIds: string[]): Promise<BookingAvailability> {
+  const [scheduleResult, mappingResult, occupiedSlots, timeOff, closures] = await Promise.all([
+    professionalIds.length ? supabase.from('barber_schedule').select('*').in('barber_id', professionalIds) : Promise.resolve({ data: [], error: null }),
+    supabase.from('service_barbers').select('*').eq('shop_id', shopId),
+    loadOccupiedSlots(shopId), loadPublicTimeOff(shopId), loadPublicShopClosures(shopId),
+  ])
+  if (scheduleResult.error || mappingResult.error) throw new Error('Não foi possível carregar a disponibilidade da equipe. Tente novamente.')
+  return { schedules: scheduleResult.data || [], mappings: mappingResult.data || [], occupiedSlots, timeOff, closures }
+}
+
+export function availableBookingTimes(
+  availability: BookingAvailability, professionalId: string, date: string, duration: number, now = new Date()
+): string[] {
+  const clock = bookingClock(now)
+  if (date < clock.date) return []
+  const schedule = getScheduleForDay(availability.schedules.filter(s => s.barber_id === professionalId), new Date(`${date}T12:00:00`).getDay())
+  if (!schedule) return []
+  return getAvailableSlots(schedule, availability.occupiedSlots, [], date, duration, availability.timeOff, availability.closures)
+    .filter(time => date > clock.date || time > clock.time)
 }
 
 export function isShopClosedOnDate(

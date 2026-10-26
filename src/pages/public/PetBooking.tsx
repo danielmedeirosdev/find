@@ -2,17 +2,9 @@ import { BrandLogo } from '../../components/BrandLogo'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import {
-  bookingErrorMessage,
-  getActiveDays,
-  getScheduleForDay,
-  getAvailableSlots,
-  getNextDatesForDay,
-  loadOccupiedSlots,
-  loadPublicTimeOff,
-  loadPublicShopClosures,
-  getShopClosureForDate,
-} from '../../lib/booking'
+import { bookingErrorMessage } from '../../lib/booking'
+import { BookingServicePicker } from '../../components/BookingServicePicker'
+import { BookingSchedulePicker } from '../../components/BookingSchedulePicker'
 import { getPetServicesDuration, getPetServicesPrice, petSizeLabel } from '../../lib/pet'
 import { applyWeekdayDiscount, customAnswersExtra, petTransportFee } from '../../lib/servicePricing'
 import {
@@ -28,21 +20,15 @@ import { DefaultAvatar } from '../../components/MediaUI'
 import { BrandAccent } from '../../components/BrandAccent'
 import { BookingStepper } from '../../components/public/BookingStepper'
 import { PageLoader } from '../../components/public/PageLoader'
-import { TimeSlotGrid } from '../../components/TimeSlotGrid'
 import { SegmentProvider } from '../../contexts/SegmentContext'
 import { useAuth } from '../../contexts/AuthContext'
-import { DAY_NAMES, PET_SIZES } from '../../lib/types'
+import { PET_SIZES } from '../../lib/types'
 import type {
   PublicBarber,
-  BarberSchedule,
-  BarberTimeOff,
-  ShopClosure,
   BookingConfirmationState,
   Pet,
   PetSize,
-  PublicBookingSlot,
   Service,
-  ServiceBarber,
   ServiceSizeRule,
   ServiceCustomField,
   ServiceCustomFieldOption,
@@ -63,12 +49,7 @@ export function PetBooking() {
   const [shop, setShop] = useState<PublicShop | null>(null)
   const [services, setServices] = useState<Service[]>([])
   const [rules, setRules] = useState<ServiceSizeRule[]>([])
-  const [serviceBarbers, setServiceBarbers] = useState<ServiceBarber[]>([])
   const [barbers, setBarbers] = useState<PublicBarber[]>([])
-  const [schedules, setSchedules] = useState<BarberSchedule[]>([])
-  const [occupiedSlots, setOccupiedSlots] = useState<PublicBookingSlot[]>([])
-  const [timeOff, setTimeOff] = useState<BarberTimeOff[]>([])
-  const [shopClosures, setShopClosures] = useState<ShopClosure[]>([])
   const [customFields, setCustomFields] = useState<ServiceCustomField[]>([])
   const [customOptions, setCustomOptions] = useState<ServiceCustomFieldOption[]>([])
   const [weekdayDiscounts, setWeekdayDiscounts] = useState<ServiceWeekdayDiscount[]>([])
@@ -93,9 +74,9 @@ export function PetBooking() {
 
   const [selectedServiceIds, setSelectedServiceIds] = useState<Set<string>>(new Set())
   const [selectedBarberId, setSelectedBarberId] = useState<string | null>(null)
-  const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
+  const [scheduleValid, setScheduleValid] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [lookupDone, setLookupDone] = useState(false)
@@ -125,10 +106,9 @@ export function PetBooking() {
         return
       }
 
-      const [{ data: svc }, { data: barb }, { data: professionalMappings }] = await Promise.all([
+      const [{ data: svc }, { data: barb }] = await Promise.all([
         supabase.from('services').select('*').eq('shop_id', shopId).order('name'),
         supabase.from('public_barbers').select('*').eq('shop_id', shopId).order('name'),
-        supabase.from('service_barbers').select('*').eq('shop_id', shopId),
       ])
 
       const serviceList = svc || []
@@ -154,57 +134,15 @@ export function PetBooking() {
         setTransportSettings((transport as ServicePetTransport[]) || [])
       }
 
-      const barberIds = (barb || []).map((b) => b.id)
-      let sched: BarberSchedule[] = []
-      if (barberIds.length > 0) {
-        const { data } = await supabase
-          .from('barber_schedule')
-          .select('*')
-          .in('barber_id', barberIds)
-        sched = data || []
-      }
-
-      let slots: PublicBookingSlot[] = []
-      let unavailable: BarberTimeOff[] = []
-      let closures: ShopClosure[] = []
-      try {
-        ;[slots, unavailable, closures] = await Promise.all([
-          loadOccupiedSlots(shopId!),
-          loadPublicTimeOff(shopId!),
-          loadPublicShopClosures(shopId!),
-        ])
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Não foi possível carregar a agenda.')
-      }
-
       setShop(shopData)
       setServices(serviceList)
       setRules(sizeRules)
       setBarbers(barb || [])
-      setServiceBarbers((professionalMappings as ServiceBarber[]) || [])
-      setSchedules(sched)
-      setOccupiedSlots(slots)
-      setTimeOff(unavailable)
-      setShopClosures(closures)
       if ((barb || []).length === 1) setSelectedBarberId(barb![0].id)
       setLoading(false)
     }
     load()
   }, [shopId])
-
-  // Atualiza horários ocupados ao chegar na etapa de agenda
-  useEffect(() => {
-    if (!shopId || step !== 4) return
-    Promise.all([loadOccupiedSlots(shopId), loadPublicTimeOff(shopId), loadPublicShopClosures(shopId)])
-      .then(([slots, unavailable, closures]) => {
-        setOccupiedSlots(slots)
-        setTimeOff(unavailable)
-        setShopClosures(closures)
-      })
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : 'Não foi possível carregar a agenda.')
-      })
-  }, [shopId, step])
 
   const selectedPets = useMemo(
     () => pets.filter((p) => selectedPetIds.has(p.id)),
@@ -222,27 +160,6 @@ export function PetBooking() {
     () => customAnswers.filter((answer) => activeCustomFields.some((field) => field.id === answer.field_id)),
     [customAnswers, activeCustomFields]
   )
-  const eligibleBarbers = useMemo(() => {
-    if (selectedServiceIds.size === 0) return barbers
-    return barbers.filter((professional) =>
-      Array.from(selectedServiceIds).every((serviceId) => {
-        const restrictedTo = serviceBarbers.filter((item) => item.service_id === serviceId)
-        return restrictedTo.length === 0 || restrictedTo.some((item) => item.barber_id === professional.id)
-      })
-    )
-  }, [barbers, selectedServiceIds, serviceBarbers])
-
-  useEffect(() => {
-    if (selectedBarberId && !eligibleBarbers.some((item) => item.id === selectedBarberId)) {
-      setSelectedBarberId(eligibleBarbers.length === 1 ? eligibleBarbers[0].id : null)
-      setSelectedDay(null)
-      setSelectedDate(null)
-      setSelectedTime(null)
-    } else if (!selectedBarberId && eligibleBarbers.length === 1) {
-      setSelectedBarberId(eligibleBarbers[0].id)
-    }
-  }, [eligibleBarbers, selectedBarberId])
-
   // Soma duração/preço de cada pet (mesmos serviços aplicados a cada um)
   const duration = selectedPets.reduce(
     (sum, pet) => sum + getPetServicesDuration(selectedServices, pet.size, rules),
@@ -309,29 +226,6 @@ export function PetBooking() {
   }
 
   const selectedBarber = barbers.find((b) => b.id === selectedBarberId)
-  const barberSchedules = schedules.filter((s) => s.barber_id === selectedBarberId)
-  const activeDays = getActiveDays(barberSchedules)
-  const availableDates = selectedDay !== null
-    ? getNextDatesForDay(selectedDay, 12)
-        .filter((date) => !getShopClosureForDate(shopClosures, date))
-        .slice(0, 8)
-    : []
-  const daySchedule =
-    selectedDay !== null ? getScheduleForDay(barberSchedules, selectedDay) : undefined
-
-  const availableSlots =
-    daySchedule && selectedDate && selectedBarberId && duration > 0
-      ? getAvailableSlots(
-          daySchedule,
-          occupiedSlots.filter((s) => s.barber_id === selectedBarberId),
-          selectedServices,
-          selectedDate,
-          duration,
-          timeOff,
-          shopClosures
-        )
-      : []
-
   const lookupCustomer = async () => {
     if (!shopId) return
     const digits = phone.replace(/\D/g, '')
@@ -487,16 +381,7 @@ export function PetBooking() {
       if (/horário|reservado|fechado/i.test(msg) && shopId) {
         setSelectedTime(null)
         setStep(4)
-        try {
-          const [slots, closures] = await Promise.all([
-            loadOccupiedSlots(shopId),
-            loadPublicShopClosures(shopId),
-          ])
-          setOccupiedSlots(slots)
-          setShopClosures(closures)
-        } catch {
-          /* already showing booking conflict */
-        }
+
       }
       return
     }
@@ -729,45 +614,16 @@ export function PetBooking() {
                   ? ` · porte ${petSizeLabel(selectedPets[0].size)}`
                   : ''}
             </p>
-            <div className="space-y-3">
-              {services.map((s) => {
-                const dur = selectedPets.reduce(
-                  (sum, pet) => sum + getPetServicesDuration([s], pet.size, rules),
-                  0
-                )
-                const price = selectedPets.reduce(
-                  (sum, pet) => sum + getPetServicesPrice([s], pet.size, rules),
-                  0
-                )
-                return (
-                  <label
-                    key={s.id}
-                    className={`flex cursor-pointer items-center justify-between rounded-lg border p-4 ${
-                      selectedServiceIds.has(s.id) ? 'border-brass bg-brass/5' : 'border-paper-dark'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedServiceIds.has(s.id)}
-                        onChange={() => toggleService(s.id)}
-                        className="accent-brass"
-                      />
-                      <span>
-                        <span className="font-medium">{s.name}</span>
-                        {transportSettings.some((item) => item.service_id === s.id && item.enabled) ? (
-                          <span className="mt-1 block text-xs font-medium text-brass">Táxi Pet disponível</span>
-                        ) : null}
-                      </span>
-                    </div>
-                    <div className="text-right font-mono text-sm">
-                      <div className="text-brass">{formatPrice(price)}</div>
-                      <div className="text-ink-muted">{formatDuration(dur)}</div>
-                    </div>
-                  </label>
-                )
-              })}
-            </div>
+            <BookingServicePicker
+              services={services.filter(service => service.is_active !== false).map(service => ({
+                id: service.id, name: service.name,
+                price: selectedPets.reduce((sum, pet) => sum + applyWeekdayDiscount(getPetServicesPrice([service], pet.size, rules), service.id, selectedDate, weekdayDiscounts), 0),
+                duration: selectedPets.reduce((sum, pet) => sum + getPetServicesDuration([service], pet.size, rules), 0),
+                detail: transportSettings.some(item => item.service_id === service.id && item.enabled) ? 'Táxi Pet disponível' : undefined,
+              }))}
+              selectedIds={Array.from(selectedServiceIds)}
+              onToggle={toggleService}
+            />
             {selectedServices.length > 0 && (
               <div className="mt-4 flex justify-between rounded-lg bg-paper p-4 font-mono text-sm">
                 <span>Total · {formatDuration(duration)}</span>
@@ -837,106 +693,16 @@ export function PetBooking() {
         {step === 4 && (
           <div>
             <h2 className="font-display text-2xl mb-2">Horário</h2>
-            <p className="text-sm text-ink-muted mb-4">
-              Duração calculada: {formatDuration(duration)}
-            </p>
-
-            {barbers.length > 1 && (
-              <div className="mb-4">
-                <p className="text-sm font-medium mb-2">Profissional</p>
-                <div className="flex flex-wrap gap-2">
-              {eligibleBarbers.map((b) => (
-                    <button
-                      key={b.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedBarberId(b.id)
-                        setSelectedDay(null)
-                        setSelectedDate(null)
-                        setSelectedTime(null)
-                      }}
-                      className={`rounded-lg px-3 py-2 text-sm ${
-                        selectedBarberId === b.id ? 'bg-brass text-charcoal' : 'bg-paper'
-                      }`}
-                    >
-                      {b.name}
-                    </button>
-              ))}
-              {eligibleBarbers.length === 0 && (
-                <p className="col-span-full rounded-xl border border-brass/30 bg-brass/5 p-4 text-sm text-brass">
-                  Nenhum profissional atende essa combinação. Volte e escolha outra combinação de serviços.
-                </p>
-              )}
-                </div>
-              </div>
-            )}
-
-            {selectedBarberId && (
-              <>
-                <div className="mb-4 flex flex-wrap gap-2">
-                  {activeDays.map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => {
-                        setSelectedDay(d)
-                        setSelectedDate(null)
-                        setSelectedTime(null)
-                      }}
-                      className={`rounded-lg px-3 py-2 text-sm ${
-                        selectedDay === d ? 'bg-brass text-charcoal' : 'bg-paper'
-                      }`}
-                    >
-                      {DAY_NAMES[d].slice(0, 3)}
-                    </button>
-                  ))}
-                </div>
-
-                {selectedDay !== null && (
-                  <div className="mb-4 flex flex-wrap gap-2">
-                    {availableDates.map((d) => (
-                      <button
-                        key={d}
-                        type="button"
-                        onClick={() => {
-                          setSelectedDate(d)
-                          setSelectedTime(null)
-                        }}
-                        className={`rounded-xl border px-3.5 py-2.5 text-sm transition-all ${
-                          selectedDate === d
-                            ? 'border-brass bg-brass font-medium text-charcoal shadow-sm'
-                            : 'border-transparent bg-paper text-ink hover:border-brass/40 hover:bg-paper-dark'
-                        }`}
-                      >
-                        <span className="block text-[11px] uppercase tracking-wide opacity-70">
-                          {new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', {
-                            weekday: 'short',
-                          })}
-                        </span>
-                        <span className="font-mono">
-                          {new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', {
-                            day: '2-digit',
-                            month: 'short',
-                          })}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {selectedDate && (
-                  <div>
-                    <h3 className="mb-3 font-medium">Horários disponíveis</h3>
-                    <TimeSlotGrid
-                      slots={availableSlots}
-                      selected={selectedTime}
-                      onSelect={setSelectedTime}
-                      emptyMessage="Nenhum horário com tempo suficiente nesta data."
-                    />
-                  </div>
-                )}
-              </>
-            )}
+            <BookingSchedulePicker
+              shopId={shop.id}
+              professionals={barbers}
+              serviceIds={selectedServices.map(service => service.id)}
+              duration={duration}
+              value={{ professionalId: selectedBarberId || '', date: selectedDate || '', time: selectedTime || '' }}
+              onChange={selection => { setSelectedBarberId(selection.professionalId || null); setSelectedDate(selection.date || null); setSelectedTime(selection.time || null) }}
+              onValidityChange={setScheduleValid}
+            />
+            {error && <p role="alert" className="mt-4 text-sm text-red-600">{error}</p>}
 
             <div className="mt-6 flex gap-3">
               <button onClick={() => setStep(3)} className="btn-secondary flex-1">
@@ -944,7 +710,7 @@ export function PetBooking() {
               </button>
               <button
                 onClick={() => setStep(5)}
-                disabled={!selectedDate || !selectedTime || !selectedBarberId}
+                disabled={!scheduleValid}
                 className="btn-primary flex-1"
               >
                 Continuar

@@ -6,9 +6,11 @@ type StepItem = {
 export function BookingStepper({
   steps,
   current,
+  tone = 'light',
 }: {
   steps: StepItem[]
   current: number
+  tone?: 'light' | 'dark'
 }) {
   return (
     <nav aria-label="Etapas do agendamento" className="mb-8">
@@ -26,8 +28,8 @@ export function BookingStepper({
                   active
                     ? 'bg-brass text-charcoal'
                     : done
-                      ? 'bg-ink text-paper'
-                      : 'bg-paper-dark text-ink-muted'
+                      ? tone === 'dark' ? 'bg-white/15 text-white' : 'bg-ink text-paper'
+                      : tone === 'dark' ? 'bg-white/5 text-charcoal-muted' : 'bg-paper-dark text-ink-muted'
                 }`}
               >
                 {done ? (
@@ -39,8 +41,8 @@ export function BookingStepper({
                 )}
               </span>
               <span
-                className={`w-full truncate text-[11px] font-medium uppercase tracking-wide ${
-                  active ? 'text-ink' : 'text-ink-muted'
+                className={`w-full text-[10px] font-medium uppercase tracking-wide ${
+                  tone === 'dark' ? active ? 'text-white' : 'text-charcoal-muted' : active ? 'text-ink' : 'text-ink-muted'
                 }`}
               >
                 {step.label}
@@ -49,7 +51,7 @@ export function BookingStepper({
           )
         })}
       </ol>
-      <div className="mt-3 h-1 overflow-hidden rounded-full bg-paper-dark">
+      <div className={`mt-3 h-1 overflow-hidden rounded-full ${tone === 'dark' ? 'bg-white/10' : 'bg-paper-dark'}`}>
         <div
           className="h-full rounded-full bg-brass transition-[width] duration-300"
           style={{ width: `${(current / steps.length) * 100}%` }}

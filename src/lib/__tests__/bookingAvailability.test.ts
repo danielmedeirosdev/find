@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getAvailableSlots, getShopClosureForDate, isShopClosedOnDate, localDateIso } from '../booking'
+import { availableBookingTimes, bookingClock, eligibleProfessionals, getAvailableSlots, getNextDatesForDay, getShopClosureForDate, isShopClosedOnDate, localDateIso, type BookingAvailability } from '../booking'
 import type { BarberSchedule, BarberTimeOff, Service, ShopClosure } from '../types'
 
 const schedule: BarberSchedule = {
@@ -104,5 +104,43 @@ describe('shop open state', () => {
       getAvailableSlots(schedule, [], [service], '2026-09-07', undefined, [], [laterHoliday])
         .length
     ).toBeGreaterThan(0)
+  })
+})
+
+describe('shared public and internal calendar', () => {
+  const availability: BookingAvailability = { schedules: [schedule], occupiedSlots: [], timeOff: [], closures: [], mappings: [] }
+  const now = new Date('2026-09-07T13:07:00Z') // 10:07 in São Paulo
+  it('uses the establishment date even across UTC midnight', () => {
+    expect(bookingClock(new Date('2026-09-08T01:30:00Z'))).toEqual({ date: '2026-09-07', time: '22:30' })
+  })
+  it('offers only future slots with room for the complete duration', () => {
+    const slots = availableBookingTimes(availability, 'professional-1', '2026-09-07', 90, now)
+    expect(slots[0]).toBe('10:15')
+    expect(slots[slots.length - 1]).toBe('11:30')
+    expect(slots).not.toContain('10:00')
+  })
+  it('omits inactive weekdays and past dates', () => {
+    expect(availableBookingTimes(availability, 'professional-1', '2026-09-06', 60, now)).toEqual([])
+    expect(availableBookingTimes(availability, 'professional-1', '2026-09-08', 60, now)).toEqual([])
+    expect(getAvailableSlots({ ...schedule, is_active: false }, [], [service], '2026-09-07')).toEqual([])
+  })
+  it('filters bookings by professional, not just date', () => {
+    const slots = getAvailableSlots(schedule, [{ shop_id: 'shop-1', barber_id: 'other', date: '2026-09-07', time: '09:00', duration_minutes: 240 }], [service], '2026-09-07')
+    expect(slots).toContain('09:00')
+  })
+  it('combines occupied time, partial leave and full closures', () => {
+    const busy = { ...availability, occupiedSlots: [{ shop_id: 'shop-1', barber_id: 'professional-1', date: '2026-09-07', time: '10:30', duration_minutes: 60 }], timeOff: [timeOff({ starts_on: '2026-09-07', ends_on: '2026-09-07', start_time: '12:00', end_time: '13:00' })] }
+    expect(availableBookingTimes(busy, 'professional-1', '2026-09-07', 60, now)).toEqual([])
+    expect(availableBookingTimes({ ...availability, closures: [holiday] }, 'professional-1', '2026-09-07', 60, now)).toEqual([])
+  })
+  it('allows only professionals qualified for every selected service', () => {
+    const team = [{ id: 'a' }, { id: 'b' }]
+    const mappings = [{ service_id: 'bath', barber_id: 'a', shop_id: 'shop-1' }, { service_id: 'cut', barber_id: 'b', shop_id: 'shop-1' }]
+    expect(eligibleProfessionals(team, ['unrestricted'], mappings)).toEqual(team)
+    expect(eligibleProfessionals(team, ['bath'], mappings)).toEqual([{ id: 'a' }])
+    expect(eligibleProfessionals(team, ['bath', 'cut'], mappings)).toEqual([])
+  })
+  it('uses the selected weekday for upcoming calendar dates', () => {
+    expect(getNextDatesForDay(1, 2, '2026-09-08')).toEqual(['2026-09-14', '2026-09-21'])
   })
 })

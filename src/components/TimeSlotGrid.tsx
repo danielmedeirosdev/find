@@ -5,6 +5,7 @@ interface Props {
   selected: string | null
   onSelect: (time: string) => void
   emptyMessage?: string
+  tone?: 'light' | 'dark'
 }
 
 type Period = 'morning' | 'afternoon' | 'evening'
@@ -42,9 +43,12 @@ export function TimeSlotGrid({
   selected,
   onSelect,
   emptyMessage = 'Nenhum horário disponível nesta data.',
+  tone = 'light',
 }: Props) {
+  const muted = tone === 'dark' ? 'text-charcoal-muted' : 'text-ink-muted'
+  const text = tone === 'dark' ? 'text-white' : 'text-ink'
   if (slots.length === 0) {
-    return <p className="text-sm text-ink-muted">{emptyMessage}</p>
+    return <p className={`text-sm ${muted}`}>{emptyMessage}</p>
   }
 
   const groups = groupSlots(slots)
@@ -56,8 +60,8 @@ export function TimeSlotGrid({
         return (
           <div key={period}>
             <div className="mb-2 flex items-baseline justify-between gap-2">
-              <h4 className="text-sm font-medium text-ink">{meta.label}</h4>
-              <span className="text-[11px] text-ink-muted">{meta.hint}</span>
+              <h4 className={`text-sm font-medium ${text}`}>{meta.label}</h4>
+              <span className={`text-[11px] ${muted}`}>{meta.hint}</span>
             </div>
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
               {times.map((t) => {
@@ -68,10 +72,10 @@ export function TimeSlotGrid({
                     type="button"
                     onClick={() => onSelect(t)}
                     aria-pressed={isSelected}
-                    className={`rounded-xl border py-2.5 font-mono text-sm transition-all ${
+                    className={`min-h-11 rounded-xl border py-2.5 font-mono text-sm transition-all ${
                       isSelected
                         ? 'border-brass bg-brass text-charcoal shadow-sm ring-2 ring-brass/30'
-                        : 'border-transparent bg-paper text-ink hover:border-brass/40 hover:bg-paper-dark'
+                        : tone === 'dark' ? 'border-white/10 bg-charcoal text-white hover:border-brass/40' : 'border-transparent bg-paper text-ink hover:border-brass/40 hover:bg-paper-dark'
                     }`}
                   >
                     {formatTime(t)}

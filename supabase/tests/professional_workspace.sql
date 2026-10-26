@@ -2,9 +2,10 @@
 do $$
 declare u uuid:=gen_random_uuid(); sh uuid:=gen_random_uuid(); c uuid:=gen_random_uuid(); pet uuid:=gen_random_uuid(); staff uuid:=gen_random_uuid(); s1 uuid:=gen_random_uuid(); s2 uuid:=gen_random_uuid(); b uuid; b2 uuid; tpl uuid:=gen_random_uuid(); cp uuid:=gen_random_uuid(); n int;
 begin
- insert into auth.users(id) values(u);
+ insert into auth.users(id,email) values(u,'qa.workspace.'||u||'@example.com');
  insert into shops(id,owner_user_id,name,segment) values(sh,u,'QA rollback only','pet');
  insert into barbers(id,shop_id,name) values(staff,sh,'QA Professional');
+ insert into barber_schedule(barber_id,day_of_week,is_active,start_time,end_time) select staff,day,true,'09:00','18:00' from generate_series(0,6) day;
  insert into shop_customers(id,shop_id,name,phone) values(c,sh,'QA Customer','19999990000');
  insert into pets(id,shop_id,customer_id,name) values(pet,sh,c,'QA Pet');
  insert into services(id,shop_id,name,price,duration_minutes) values(s1,sh,'QA Bath',59.90,30),(s2,sh,'QA Extra',20.10,15);

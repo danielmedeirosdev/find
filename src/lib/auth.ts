@@ -31,8 +31,6 @@ export async function ensureBarberShop(
     return { id: existing.id, created: false }
   }
 
-  const trialEndsAt = new Date()
-  trialEndsAt.setDate(trialEndsAt.getDate() + 30)
   const slug = await ensureUniqueSlug(shopName, undefined, segment)
   const meta = getSegment(segment)
 
@@ -41,8 +39,6 @@ export async function ensureBarberShop(
     .insert({
       owner_user_id: userId,
       name: shopName || meta.defaultShopName,
-      subscription_status: 'trial',
-      trial_ends_at: trialEndsAt.toISOString(),
       slug,
       segment,
     })
