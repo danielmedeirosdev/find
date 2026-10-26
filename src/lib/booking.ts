@@ -28,8 +28,7 @@ export function bookingErrorMessage(err: unknown): string {
 }
 
 /** Horários que ainda ocupam a agenda (alinhado a bookings_active_slot_uidx). */
-export async function loadOccupiedSlots(shopId: string): Promise<PublicBookingSlot[]> {
-  const today = bookingClock().date
+export async function loadOccupiedSlots(shopId: string, today = bookingClock().date): Promise<PublicBookingSlot[]> {
   const { data, error } = await supabase
     .from('public_booking_slots')
     .select('shop_id, barber_id, date, time, duration_minutes')
@@ -42,8 +41,7 @@ export async function loadOccupiedSlots(shopId: string): Promise<PublicBookingSl
   return (data as PublicBookingSlot[]) || []
 }
 
-export async function loadPublicTimeOff(shopId: string): Promise<BarberTimeOff[]> {
-  const today = bookingClock().date
+export async function loadPublicTimeOff(shopId: string, today = bookingClock().date): Promise<BarberTimeOff[]> {
   const { data, error } = await supabase
     .from('barber_time_off')
     .select('id, shop_id, barber_id, starts_on, ends_on, start_time, end_time')
@@ -56,8 +54,7 @@ export async function loadPublicTimeOff(shopId: string): Promise<BarberTimeOff[]
   return (data as BarberTimeOff[]) || []
 }
 
-export async function loadPublicShopClosures(shopId: string): Promise<ShopClosure[]> {
-  const today = bookingClock().date
+export async function loadPublicShopClosures(shopId: string, today = bookingClock().date): Promise<ShopClosure[]> {
   const { data, error } = await supabase
     .from('shop_closures')
     .select('id, shop_id, starts_on, ends_on, label')
@@ -187,6 +184,7 @@ export function eligibleProfessionals<T extends { id: string }>(
 }
 
 export interface BookingAvailability {
+  serverClock?: { serverTime: number; measuredAt: number }
   schedules: BarberSchedule[]
   occupiedSlots: PublicBookingSlot[]
   timeOff: BarberTimeOff[]
@@ -194,18 +192,32 @@ export interface BookingAvailability {
   mappings: ServiceBarber[]
 }
 
+/** Advance the server clock using monotonic elapsed time, independent of device date settings. */
+export function bookingNow(clock?: BookingAvailability['serverClock'], elapsed = performance.now()): Date {
+  return clock ? new Date(clock.serverTime + Math.max(0, elapsed - clock.measuredAt)) : new Date()
+}
+
 export async function loadBookingAvailability(shopId: string, professionalIds: string[]): Promise<BookingAvailability> {
+  const startedAt = performance.now()
+  const clockResult = await supabase.rpc('current_booking_time')
+  const receivedAt = performance.now()
+  const serverTime = typeof clockResult.data === 'string' ? Date.parse(clockResult.data) : NaN
+  if (clockResult.error || !Number.isFinite(serverTime)) throw new Error('Não foi possível conferir a hora atual do agendamento. Tente novamente.')
+  // Include request transit time conservatively: a slot must disappear before
+  // it can be rejected as elapsed, even with a slow network or a wrong device clock.
+  const serverClock = { serverTime: serverTime + receivedAt - startedAt, measuredAt: receivedAt }
+  const today = bookingClock(bookingNow(serverClock)).date
   const [scheduleResult, mappingResult, occupiedSlots, timeOff, closures] = await Promise.all([
     professionalIds.length ? supabase.from('barber_schedule').select('*').in('barber_id', professionalIds) : Promise.resolve({ data: [], error: null }),
     supabase.from('service_barbers').select('*').eq('shop_id', shopId),
-    loadOccupiedSlots(shopId), loadPublicTimeOff(shopId), loadPublicShopClosures(shopId),
+    loadOccupiedSlots(shopId, today), loadPublicTimeOff(shopId, today), loadPublicShopClosures(shopId, today),
   ])
   if (scheduleResult.error || mappingResult.error) throw new Error('Não foi possível carregar a disponibilidade da equipe. Tente novamente.')
-  return { schedules: scheduleResult.data || [], mappings: mappingResult.data || [], occupiedSlots, timeOff, closures }
+  return { serverClock, schedules: scheduleResult.data || [], mappings: mappingResult.data || [], occupiedSlots, timeOff, closures }
 }
 
 export function availableBookingTimes(
-  availability: BookingAvailability, professionalId: string, date: string, duration: number, now = new Date()
+  availability: BookingAvailability, professionalId: string, date: string, duration: number, now = bookingNow(availability.serverClock)
 ): string[] {
   const clock = bookingClock(now)
   if (date < clock.date) return []

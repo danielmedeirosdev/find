@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { availableBookingTimes, bookingClock, eligibleProfessionals, getAvailableSlots, getNextDatesForDay, getShopClosureForDate, isShopClosedOnDate, localDateIso, type BookingAvailability } from '../booking'
+import { availableBookingTimes, bookingClock, bookingNow, eligibleProfessionals, getAvailableSlots, getNextDatesForDay, getShopClosureForDate, isShopClosedOnDate, localDateIso, type BookingAvailability } from '../booking'
 import type { BarberSchedule, BarberTimeOff, Service, ShopClosure } from '../types'
 
 const schedule: BarberSchedule = {
@@ -112,6 +112,16 @@ describe('shared public and internal calendar', () => {
   const now = new Date('2026-09-07T13:07:00Z') // 10:07 in São Paulo
   it('uses the establishment date even across UTC midnight', () => {
     expect(bookingClock(new Date('2026-09-08T01:30:00Z'))).toEqual({ date: '2026-09-07', time: '22:30' })
+  })
+  it('advances server time independently of the device clock', () => {
+    const clock = { serverTime: Date.parse('2026-09-07T15:14:00Z'), measuredAt: 1000 }
+    expect(bookingClock(bookingNow(clock, 2000))).toEqual({ date: '2026-09-07', time: '12:14' })
+    expect(bookingClock(bookingNow(clock, 62000))).toEqual({ date: '2026-09-07', time: '12:15' })
+    expect(bookingNow(clock, 0).toISOString()).toBe('2026-09-07T15:14:00.000Z')
+  })
+  it('removes a selected slot at the instant its starting minute is reached', () => {
+    expect(availableBookingTimes(availability, 'professional-1', '2026-09-07', 15, new Date('2026-09-07T15:14:59Z'))).toContain('12:15')
+    expect(availableBookingTimes(availability, 'professional-1', '2026-09-07', 15, new Date('2026-09-07T15:15:00Z'))).not.toContain('12:15')
   })
   it('offers only future slots with room for the complete duration', () => {
     const slots = availableBookingTimes(availability, 'professional-1', '2026-09-07', 90, now)
