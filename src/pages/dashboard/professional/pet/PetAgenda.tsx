@@ -335,10 +335,10 @@ export function PetAgenda({ shopId, barberId }: Props) {
 
   return (
     <div className="overflow-x-hidden">
-      <div className="mb-4 flex justify-end"><button type="button" onClick={()=>void openNew()} className="rounded-xl bg-brass px-5 py-3 font-semibold text-charcoal-dark">+ Novo agendamento</button></div>
+      <div className="mb-4 flex justify-end"><button type="button" onClick={()=>void openNew()} className="min-h-11 rounded-xl bg-brass px-4 py-2.5 text-sm font-semibold text-charcoal-dark">+ Novo agendamento</button></div>
       {showNew && <section className="mb-4 rounded-xl border border-white/10 bg-charcoal-dark p-3 sm:p-4">
         <div className="mb-3 flex items-center justify-between gap-3"><h3 className="text-lg font-semibold text-white">Novo agendamento</h3><button type="button" onClick={()=>setShowNew(false)} className="text-sm text-charcoal-muted">Fechar</button></div>
-        <div className="mb-6 grid grid-cols-4 gap-2">{['Cliente e pet','Serviço','Horário','Comprovante'].map((label,i)=><div key={label} className={`rounded-lg px-1 py-2 text-center text-[11px] font-medium ${newStep===i+1?'bg-brass text-charcoal-dark':'bg-white/5 text-charcoal-muted'}`}>{i+1}. {label}</div>)}</div>
+        <div className="mb-5 grid grid-cols-4 gap-1.5">{['Cliente e pet','Serviços','Data e hora','Concluído'].map((label,i)=><div key={label} className={`rounded-lg px-1 py-2 text-center text-[11px] font-medium ${newStep===i+1?'bg-brass text-charcoal-dark':'bg-white/5 text-charcoal-muted'}`}>{i+1}. {label}</div>)}</div>
         {newStep===4 && receipt ? <div className="space-y-3">
           {createdCount>1 && <p className="rounded-xl border border-brass/30 p-3 text-center text-sm text-white">{createdCount} agendamentos criados com sucesso. O comprovante abaixo corresponde ao primeiro horário.</p>}
           <ConfirmReceipt view={receipt} signedIn={true}/>
@@ -414,30 +414,6 @@ export function PetAgenda({ shopId, barberId }: Props) {
         <div className="mb-4">
           <InlineError message={actionError || loadError} />
         </div>
-      )}
-
-      {nextUp && (
-        <section className="mb-6 rounded-2xl border border-brass/35 bg-gradient-to-r from-brass/10 to-transparent p-5">
-          <p className="text-[11px] uppercase tracking-widest text-brass/90">Próximo atendimento</p>
-          <p className="mt-2 font-mono text-2xl text-brass">{formatTime(nextUp.time)}</p>
-          <p className="text-sm text-charcoal-muted">{formatDate(nextUp.date)}</p>
-          <p className="mt-2 text-lg font-medium text-white">{nextUp.client_name}</p>
-          <span className="mt-2 inline-block rounded-full bg-charcoal-light px-2.5 py-1 text-xs text-charcoal-muted">
-            {bookingStatusLabel(nextUp.status || 'scheduled')}
-          </span>
-          <button type="button" onClick={() => { setEditingBooking(nextUp); setExtraServiceIds([]); setExtraError('') }}
-            className="min-h-11 rounded-xl border border-brass/40 px-4 py-2.5 text-sm font-medium text-brass hover:bg-brass/10">
-            + Adicionar serviços
-          </button>
-          <BookingActions
-            status={nextUp.status}
-            busy={statusUpdatingId === nextUp.id}
-            includeAwaitingPayment
-            onStatusChange={(status) => updateStatus(nextUp.id, status)}
-            onComplete={() => setCompletingBooking(nextUp)}
-            className="mt-4 border-t border-brass/20 pt-4"
-          />
-        </section>
       )}
 
       <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
@@ -602,6 +578,8 @@ export function PetAgenda({ shopId, barberId }: Props) {
             + Adicionar serviços
           </button>
                 <BookingActions
+                  compact
+            compact
                   status={b.status}
                   busy={statusUpdatingId === b.id}
                   includeAwaitingPayment
