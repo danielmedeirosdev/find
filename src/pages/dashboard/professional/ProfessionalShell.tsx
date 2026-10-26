@@ -1,5 +1,5 @@
 import { BusinessAccount } from '../../../components/BusinessAccount'
-import { useLayoutEffect, useRef, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { SegmentProvider } from '../../../contexts/SegmentContext'
 import { BrandAccent } from '../../../components/BrandAccent'
@@ -48,6 +48,7 @@ export function ProfessionalShell({
   children,
 }: Props) {
   const meta = getSegment(segment)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const location = useLocation()
   const contentRef = useRef<HTMLDivElement>(null)
   const previousTab = useRef(activeTab)
@@ -69,29 +70,65 @@ export function ProfessionalShell({
   return (
     <SegmentProvider segment={segment}>
       <div className={meta.themeClass} data-segment={segment} data-professional={segment}>
-        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="mb-5 flex flex-wrap items-center gap-3 sm:mb-8">
           {shop.logo_url ? (
             <img
               src={shop.logo_url}
               alt=""
-              className="h-14 w-14 rounded-xl object-cover border border-charcoal-light"
+              className="h-11 w-11 rounded-xl object-cover border border-charcoal-light sm:h-14 sm:w-14"
             />
           ) : null}
           <div className="min-w-0">
             <p className="text-xs uppercase tracking-widest text-brass/80 mb-1">
               {meta.panelEyebrow}
             </p>
-            <h1 className="font-display text-3xl sm:text-4xl text-brass break-words">{title}</h1>
-            <p className="text-charcoal-muted text-sm mt-1">
+            <h1 className="font-display text-xl font-semibold sm:text-4xl text-brass break-words">{title}</h1>
+            <p className="hidden text-charcoal-muted text-sm mt-1 sm:block">
               {subtitle || meta.panelSubtitle}
             </p>
           </div>
-          <UpdatesButton className="sm:ml-auto" />
+          <UpdatesButton className="ml-auto" />
           <BusinessAccount shop={shop} />
         </div>
 
-        <BrandAccent className="mb-6 max-w-sm" height="h-1" segment={segment} />
+        <BrandAccent className="mb-3 max-w-sm sm:mb-6" height="h-1" segment={segment} />
 
+        <div className="mb-4 sm:hidden">
+          <button type="button" onClick={() => setMobileMenuOpen(open => !open)}
+            aria-expanded={mobileMenuOpen} aria-controls="onefind-mobile-navigation"
+            className="flex min-h-12 w-full items-center justify-between rounded-xl border border-white/15 bg-charcoal-light/50 px-4 text-sm font-semibold text-white">
+            <span className="flex items-center gap-2"><AppIcon name="menu" size={18} /> {tabs.find(tab => tab.id === activeTab)?.label || 'Menu'}</span>
+            <span className="text-brass">{mobileMenuOpen ? 'Fechar' : 'Todas as áreas'}</span>
+          </button>
+          {mobileMenuOpen && (
+            <nav id="onefind-mobile-navigation" aria-label="Menu do painel" className="mt-2 max-h-[55vh] space-y-4 overflow-y-auto rounded-xl border border-white/10 bg-charcoal-dark p-3 shadow-xl">
+              {(tabGroups?.length ? tabGroups : [{ label: 'Painel', tabs }]).map(group => (
+                <div key={group.label}>
+                  <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-widest text-charcoal-muted">{group.label}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {group.tabs.map(tab => (
+                      <button key={tab.id} type="button" onClick={() => { onTabChange(tab.id); setMobileMenuOpen(false) }}
+                        aria-current={activeTab === tab.id ? 'page' : undefined}
+                        className={`flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium ${activeTab === tab.id ? 'bg-brass text-charcoal-dark' : 'bg-white/5 text-white'}`}>
+                        {tab.icon ? <AppIcon name={tab.icon} size={16} /> : null}<span>{tab.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </nav>
+          )}
+        </div>
+        <nav className="mb-5 flex gap-2 overflow-x-auto pb-2 sm:hidden" aria-label="Acesso rápido">
+          {tabs.slice(0, 5).map(tab => (
+            <button key={tab.id} type="button" onClick={() => { onTabChange(tab.id); setMobileMenuOpen(false) }}
+              aria-current={activeTab === tab.id ? 'page' : undefined}
+              className={`min-h-10 shrink-0 rounded-full px-4 text-xs font-semibold ${activeTab === tab.id ? 'bg-brass text-charcoal-dark' : 'border border-white/15 bg-white/5 text-white'}`}>
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+        <div className="hidden sm:block">
         {tabGroups && tabGroups.length > 0 ? (
           <nav className="mb-8 space-y-4 border-b border-charcoal-light pb-4" aria-label={`Navegação ${meta.brandName}`}>
             {tabGroups.map((group) => (
@@ -144,6 +181,7 @@ export function ProfessionalShell({
           </nav>
         )}
 
+        </div>
         <div key={activeTab} ref={contentRef} tabIndex={-1} role="region" aria-label={tabs.find(tab => tab.id === activeTab)?.label || title} className="dashboard-tab-content">
           <div className="panel-enter">{children}</div>
         </div>
