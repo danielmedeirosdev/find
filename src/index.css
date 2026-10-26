@@ -1460,3 +1460,53 @@ html {
   .mobile-signup-bar p { color: #474f5b; font-size: .875rem; text-align: center; }
   .editorial-home .pricing-action { min-width: 0; }
 }
+
+
+/* onefind workspace: one coherent system for all PET management screens. */
+[data-professional="pet"] {
+  --of-surface: #1d1d1d;
+  --of-panel: #242320;
+  --of-line: #393630;
+  --of-gold: #d2a456;
+  color: #f4f0e9;
+  -webkit-font-smoothing: antialiased;
+}
+[data-professional="pet"] .dashboard-tab-content {
+  max-width: 1120px;
+  margin-inline: auto;
+  min-width: 0;
+}
+[data-professional="pet"] .dashboard-tab-content :is(h2,h3) {
+  letter-spacing: -.025em;
+  line-height: 1.25;
+}
+[data-professional="pet"] .dashboard-tab-content h2 { font-size: clamp(1.25rem, 2.5vw, 1.65rem); font-weight: 650; }
+[data-professional="pet"] .dashboard-tab-content h3 { font-size: 1.05rem; font-weight: 620; }
+[data-professional="pet"] .dashboard-tab-content :is(input,select,textarea) {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  border-radius: 11px;
+  font-size: 16px;
+}
+[data-professional="pet"] .dashboard-tab-content :is(button,a) { -webkit-tap-highlight-color: transparent; }
+[data-professional="pet"] .dashboard-tab-content button:focus-visible,
+[data-professional="pet"] .dashboard-tab-content a:focus-visible,
+[data-professional="pet"] .dashboard-tab-content input:focus-visible {
+  outline: 2px solid var(--of-gold);
+  outline-offset: 2px;
+}
+[data-professional="pet"] .dashboard-tab-content :is(.grid,.flex) { min-width: 0; }
+[data-professional="pet"] .dashboard-tab-content :is(.rounded-lg,.rounded-xl,.rounded-2xl) {
+  box-shadow: none;
+}
+@media (max-width: 639px) {
+  [data-professional="pet"] .dashboard-tab-content { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+  [data-professional="pet"] .dashboard-tab-content :is(h2,h3) { overflow-wrap: anywhere; }
+  [data-professional="pet"] .dashboard-tab-content :is(input,select,textarea) { width: 100%; }
+  [data-professional="pet"] .dashboard-tab-content :is(button,select) { touch-action: manipulation; }
+  [data-professional="pet"] .dashboard-tab-content .font-mono { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  [data-professional="pet"] .dashboard-tab-content :is(.overflow-x-auto) { overscroll-behavior-x: contain; }
+  [data-professional="pet"] .dashboard-tab-content table { min-width: 540px; }
+  [data-professional="pet"] .dashboard-tab-content :is(.sm\\:grid-cols-2,.sm\\:grid-cols-3) { min-width: 0; }
+}
