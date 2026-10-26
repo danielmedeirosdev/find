@@ -75,6 +75,57 @@ export function PetAgenda({ shopId, barberId }: Props) {
   const [dayFilter, setDayFilter] = useState<DayFilter>('today')
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null)
   const [showAvailability, setShowAvailability] = useState(false)
+  const [editingBooking, setEditingBooking] = useState<BookingWithDetails | null>(null)
+  const [extraServiceIds, setExtraServiceIds] = useState<string[]>([])
+  const [savingExtras, setSavingExtras] = useState(false)
+  const [extraError, setExtraError] = useState('')
+
+  const saveExtraServices = async () => {
+    if (!editingBooking || !extraServiceIds.length) return
+    const existing = new Set((editingBooking.booking_services || []).map(item => item.service_id))
+    const additions = shopServices.filter(service => extraServiceIds.includes(service.id) && !existing.has(service.id))
+    if (!additions.length) return
+    setSavingExtras(true)
+    setExtraError('')
+    const addedPrice = additions.reduce((sum, service) => sum + Number(service.price || 0), 0)
+    const addedMinutes = additions.reduce((sum, service) => sum + Number(service.duration_minutes || 0), 0)
+    const previousServices = (editingBooking.booking_services || []).map(item => item.services).filter(Boolean)
+    const baseAmount = editingBooking.services_amount != null
+      ? Number(editingBooking.services_amount)
+      : previousServices.reduce((sum, service) => sum + Number(service.price || 0), 0)
+    const previousTotal = editingBooking.quoted_amount != null
+      ? Number(editingBooking.quoted_amount)
+      : baseAmount + Number(editingBooking.extras_amount || 0) + Number(editingBooking.pet_transport_fee || 0) - Number(editingBooking.discount_amount || 0)
+    const previousMinutes = editingBooking.duration_minutes != null
+      ? Number(editingBooking.duration_minutes)
+      : previousServices.reduce((sum, service) => sum + Number(service.duration_minutes || 0), 0)
+
+    const { error: insertError } = await supabase.from('booking_services').insert(
+      additions.map(service => ({ booking_id: editingBooking.id, service_id: service.id }))
+    )
+    if (insertError) {
+      setExtraError(userFacingError(insertError, 'Não foi possível adicionar os serviços.'))
+      setSavingExtras(false)
+      return
+    }
+    const { error: updateError } = await supabase.from('bookings').update({
+      services_amount: baseAmount + addedPrice,
+      quoted_amount: previousTotal + addedPrice,
+      duration_minutes: previousMinutes + addedMinutes,
+    }).eq('id', editingBooking.id).eq('shop_id', shopId)
+    if (updateError) {
+      await supabase.from('booking_services').delete()
+        .eq('booking_id', editingBooking.id).in('service_id', additions.map(service => service.id))
+      setExtraError(userFacingError(updateError, 'Não foi possível atualizar o agendamento.'))
+      setSavingExtras(false)
+      return
+    }
+    setEditingBooking(null)
+    setExtraServiceIds([])
+    setSavingExtras(false)
+    await load()
+  }
+
   const today = addDaysIso(0)
   const tomorrow = addDaysIso(1)
 
@@ -92,7 +143,7 @@ export function PetAgenda({ shopId, barberId }: Props) {
       .from('bookings')
       .select(PET_BOOKING_SELECT)
       .eq('shop_id', shopId)
-      .gte('date', today)
+      .gte('date', addDaysIso(-30))
       .order('date')
       .order('time')
     if (barberId) query = query.eq('barber_id', barberId)
@@ -374,6 +425,10 @@ export function PetAgenda({ shopId, barberId }: Props) {
           <span className="mt-2 inline-block rounded-full bg-charcoal-light px-2.5 py-1 text-xs text-charcoal-muted">
             {bookingStatusLabel(nextUp.status || 'scheduled')}
           </span>
+          <button type="button" onClick={() => { setEditingBooking(nextUp); setExtraServiceIds([]); setExtraError('') }}
+            className="min-h-11 rounded-xl border border-brass/40 px-4 py-2.5 text-sm font-medium text-brass hover:bg-brass/10">
+            + Adicionar serviços
+          </button>
           <BookingActions
             status={nextUp.status}
             busy={statusUpdatingId === nextUp.id}
@@ -542,6 +597,10 @@ export function PetAgenda({ shopId, barberId }: Props) {
                   </div>
                   <p className="font-mono text-brass">{formatPrice(total)}</p>
                 </div>
+          <button type="button" onClick={() => { setEditingBooking(b); setExtraServiceIds([]); setExtraError('') }}
+            className="min-h-11 rounded-xl border border-brass/40 px-4 py-2.5 text-sm font-medium text-brass hover:bg-brass/10">
+            + Adicionar serviços
+          </button>
                 <BookingActions
                   status={b.status}
                   busy={statusUpdatingId === b.id}
@@ -556,6 +615,32 @@ export function PetAgenda({ shopId, barberId }: Props) {
         </div>
       )}
 
+
+      {editingBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-label="Adicionar serviços">
+          <div className="w-full max-w-md rounded-2xl border border-brass/25 bg-charcoal-dark p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-3">
+              <div><h3 className="text-lg font-semibold text-white">Adicionar serviços</h3>
+                <p className="mt-1 text-sm text-charcoal-muted">{editingBooking.client_name} · {formatDate(editingBooking.date)}</p></div>
+              <button type="button" onClick={() => setEditingBooking(null)} className="rounded-lg px-3 py-2 text-sm text-charcoal-muted">Fechar</button>
+            </div>
+            <div className="mt-5 max-h-72 space-y-2 overflow-y-auto">
+              {shopServices.filter(service => !(editingBooking.booking_services || []).some(item => item.service_id === service.id)).map(service => (
+                <label key={service.id} className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-white/10 p-3 text-sm text-white">
+                  <input type="checkbox" className="h-4 w-4 accent-amber-500" checked={extraServiceIds.includes(service.id)}
+                    onChange={event => setExtraServiceIds(current => event.target.checked ? [...current, service.id] : current.filter(id => id !== service.id))} />
+                  <span className="flex-1">{service.name}</span><span className="text-brass">{formatPrice(Number(service.price || 0))}</span>
+                </label>
+              ))}
+            </div>
+            {extraError && <p role="alert" className="mt-3 text-sm text-red-400">{extraError}</p>}
+            <button type="button" disabled={!extraServiceIds.length || savingExtras} onClick={() => void saveExtraServices()}
+              className="mt-5 min-h-12 w-full rounded-xl bg-brass px-4 py-3 text-center font-semibold text-charcoal disabled:opacity-50">
+              {savingExtras ? 'Salvando...' : 'Salvar serviços'}
+            </button>
+          </div>
+        </div>
+      )}
       {completingBooking && (
         <CompleteBookingModal
           booking={completingBooking}
