@@ -44,7 +44,6 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
 
   const selectedServices = shopServices.filter((s) => selectedIds.has(s.id))
   const parsedTransportFee = Number(transportFee.replace(',', '.'))
-  const currentTransportFee = Number(booking.pet_transport_fee || 0)
   const baseTotal = getTotalPrice(selectedServices) + Number(booking.extras_amount || 0) + Number(booking.booking_custom_field_answers?.reduce((sum, answer) => sum + Number(answer.price_delta || 0), 0) || 0) - Number(booking.discount_amount || 0)
   const total = baseTotal + (booking.pet_transport_requested && Number.isFinite(parsedTransportFee) ? parsedTransportFee : 0)
 
