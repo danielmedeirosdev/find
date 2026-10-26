@@ -83,6 +83,56 @@ export function AgendaTab({ shopId, barberId }: Props) {
   const [reminderUpdatingId, setReminderUpdatingId] = useState<string | null>(null)
   const [showAvailability, setShowAvailability] = useState(false)
   const [shopName, setShopName] = useState('')
+  const [editingBooking, setEditingBooking] = useState<BookingWithDetails | null>(null)
+  const [selectedExtraIds, setSelectedExtraIds] = useState<string[]>([])
+  const [savingExtras, setSavingExtras] = useState(false)
+
+  const saveExtraServices = async () => {
+    if (!editingBooking || selectedExtraIds.length === 0) return
+    setSavingExtras(true)
+    setActionError('')
+    const extras = shopServices.filter(s => selectedExtraIds.includes(s.id))
+    const currentIds = new Set((editingBooking.booking_services || []).map(s => s.service_id))
+    const additions = extras.filter(s => !currentIds.has(s.id))
+    if (!additions.length) { setSavingExtras(false); setEditingBooking(null); return }
+    const oldServices = (editingBooking.booking_services || []).map(item => item.services).filter(Boolean)
+    const basePrice = editingBooking.services_amount != null
+      ? Number(editingBooking.services_amount)
+      : oldServices.reduce((sum, s) => sum + Number(s.price || 0), 0)
+    const extraPrice = additions.reduce((sum, s) => sum + Number(s.price || 0), 0)
+    const extraDuration = additions.reduce((sum, s) => sum + Number(s.duration_minutes || 0), 0)
+    const previousDuration = editingBooking.duration_minutes != null
+      ? Number(editingBooking.duration_minutes)
+      : oldServices.reduce((sum, s) => sum + Number(s.duration_minutes || 0), 0)
+    const previousQuote = editingBooking.quoted_amount != null
+      ? Number(editingBooking.quoted_amount)
+      : basePrice + Number(editingBooking.extras_amount || 0) + Number(editingBooking.pet_transport_fee || 0) - Number(editingBooking.discount_amount || 0)
+
+    const { error: insertError } = await supabase.from('booking_services').insert(
+      additions.map(s => ({ booking_id: editingBooking.id, service_id: s.id }))
+    )
+    if (insertError) {
+      setActionError(userFacingError(insertError, 'Não foi possível adicionar os serviços.'))
+      setSavingExtras(false)
+      return
+    }
+    const { error: updateError } = await supabase.from('bookings').update({
+      services_amount: basePrice + extraPrice,
+      quoted_amount: previousQuote + extraPrice,
+      duration_minutes: previousDuration + extraDuration,
+    }).eq('id', editingBooking.id).eq('shop_id', shopId)
+    if (updateError) {
+      await supabase.from('booking_services').delete().eq('booking_id', editingBooking.id).in('service_id', additions.map(s => s.id))
+      setActionError(userFacingError(updateError, 'Não foi possível atualizar o valor do agendamento.'))
+      setSavingExtras(false)
+      return
+    }
+    setEditingBooking(null)
+    setSelectedExtraIds([])
+    setSavingExtras(false)
+    await load()
+  }
+
 
   const today = addDaysIso(0)
   const tomorrow = addDaysIso(1)
@@ -460,6 +510,12 @@ export function AgendaTab({ shopId, barberId }: Props) {
                     )}
                   </div>
                 )}
+                {['scheduled', 'confirmed'].includes(status) && (
+                  <button type="button" onClick={() => { setEditingBooking(b); setSelectedExtraIds([]) }}
+                    className="mt-3 min-h-10 rounded-lg border border-brass/40 px-3 py-2 text-sm font-medium text-brass">
+                    Adicionar serviços
+                  </button>
+                )}
                 <BookingActions
                   status={b.status}
                   busy={busy}
@@ -473,6 +529,28 @@ export function AgendaTab({ shopId, barberId }: Props) {
         </div>
       )}
 
+      {editingBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-label="Adicionar serviços ao agendamento">
+          <div className="w-full max-w-md rounded-2xl border border-charcoal-light bg-charcoal-dark p-5 shadow-xl">
+            <h3 className="text-lg font-semibold text-white">Adicionar serviços</h3>
+            <p className="mt-1 text-sm text-charcoal-muted">{editingBooking.client_name} · {formatDate(editingBooking.date)} às {formatTime(editingBooking.time)}</p>
+            <div className="mt-4 max-h-64 space-y-2 overflow-y-auto">
+              {shopServices.filter(s => !(editingBooking.booking_services || []).some(item => item.service_id === s.id)).map(s => (
+                <label key={s.id} className="flex cursor-pointer items-center gap-3 rounded-lg border border-charcoal-light p-3 text-sm text-white">
+                  <input type="checkbox" checked={selectedExtraIds.includes(s.id)}
+                    onChange={e => setSelectedExtraIds(prev => e.target.checked ? [...prev, s.id] : prev.filter(id => id !== s.id))} />
+                  <span className="flex-1">{s.name}</span><span className="text-brass">{formatPrice(Number(s.price))}</span>
+                </label>
+              ))}
+            </div>
+            <p className="mt-3 text-xs text-charcoal-muted">Os serviços novos serão somados ao valor e à duração do atendimento. Confira se o horário comporta o tempo adicional.</p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={() => setEditingBooking(null)} className="rounded-lg border border-charcoal-light px-4 py-2 text-sm text-white">Cancelar</button>
+              <button type="button" disabled={savingExtras || !selectedExtraIds.length} onClick={saveExtraServices} className="rounded-lg bg-brass px-4 py-2 text-sm font-semibold text-charcoal disabled:opacity-50">{savingExtras ? 'Salvando...' : 'Salvar serviços'}</button>
+            </div>
+          </div>
+        </div>
+      )}
       {completingBooking && (
         <CompleteBookingModal
           booking={completingBooking}
