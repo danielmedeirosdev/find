@@ -301,17 +301,17 @@ export function PetServices({ shopId }: Props) {
         <div className="space-y-4">
           {services.map((s) => (
             <div key={s.id} className="rounded-lg border border-charcoal-light p-4">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <span className="font-medium text-white">{s.name}</span>
-                  <span className="ml-4 font-mono text-sm text-brass">
+              <div className="flex flex-col items-stretch justify-between gap-3 xl:flex-row xl:items-center">
+                <div className="min-w-0 flex-1">
+                  <span className="block break-words font-medium text-white">{s.name}</span>
+                  <span className="font-mono text-sm text-brass">
                     {formatPrice(Number(s.price))}
                   </span>
                   <span className="ml-2 font-mono text-sm text-charcoal-muted">
                     {formatDuration(s.duration_minutes)}
                   </span>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex shrink-0 flex-wrap gap-3">
                   <button
                     onClick={() => editService(s)}
                     className="text-sm text-brass"
