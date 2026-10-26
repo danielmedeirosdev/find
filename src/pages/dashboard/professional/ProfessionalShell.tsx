@@ -1,3 +1,4 @@
+import { Modal } from '../../../components/Modal'
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { BusinessAccount } from "../../../components/BusinessAccount";
 import { SegmentProvider } from "../../../contexts/SegmentContext";
@@ -57,7 +58,7 @@ export function ProfessionalShell({
       {groups.map((group) => (
         <section key={group.label}>
           <p className="workspace-nav-label">{group.label}</p>
-          {group.tabs.map((tab) => (
+          <div className="workspace-nav-items">{group.tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
@@ -67,7 +68,7 @@ export function ProfessionalShell({
               {tab.icon && <AppIcon name={tab.icon} size={18} />}
               <span>{tab.label}</span>
             </button>
-          ))}
+          ))}</div>
         </section>
       ))}
     </>
@@ -107,20 +108,17 @@ export function ProfessionalShell({
           </div>
         </div>
         {menu && (
-          <div
-            className="workspace-menu"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Todas as áreas"
-          >
+          <Modal label="Todas as áreas" onClose={() => setMenu(false)} className="workspace-menu-layer">
+          <div className="workspace-menu">
             <header>
               <strong>Áreas do onefind</strong>
               <button type="button" onClick={() => setMenu(false)}>
                 Fechar
               </button>
             </header>
-            <nav>{nav}</nav>
+            <nav aria-label="Todas as áreas do painel">{nav}</nav>
           </div>
+          </Modal>
         )}
         <nav className="workspace-bottom" aria-label="Acesso rápido">
           {primary.map((t) => (

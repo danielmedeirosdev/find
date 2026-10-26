@@ -188,7 +188,7 @@ export function CashFlowTab({ shopId }: Props) {
               <div>
                 <p className="text-white">{t.description}</p>
                 <p className="text-xs text-charcoal-muted">
-                  {new Date(t.created_at).toLocaleString('pt-BR')} ·{' '}
+                  {new Date(t.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })} ·{' '}
                   {paymentMethodLabel(t.payment_method)}
                 </p>
               </div>

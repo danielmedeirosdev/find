@@ -245,31 +245,53 @@
     min-height: 52px;
     border-radius: 8px;
   }
-  .workspace-menu {
-    display: block;
+  .workspace .workspace-menu-layer {
     position: fixed;
-    inset: 72px 8px calc(78px + env(safe-area-inset-bottom));
+    inset: 0 0 calc(76px + env(safe-area-inset-bottom));
     z-index: 45;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: max(12px, env(safe-area-inset-top)) 12px 8px;
+    background: #0008;
+  }
+  .workspace .workspace-menu-layer .workspace-menu {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 560px;
+    max-height: calc(100dvh - 112px - env(safe-area-inset-bottom) - env(safe-area-inset-top));
     border: 1px solid var(--of-line);
-    border-radius: 12px;
-    background: #202226;
+    border-radius: 16px;
+    background: var(--of-panel);
     padding: 16px;
-    overflow-y: auto;
+    overflow: hidden;
   }
   .workspace-menu header {
     display: flex;
-    justify-content: space-between;
+    flex-shrink: 0;
     align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     margin-bottom: 12px;
+    font-size: 16px;
   }
+  .workspace-menu header button { padding: 8px; font-size: 13px; }
   .workspace-menu nav {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    min-height: 0;
+  }
+  .workspace-menu .workspace-nav-items {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
   }
-  .workspace-menu nav button {
-    font-size: 12px;
-  }
+  .workspace-menu .workspace-nav-label { margin: 0 8px 6px; }
+  .workspace-menu nav button { font-size: 12px; padding: 8px; }
   .of-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
@@ -295,8 +317,5 @@
   .of-booking-row .of-status {
     grid-column: 2;
     justify-self: start;
-  }
-  .workspace-menu nav {
-    grid-template-columns: 1fr;
   }
 }

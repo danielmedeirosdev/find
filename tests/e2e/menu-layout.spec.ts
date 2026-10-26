@@ -1,0 +1,31 @@
+import {test,expect} from '@playwright/test'
+import fs from 'node:fs'
+const account=JSON.parse(fs.readFileSync(process.env.ONEFIND_QA_ACCOUNT||'/tmp/onefind-qa-account.json','utf8'))
+test('mobile menu keeps each group compact and ledger omits seconds',async({page})=>{
+ await page.goto('/painel')
+ await page.getByPlaceholder('Ex: contato@negocio.com').fill(account.email)
+ await page.getByPlaceholder('Sua senha').fill(account.password)
+ await page.getByRole('button',{name:'Entrar',exact:true}).click()
+ await expect(page.getByRole('heading',{name:'Seu dia no onefind'})).toBeVisible({timeout:30000})
+ for(const width of [320,375,390,430]){
+  await page.setViewportSize({width,height:844})
+  await page.getByRole('button',{name:'Mais',exact:true}).click()
+  const menu=page.getByRole('dialog',{name:'Todas as áreas'})
+  await expect(menu).toBeVisible()
+  const panel=await menu.locator('.workspace-menu').boundingBox()
+  expect(panel!.y).toBeGreaterThanOrEqual(0)
+  expect(panel!.x).toBeGreaterThanOrEqual(0)
+  expect(panel!.x+panel!.width).toBeLessThanOrEqual(width)
+  expect(panel!.y+panel!.height).toBeLessThan(780)
+  const grids=await menu.locator('.workspace-nav-items').evaluateAll(nodes=>nodes.map(n=>getComputedStyle(n).gridTemplateColumns.split(' ').length))
+  expect(grids.every(n=>n===2)).toBe(true)
+  if(width===390)await page.screenshot({path:'/tmp/onefind-menu-fixed.png'})
+  await page.keyboard.press('Escape')
+  await expect(menu).toBeHidden()
+ }
+ await page.goto('/painel/dashboard?aba=cashflow')
+ await expect(page.getByText('Saldo do período',{exact:true})).toBeVisible()
+ const ledger=await page.locator('.dashboard-tab-content').innerText()
+ expect(ledger).not.toMatch(/\b\d{2}:\d{2}:\d{2}\b/)
+ expect(ledger).toMatch(/\b\d{2}\/\d{2}\/\d{4},? \d{2}:\d{2}\b/)
+})
