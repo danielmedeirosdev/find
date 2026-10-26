@@ -139,7 +139,7 @@ export function PetOverview({ shopId, businessType, onNavigate }: Props) {
     })
     const recurringCustomers = [...visitsByCustomer.values()].filter((visits) => visits >= 2).length
     const activeToday = todayBookings.filter((booking) => !['cancelled', 'no_show', 'completed'].includes(booking.status || 'scheduled'))
-    const expectedToday = activeToday.reduce((sum, booking) => sum + (booking.booking_services || []).reduce((serviceSum, row) => serviceSum + Number(row.services.price || 0), 0), 0)
+    const expectedToday = activeToday.reduce((sum, booking) => sum + (booking.quoted_amount != null ? Number(booking.quoted_amount) : (booking.booking_services || []).reduce((serviceSum, row) => serviceSum + Number(row.services.price || 0), 0)), 0)
     return {
       income, expenses, net: income - expenses, previousIncome,
       ticket: paidBookings > 0 ? income / paidBookings : 0,
@@ -160,30 +160,48 @@ export function PetOverview({ shopId, businessType, onNavigate }: Props) {
   const businessLabel = PET_BUSINESS_TYPES.find((option) => option.value === businessType)?.label
 
   return (
-    <div className="space-y-9">
+    <div className="space-y-6 sm:space-y-9">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-brass">Visão geral</p>
-          <h2 className="mt-2 font-display text-2xl text-white">Seu negócio PET em um só lugar</h2>
-          <p className="mt-1 text-sm text-charcoal-muted">{businessLabel ? `${businessLabel} · ` : ''}agenda, financeiro, clientes e retorno.</p>
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-brass">Seu dia</p>
+          <h2 className="mt-1 font-display text-xl font-semibold text-white sm:text-2xl">Resumo do negócio</h2>
+          <p className="mt-1 text-xs text-charcoal-muted sm:text-sm">{businessLabel || "Banho e tosa"}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
           <QuickAction label="Abrir agenda" tab="agenda" onNavigate={onNavigate} />
-          <QuickAction label="Cadastrar pet" tab="pets" onNavigate={onNavigate} />
-          <QuickAction label="Link público" tab="link" onNavigate={onNavigate} />
+
         </div>
       </div>
       {loadError ? <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">{loadError}</p> : null}
 
       <DashboardSection title="Resumo de hoje">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
           <Stat label="Atendimentos" value={String(metrics.activeToday.length)} hint="ativos hoje" />
-          <Stat label="Receita prevista" value={formatPrice(metrics.expectedToday)} hint="pelos serviços agendados" />
+          <Stat label="Receita prevista" value={formatPrice(metrics.expectedToday)} hint="dos agendamentos ativos" />
           <Stat label="Próximos" value={String(upcoming.length)} hint="na fila da agenda" />
           <Stat label="Concluídos" value={String(completedToday)} hint="finalizados hoje" />
         </div>
       </DashboardSection>
 
+      <div className="grid gap-8 xl:grid-cols-[1.4fr_1fr]">
+        <DashboardSection title="Próximos atendimentos" action="Ver agenda" onAction={() => onNavigate('agenda')}>
+          {upcoming.length === 0 ? <EmptyLine>Nenhum atendimento agendado.</EmptyLine> : <div className="space-y-2">{upcoming.map((booking) => <UpcomingBooking key={booking.id} booking={booking} />)}</div>}
+        </DashboardSection>
+        <DashboardSection title="Agenda do mês">
+          <div className="grid grid-cols-2 gap-3">
+            <Stat label="Agendamentos" value={String(monthBookings.length)} />
+            <Stat label="Concluídos" value={String(metrics.completed.length)} />
+            <Stat label="Cancelamentos" value={String(metrics.cancellations)} />
+            <Stat label="Faltas" value={String(metrics.noShows)} />
+          </div>
+        </DashboardSection>
+      </div>
+
+      <details className="group rounded-2xl border border-charcoal-light bg-charcoal-dark/30 p-4 sm:p-5">
+        <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-white">
+          <span>Indicadores e detalhes</span><span className="text-xs font-normal text-brass group-open:hidden">Ver mais</span><span className="hidden text-xs font-normal text-brass group-open:inline">Recolher</span>
+        </summary>
+        <div className="mt-5 space-y-7">
       <div className="grid gap-8 xl:grid-cols-2">
         <DashboardSection title="Financeiro" action="Abrir financeiro" onAction={() => onNavigate('cashflow')}>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -207,20 +225,6 @@ export function PetOverview({ shopId, businessType, onNavigate }: Props) {
         </DashboardSection>
       </div>
 
-      <div className="grid gap-8 xl:grid-cols-[1.4fr_1fr]">
-        <DashboardSection title="Próximos atendimentos" action="Ver agenda" onAction={() => onNavigate('agenda')}>
-          {upcoming.length === 0 ? <EmptyLine>Nenhum atendimento agendado.</EmptyLine> : <div className="space-y-2">{upcoming.map((booking) => <UpcomingBooking key={booking.id} booking={booking} />)}</div>}
-        </DashboardSection>
-        <DashboardSection title="Agenda do mês">
-          <div className="grid grid-cols-2 gap-3">
-            <Stat label="Agendamentos" value={String(monthBookings.length)} />
-            <Stat label="Concluídos" value={String(metrics.completed.length)} />
-            <Stat label="Cancelamentos" value={String(metrics.cancellations)} />
-            <Stat label="Faltas" value={String(metrics.noShows)} />
-          </div>
-        </DashboardSection>
-      </div>
-
       <div className="grid gap-8 xl:grid-cols-2">
         <DashboardSection title="Equipe" action="Gerenciar equipe" onAction={() => onNavigate('team')}>
           {metrics.teamMetrics.length === 0 ? <EmptyLine>Nenhum profissional cadastrado.</EmptyLine> : <MetricList rows={metrics.teamMetrics.slice(0, 5).map((professional) => ({ label: professional.name, value: `${professional.appointments} atend. · ${formatPrice(professional.revenue)}` }))} />}
@@ -239,6 +243,8 @@ export function PetOverview({ shopId, businessType, onNavigate }: Props) {
           {(businessType === 'veterinary_clinic' || businessType === 'mixed') ? <AlertCard title="Vacinas próximas" value={vaccinesDueCount} description="Vacinas com vencimento nos próximos 30 dias ou em atraso." onClick={() => onNavigate('clinical')} /> : null}
         </div>
       </DashboardSection>
+        </div>
+      </details>
     </div>
   )
 }
@@ -248,7 +254,7 @@ function DashboardSection({ title, action, onAction, children }: { title: string
 }
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return <div className="rounded-xl border border-charcoal-light bg-charcoal-light/30 p-4"><p className="text-xs uppercase tracking-wider text-charcoal-muted">{label}</p><p className="mt-1 font-display text-2xl text-brass">{value}</p>{hint ? <p className="mt-0.5 text-xs text-charcoal-muted">{hint}</p> : null}</div>
+  return <div className="min-w-0 rounded-xl border border-charcoal-light bg-charcoal-light/20 p-3 sm:p-4"><p className="text-[11px] font-medium text-charcoal-muted sm:text-xs">{label}</p><p className="mt-1 break-words text-lg font-semibold tabular-nums text-brass sm:text-2xl">{value}</p>{hint ? <p className="mt-0.5 text-xs text-charcoal-muted">{hint}</p> : null}</div>
 }
 
 function QuickAction({ label, tab, onNavigate }: { label: string; tab: string; onNavigate: (tab: string) => void }) {
