@@ -143,7 +143,7 @@ export function AgendaTab({ shopId, barberId }: Props) {
       .from('bookings')
       .select(BOOKING_SELECT)
       .eq('shop_id', shopId)
-      .gte('date', today)
+      .gte('date', addDaysIso(-30))
       .order('date')
       .order('time')
 
@@ -328,7 +328,7 @@ export function AgendaTab({ shopId, barberId }: Props) {
               {bookingStatusLabel(nextUp.status || 'scheduled')}
             </span>
           </div>
-          {['scheduled', 'confirmed'].includes(nextUp.status || 'scheduled') && (
+          {isActiveStatus(nextUp.status) && (
             <button type="button" onClick={() => { setEditingBooking(nextUp); setSelectedExtraIds([]) }}
               className="mt-3 min-h-10 rounded-lg border border-brass/40 px-3 py-2 text-sm font-medium text-brass">
               Adicionar serviços
@@ -516,7 +516,7 @@ export function AgendaTab({ shopId, barberId }: Props) {
                     )}
                   </div>
                 )}
-                {['scheduled', 'confirmed'].includes(status) && (
+                {isActiveStatus(status) && (
                   <button type="button" onClick={() => { setEditingBooking(b); setSelectedExtraIds([]) }}
                     className="mt-3 min-h-10 rounded-lg border border-brass/40 px-3 py-2 text-sm font-medium text-brass">
                     Adicionar serviços
