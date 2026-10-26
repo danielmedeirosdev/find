@@ -68,7 +68,7 @@ export function DashboardLayout() {
     >
       <SetupBanner />
       <header className="dashboard-glass-header border-b border-charcoal-light">
-        <div className="dashboard-header-inner mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+        <div className="dashboard-header-inner mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:py-4">
           <Link to="/painel" className="flex items-baseline gap-2">
             <BrandLogo inverse />
 
@@ -84,7 +84,7 @@ export function DashboardLayout() {
         </div>
         <BrandAccent height="h-1.5" segment={segmentId} />
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className="mx-auto max-w-6xl px-3 py-4 sm:px-4 sm:py-8">
         <DashboardHeaderContext.Provider value={accountTarget}><Outlet /></DashboardHeaderContext.Provider>
       </main>
     </div>
