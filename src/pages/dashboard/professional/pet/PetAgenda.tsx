@@ -578,7 +578,6 @@ export function PetAgenda({ shopId, barberId }: Props) {
           </button>
                 <BookingActions
                   compact
-            compact
                   status={b.status}
                   busy={statusUpdatingId === b.id}
                   includeAwaitingPayment
