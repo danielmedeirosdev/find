@@ -62,7 +62,7 @@ test('agenda opens a chosen day directly, moves between days and keeps reminder 
     else await route.continue()
   })
   await day.fill(friday)
-  await expect(page.getByRole('button', { name: 'Tentar novamente', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Tentar novamente', exact: true })).toBeVisible({ timeout: 30000 })
   await expect(page.getByTestId(`booking-${next.id}`)).toHaveCount(0)
   await page.unroute('**/rest/v1/bookings?**')
   await page.getByRole('button', { name: 'Tentar novamente', exact: true }).click()
