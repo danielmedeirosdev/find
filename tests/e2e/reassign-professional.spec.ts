@@ -30,6 +30,8 @@ test('owner reassigns an appointment to another available professional', async (
   await page.getByTestId(`booking-${late.id}`).getByRole('button',{name:'Editar / adicionar serviços'}).click()
   const modal=page.getByRole('dialog',{name:'Editar atendimento'})
   await modal.getByRole('button',{name:second.name,exact:true}).click()
+  await modal.getByRole('button',{name:'Sexta',exact:true}).click()
+  await modal.locator(`[data-date="${friday}"]`).click()
   await modal.getByRole('button',{name:'12:00',exact:true}).click()
   await modal.getByRole('button',{name:'Salvar atendimento',exact:true}).click()
   await expect(modal).toBeHidden()
