@@ -39,7 +39,7 @@ interface Props {
   onReminderUpdate?: () => void
 }
 
-type DayFilter = 'today' | 'tomorrow' | 'upcoming'
+type DayFilter = 'today' | 'tomorrow' | 'upcoming' | 'date'
 
 const PET_BOOKING_SELECT = `
   *,
@@ -59,6 +59,7 @@ function addDaysIso(days: number): string {
 
 export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [], focusBookingId, onReminderUpdate }: Props) {
   const focusedBooking=useRef('')
+  const loadRequest=useRef(0)
   const [showNew, setShowNew] = useState(false)
   const [newStep, setNewStep] = useState(1)
   const [receipt, setReceipt] = useState<ReceiptView | null>(null)
@@ -99,6 +100,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
   const [actionError, setActionError] = useState('')
   const [loadError, setLoadError] = useState('')
   const [dayFilter, setDayFilter] = useState<DayFilter>('today')
+  const [consultationDate, setConsultationDate] = useState(localDateIso())
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null)
   const [showAvailability, setShowAvailability] = useState(false)
   const [editingBooking, setEditingBooking] = useState<BookingWithDetails | null>(null)
@@ -141,6 +143,17 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
 
   const today = addDaysIso(0)
   const tomorrow = addDaysIso(1)
+  const selectedDay = dayFilter === 'today' ? today : dayFilter === 'tomorrow' ? tomorrow : consultationDate
+  const chooseDay = (date: string) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return
+    setConsultationDate(date)
+    setDayFilter('date')
+  }
+  const moveDay = (offset: number) => {
+    const date = new Date(`${selectedDay}T12:00:00`)
+    date.setDate(date.getDate() + offset)
+    chooseDay(localDateIso(date))
+  }
 
   const petsForBooking = (b: BookingWithDetails) => {
     const fromJoin = (b.booking_pets || [])
@@ -151,14 +164,16 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
   }
 
   const load = useCallback(async () => {
+    const request = ++loadRequest.current
+    setLoading(true)
     setLoadError('')
     let query = supabase
       .from('bookings')
       .select(PET_BOOKING_SELECT)
       .eq('shop_id', shopId)
-      .gte('date', addDaysIso(-30))
       .order('date')
       .order('time')
+    query = dayFilter === 'upcoming' ? query.gte('date', today) : query.eq('date', selectedDay)
     if (barberId) query = query.eq('barber_id', barberId)
 
     const [{ data, error }, { data: svc }] = await Promise.all([
@@ -166,6 +181,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
       supabase.from('services').select('*').eq('shop_id', shopId).order('name'),
     ])
 
+    if (request !== loadRequest.current) return
     if (error) {
       setLoadError(userFacingError(error, 'Não foi possível carregar a agenda.'))
       setBookings([])
@@ -179,19 +195,31 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
         supabase.from('service_weekday_discounts').select('*').in('service_id',svc.map(s=>s.id)),
         supabase.from('service_pet_transport').select('*').eq('shop_id',shopId).in('service_id',svc.map(s=>s.id)),
       ])
+      if (request !== loadRequest.current) return
       setSizeRules(rules.data||[]);setWeekdayDiscounts(discounts.data||[]);setTransportSettings(transport.data||[])
       if(rules.error||discounts.error||transport.error)setLoadError('Não foi possível carregar as regras de preços e transporte. Atualize a agenda.')
     }
     setLoading(false)
-  }, [shopId, barberId, today])
+  }, [shopId, barberId, today, dayFilter, selectedDay])
 
   useEffect(() => {
     load()
   }, [load])
 
-  useEffect(()=>{if(focusBookingId)setDayFilter('upcoming')},[focusBookingId])
+  useEffect(() => {
+    if (!focusBookingId) return
+    let active = true
+    let query = supabase.from('bookings').select('date').eq('id', focusBookingId).eq('shop_id', shopId)
+    if (barberId) query = query.eq('barber_id', barberId)
+    void query.maybeSingle().then(({ data, error }) => {
+      if (!active) return
+      if (error) { setActionError('Não foi possível localizar o atendimento do aviso.'); return }
+      if (data) { setConsultationDate(data.date); setDayFilter('date') }
+    })
+    return () => { active = false }
+  }, [focusBookingId, shopId, barberId])
   useEffect(()=>{
-    if(!focusBookingId || loading || dayFilter!=='upcoming' || focusedBooking.current===focusBookingId)return
+    if(!focusBookingId || loading || dayFilter!=='date' || focusedBooking.current===focusBookingId)return
     const target=document.getElementById(`booking-${focusBookingId}`)
     if(target){target.scrollIntoView({block:'center',behavior:'smooth'});target.focus({preventScroll:true});focusedBooking.current=focusBookingId}
   },[focusBookingId,loading,dayFilter,bookings])
@@ -341,7 +369,6 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
     setSearching(false)
   }
 
-  if (loading) return <LoadingBlock label="Carregando agenda..." />
 
   const activeBookings = bookings.filter(
     (b) =>
@@ -351,12 +378,9 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
       b.status === 'awaiting_payment' ||
       !b.status
   )
-  const filtered =
-    dayFilter === 'today'
-      ? activeBookings.filter((b) => b.date === today)
-      : dayFilter === 'tomorrow'
-        ? activeBookings.filter((b) => b.date === tomorrow)
-        : activeBookings
+  const filtered = dayFilter === 'upcoming'
+    ? activeBookings.filter((b) => b.date >= today)
+    : bookings.filter((b) => b.date === selectedDay)
 
   return (
     <div className="overflow-x-hidden">
@@ -429,7 +453,8 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
             <button
               key={key}
               type="button"
-              onClick={() => setDayFilter(key)}
+              onClick={() => { if (key !== 'upcoming') setConsultationDate(key === 'today' ? today : tomorrow); setDayFilter(key) }}
+              aria-pressed={dayFilter === key}
               className={`min-h-11 rounded-xl px-2 py-2.5 text-center text-sm sm:shrink-0 sm:px-4 ${
                 dayFilter === key
                   ? 'bg-brass text-charcoal font-semibold'
@@ -441,6 +466,20 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
           )
         )}
       </div>
+
+      <section aria-label="Consulta por dia" className="mb-4 min-w-0 rounded-xl border border-charcoal-light bg-charcoal-dark/30 p-3">
+        <div className="grid min-w-0 grid-cols-[44px_minmax(0,1fr)_44px] items-end gap-2">
+          <button type="button" aria-label="Dia anterior" onClick={() => moveDay(-1)} className="min-h-11 rounded-lg border border-charcoal-light text-xl text-white">‹</button>
+          <label className="block min-w-0 text-xs text-charcoal-muted">Consultar dia
+            <input type="date" value={selectedDay} onChange={event => chooseDay(event.target.value)} className="mt-1 block min-h-11 w-full min-w-0 max-w-full rounded-lg border border-charcoal-light bg-charcoal px-2 text-sm text-white [color-scheme:dark]" />
+          </label>
+          <button type="button" aria-label="Dia seguinte" onClick={() => moveDay(1)} className="min-h-11 rounded-lg border border-charcoal-light text-xl text-white">›</button>
+        </div>
+        <p aria-live="polite" className="mt-2 text-center text-sm text-white">
+          {dayFilter === 'upcoming' ? 'Próximos atendimentos' : new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(`${selectedDay}T12:00:00`))}
+          {!loading && !loadError && <span className="ml-1 text-charcoal-muted">· {filtered.length} {filtered.length === 1 ? 'atendimento' : 'atendimentos'}</span>}
+        </p>
+      </section>
 
       <details className="group mb-5 rounded-xl border border-charcoal-light bg-charcoal-dark/30 p-3 sm:mb-8 sm:rounded-2xl sm:p-4">
         <summary className="cursor-pointer list-none font-medium text-white">
@@ -493,9 +532,9 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
         </div>
       </details>
 
-      {filtered.length === 0 ? (
+      {loading ? <LoadingBlock label="Carregando agenda..." /> : loadError ? <button type="button" onClick={() => void load()} className="min-h-11 rounded-xl border border-charcoal-light px-4 text-sm text-white">Tentar novamente</button> : filtered.length === 0 ? (
         <EmptyState
-          title="Nenhum agendamento neste período."
+          title={dayFilter === 'upcoming' ? 'Nenhum agendamento neste período.' : 'Nenhum agendamento neste dia.'}
           description="Quando houver reservas, elas aparecem aqui com pet, horário e serviço."
         />
       ) : (
