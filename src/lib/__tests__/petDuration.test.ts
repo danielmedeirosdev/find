@@ -20,6 +20,22 @@ describe('owner configured PET duration', () => {
     expect(() => durationPayload({ mode: 'single', minutes: '', sizes: {} })).toThrow()
     expect(durationPayload({ mode: 'single', minutes: '47', sizes: {} })).toEqual({ p_duration_minutes: 47, p_size_durations: null })
   })
+  it.each(['1', '3', '5', '8', '14'])('accepts short additional services of %s minutes', (minutes) => {
+    expect(durationPayload({ mode: 'single', minutes, sizes: {} }).p_duration_minutes).toBe(Number(minutes))
+  })
+  it('accepts short durations for every size without rounding', () => {
+    expect(durationPayload({ mode: 'size', minutes: '', sizes: { pequeno: '1', medio: '3', grande: '5' } }).p_size_durations).toEqual({ pequeno: 1, medio: 3, grande: 5 })
+  })
+  it('adds only the actual extra minutes and preserves prices', () => {
+    const bath = { ...service, duration_minutes: 60 }
+    const extra = { ...service, id: 'extra', duration_minutes: 5, price: 10 }
+    expect(getPetServicesDuration([bath, extra], 'medio', [])).toBe(65)
+    expect(getPetServicesPrice([bath, extra], 'medio', [])).toBe(90)
+    const occupied = [{ shop_id: 'a', barber_id: 'b', date: '2026-10-05', time: '10:00', duration_minutes: 5 }]
+    const slots = getAvailableSlots(schedule, occupied, [], '2026-10-05', 5)
+    expect(slots).not.toContain('10:00')
+    expect(slots).toContain('10:15')
+  })
   it('requires every size and preserves the owner values exactly', () => {
     expect(() => durationPayload({ mode: 'size', minutes: '', sizes: { pequeno: '45' } })).toThrow()
     expect(durationPayload({ mode: 'size', minutes: '', sizes: { pequeno: '45', medio: '75', grande: '105' } }).p_size_durations).toEqual({ pequeno: 45, medio: 75, grande: 105 })

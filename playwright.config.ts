@@ -22,6 +22,8 @@ export default defineConfig({
     actionTimeout: 15000,
     navigationTimeout: 30000,
     proxy,
+    // The test runtime proxy terminates TLS with its own certificate.
+    ignoreHTTPSErrors: Boolean(proxy),
     trace: "off",
     screenshot: "only-on-failure",
   },

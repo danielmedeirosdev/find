@@ -50,12 +50,12 @@ export interface PetDurationDraft {
 }
 
 export function durationPayload(draft: PetDurationDraft) {
-  const valid = (value: string | undefined) => Boolean(value?.trim()) && Number.isInteger(Number(value)) && Number(value) >= 15 && Number(value) <= 720
+  const valid = (value: string | undefined) => Boolean(value?.trim()) && Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 720
   if (draft.mode === 'single') {
-    if (!valid(draft.minutes)) throw new Error('Informe uma duração entre 15 e 720 minutos.')
+    if (!valid(draft.minutes)) throw new Error('Informe uma duração entre 1 e 720 minutos.')
     return { p_duration_minutes: Number(draft.minutes), p_size_durations: null }
   }
-  if (PET_SIZES.some(({ value }) => !valid(draft.sizes[value]))) throw new Error('Preencha o tempo de cada porte, entre 15 e 720 minutos.')
+  if (PET_SIZES.some(({ value }) => !valid(draft.sizes[value]))) throw new Error('Preencha o tempo de cada porte, entre 1 e 720 minutos.')
   return {
     // Complete rules override this compatibility value for every supported size.
     p_duration_minutes: Number(draft.sizes[PET_SIZES[0].value]),

@@ -12,10 +12,10 @@ export function PetDurationFields({ value, onChange, disabled = false }: { value
       <label className="flex min-h-11 items-center gap-2"><input type="radio" name={groupName} checked={value.mode === 'size'} onChange={() => onChange({ ...value, mode: 'size' })} />Duração por porte</label>
     </div>
     {value.mode === 'single' ? <label className="block text-xs text-charcoal-muted">Minutos para qualquer porte
-      <input type="number" min="15" max="720" step="1" required value={value.minutes} onChange={(e) => onChange({ ...value, minutes: e.target.value })} className={inputClass} />
+      <input type="number" min="1" max="720" step="1" required value={value.minutes} onChange={(e) => onChange({ ...value, minutes: e.target.value })} className={inputClass} />
     </label> : <div className="grid gap-3 sm:grid-cols-3">{PET_SIZES.map(({ value: size, label }) => <label key={size} className="text-xs text-charcoal-muted">{label} (min)
-      <input type="number" min="15" max="720" step="1" required value={value.sizes[size] ?? ''} onChange={(e) => onChange({ ...value, sizes: { ...value.sizes, [size]: e.target.value } })} className={inputClass} />
+      <input type="number" min="1" max="720" step="1" required value={value.sizes[size] ?? ''} onChange={(e) => onChange({ ...value, sizes: { ...value.sizes, [size]: e.target.value } })} className={inputClass} />
     </label>)}</div>}
-    <p className="text-xs text-charcoal-muted">Informe os tempos usados no seu estabelecimento.</p>
+    <p className="text-xs text-charcoal-muted">Digite a duração em minutos, sem precisar usar múltiplos de 15.</p>
   </fieldset>
 }
