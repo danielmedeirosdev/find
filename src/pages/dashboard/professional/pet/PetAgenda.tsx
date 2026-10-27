@@ -107,6 +107,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
   const [extraServiceIds, setExtraServiceIds] = useState<string[]>([])
   const [savingExtras, setSavingExtras] = useState(false)
   const [extraError, setExtraError] = useState('')
+  const [editStaffId,setEditStaffId] = useState('')
   const [editDate,setEditDate] = useState('')
   const [editTime,setEditTime] = useState('')
   const [editNotes,setEditNotes] = useState('')
@@ -130,7 +131,8 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
     setSavingExtras(true)
     setExtraError('')
     const ids = [...new Set([...(editingBooking.booking_services || []).map(s => s.service_id), ...extraServiceIds])]
-    const { error } = await supabase.rpc('edit_operational_booking', {
+    const { error } = await supabase.rpc('edit_operational_booking_professional', {
+      p_barber_id: editStaffId,
       p_booking_id: editingBooking.id, p_service_ids: ids,
       p_date: editDate, p_time: editTime, p_notes: editNotes,
     })
@@ -176,9 +178,10 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
     query = dayFilter === 'upcoming' ? query.gte('date', today) : query.eq('date', selectedDay)
     if (barberId) query = query.eq('barber_id', barberId)
 
-    const [{ data, error }, { data: svc }] = await Promise.all([
+    const [{ data, error }, { data: svc }, {data: team, error: teamError}] = await Promise.all([
       query,
       supabase.from('services').select('*').eq('shop_id', shopId).order('name'),
+      supabase.from('barbers').select('id,name').eq('shop_id',shopId).order('name'),
     ])
 
     if (request !== loadRequest.current) return
@@ -188,6 +191,8 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
     } else {
       setBookings((data as BookingWithDetails[]) || [])
     }
+    setTeamList(team || [])
+    if(teamError) setLoadError('Não foi possível carregar os profissionais. Tente novamente.')
     setShopServices(svc || [])
     if(svc?.length){
       const [rules,discounts,transport]=await Promise.all([
@@ -620,7 +625,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
                   <p className="font-mono text-brass">{formatPrice(total)}</p>
                 </div>
           <BookingConfirmationReminder booking={b} shopName={shopName} due={pendingReminderIds.includes(b.id)} onUpdate={async()=>{await load();onReminderUpdate?.()}}/>
-          <button type="button" onClick={() => { setEditingBooking(b); setExtraServiceIds([]); setExtraError('');setEditScheduleValid(false);setEditDate(b.date);setEditTime(b.time.slice(0,5));setEditNotes(b.notes||'') }}
+          <button type="button" onClick={() => { setEditStaffId(b.barber_id); setEditingBooking(b); setExtraServiceIds([]); setExtraError('');setEditScheduleValid(false);setEditDate(b.date);setEditTime(b.time.slice(0,5));setEditNotes(b.notes||'') }}
             className="min-h-11 w-full rounded-xl border border-brass/40 px-4 py-2.5 text-center text-sm font-medium text-brass hover:bg-brass/10 sm:w-auto">
             Editar / adicionar serviços
           </button>
@@ -650,12 +655,12 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
             </div>
             <div className="mt-4">{['in_progress','awaiting_payment'].includes(editingBooking.status || '') ? <p className="text-sm text-charcoal-muted">Atendimento iniciado em {formatDate(editingBooking.date)} às {formatTime(editingBooking.time)}. Você pode acrescentar serviços abaixo.</p> : <BookingSchedulePicker
               shopId={shopId}
-              professionals={[{id:editingBooking.barber_id,name:editingBooking.barbers?.name || 'Profissional'}]}
+              professionals={barberId ? teamList.filter(person=>person.id===barberId) : teamList}
               serviceIds={[...(editingBooking.booking_services || []).map(item=>item.service_id),...extraServiceIds]}
               duration={(editingBooking.duration_minutes || 30)+getPetServicesDuration(shopServices.filter(service=>extraServiceIds.includes(service.id)),editingBooking.pets?.size||'medio',sizeRules)}
-              value={{professionalId:editingBooking.barber_id,date:editDate,time:editTime}}
+              value={{professionalId:editStaffId,date:editDate,time:editTime}}
               excludeBooking={{professionalId:editingBooking.barber_id,date:editingBooking.date,time:editingBooking.time}}
-              onChange={selection=>{setEditDate(selection.date);setEditTime(selection.time)}}
+              onChange={selection=>{setEditStaffId(selection.professionalId);setEditDate(selection.date);setEditTime(selection.time)}}
               onValidityChange={setEditScheduleValid}
               tone="dark"
             />}</div>
