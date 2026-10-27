@@ -33,7 +33,7 @@ test('short service durations can be created and edited on mobile without changi
     await edit.getByLabel(label, { exact: true }).fill(value)
   }
   await edit.getByRole('button', { name: 'Salvar duração', exact: true }).click()
-  await expect(edit).toBeHidden()
+  await expect(page.getByRole('button', { name: 'Configurar serviço', exact: true })).toBeVisible()
   const rules = await data(page, `service_size_rules?service_id=eq.${service.id}`)
   expect(Object.fromEntries(rules.map((r: { size: string; duration_minutes: number }) => [r.size, r.duration_minutes]))).toEqual({ pequeno: 1, medio: 3, grande: 5 })
   expect(Number((await data(page, `services?id=eq.${service.id}`))[0].price)).toBe(10)
