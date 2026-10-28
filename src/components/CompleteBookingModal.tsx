@@ -40,6 +40,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
           (p) => packageRemaining(p.total_sessions, p.used_sessions) > 0 && (!p.expires_at || p.expires_at >= new Date().toLocaleDateString('en-CA'))
         )
         setPackages(list)
+        if (list.length === 1) setSelectedPackageId(list[0].id)
       })
   }, [booking.pet_id,booking.shop_id])
 
@@ -163,7 +164,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
           </div>
         )}
 
-        {selectedPackageId && <p className="mb-4 text-sm text-brass">Os serviços serão cobertos por uma sessão. Apenas adicionais e transporte serão cobrados agora.</p>}
+        {selectedPackageId && <p className="mb-4 text-sm text-brass">Uma sessão do pacote selecionado será descontada ao finalizar. Adicionais e transporte continuam sendo cobrados.</p>}
         <div className="mb-6">
           <p className="text-sm font-medium text-white mb-3">Forma de pagamento</p>
           <div className="grid grid-cols-3 gap-2">
