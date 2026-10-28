@@ -112,7 +112,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
         <div className="mb-5">
           <p className="text-sm font-medium text-white mb-3">Serviços executados</p>
           <div className="space-y-2">
-            {shopServices.filter(s => initialIds.has(s.id) || selectedIds.has(s.id)).map((s) => (
+            {shopServices.filter(s => s.is_active !== false || initialIds.has(s.id)).map((s) => (
               <label
                 key={s.id}
                 className={`flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 ${
@@ -133,7 +133,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
               </label>
             ))}
           </div>
-          <p className="mt-3 text-xs text-charcoal-muted">Para incluir serviços, volte à agenda e use Editar / adicionar serviços.</p>
+          <p className="mt-3 text-xs text-charcoal-muted">Selecione aqui os serviços adicionais realizados.</p>
         </div>
 
         {(booking.booking_custom_field_answers?.length || booking.pet_transport_requested) ? (
