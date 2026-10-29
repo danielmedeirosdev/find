@@ -111,9 +111,7 @@ export function StaffAccessPanel({ barber, onChanged }: Props) {
 
       {open && (
         <div className="mt-3 space-y-3 border-t border-charcoal-light pt-3">
-          <p className="text-xs text-charcoal-muted">
-            Não enviamos e-mail. Anote a senha e envie pelo WhatsApp ao profissional.
-          </p>
+          <p className="text-xs text-charcoal-muted">Envie o acesso ao profissional. Não há e-mail automático.</p>
           <input
             type="email"
             value={email}

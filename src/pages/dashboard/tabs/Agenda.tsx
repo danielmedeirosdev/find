@@ -283,7 +283,7 @@ export function AgendaTab({ shopId, barberId }: Props) {
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-brass">Operação do dia</p>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">{barberId ? 'Minha agenda' : 'Agenda da equipe'}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-charcoal-muted">Horários, clientes, serviços e andamento em uma visão organizada para a equipe.</p>
+
           </div>
           <button type="button" onClick={() => setShowAvailability((current) => !current)} className="min-h-11 rounded-xl border border-brass/35 bg-brass/5 px-4 text-sm font-medium text-brass transition hover:bg-brass/10">
             {showAvailability ? 'Fechar disponibilidade' : 'Configurar folgas'}

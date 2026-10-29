@@ -402,7 +402,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
           {createdCount>1 && <p className="rounded-xl border border-brass/30 p-3 text-center text-sm text-white">{createdCount} agendamentos criados com sucesso. O comprovante abaixo corresponde ao primeiro horário.</p>}
           <ConfirmReceipt view={receipt} signedIn={true}/>
           <a target="_blank" rel="noopener noreferrer" href={`https://wa.me/${receiptPhone.replace(/\D/g,'').replace(/^(?!55)/,'55')}?text=${encodeURIComponent(`${receipt.clientName?.trim()?`Oi, ${receipt.clientName}!`:'Oi!'} Seu horário na ${receipt.shopName} está agendado.\nPet: ${receipt.petName}\nServiço: ${receipt.services.map(s=>s.name).join(', ')}\nData: ${formatDate(receipt.date)}\nHorário: ${formatTime(receipt.time)}\nProfissional: ${receipt.barberName || 'A definir'}\nValor: ${formatPrice(Number(receipt.quotedAmount ?? receipt.services.reduce((a,s)=>a+s.price,0)))}${receipt.notes?`\nObservação: ${receipt.notes}`:''}${receipt.petTransportRequested?`\nTáxi Pet: ${Number(receipt.petTransportFee)>0?formatPrice(Number(receipt.petTransportFee)):'valor a confirmar'}\nEndereço da busca: ${receipt.petTransportAddress}${receipt.petTransportNotes?`\nInstruções: ${receipt.petTransportNotes}`:''}`:''}`)}`} className="block rounded-xl bg-brass px-5 py-4 text-center font-semibold text-charcoal-dark">Mandar comprovante pro cliente pelo WhatsApp</a>
-          <p className="text-center text-xs text-charcoal-muted">Abre o WhatsApp com os dados do comprovante prontos para enviar.</p>
+
           <button type="button" onClick={()=>setShowNew(false)} className="w-full rounded-xl border border-white/20 py-3 text-white">Concluir</button>
         </div> : <form onSubmit={e=>{if(newStep<3){e.preventDefault();if(newStep===2&&serviceIds.length===0){setNewError('Selecione pelo menos um serviço.');return}if(newStep===2&&!validateDetails())return;setNewError('');setNewStep(newStep+1)}else void saveNew(e)}} className="space-y-4">
           {newStep===1 && <div className="space-y-4">
@@ -670,7 +670,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
               onValidityChange={setEditScheduleValid}
               tone="dark"
             />}</div>
-            <label className="mt-4 block text-sm text-white">Tempo reservado na agenda (min)<input type="number" min="1" max="720" step="1" className="mt-1 min-h-11 w-full rounded-lg border border-charcoal-light bg-charcoal p-2" value={reservedMinutes} onChange={e=>setReservedMinutes(e.target.value)}/></label><p className="mt-1 text-xs text-charcoal-muted">Mantenha o tempo se os extras couberem no horário. Aumentos dependem da disponibilidade.</p><label className="mt-3 block text-sm">Observações<textarea className="mt-1 w-full bg-charcoal p-2" value={editNotes} onChange={e=>setEditNotes(e.target.value)}/></label><p className="mt-3 text-sm text-charcoal-muted">Serviços adicionais</p><div className="mt-2 max-h-72 space-y-2 overflow-y-auto">
+            <label className="mt-4 block text-sm text-white">Tempo reservado na agenda (min)<input type="number" min="1" max="720" step="1" className="mt-1 min-h-11 w-full rounded-lg border border-charcoal-light bg-charcoal p-2" value={reservedMinutes} onChange={e=>setReservedMinutes(e.target.value)}/></label><p className="mt-1 text-xs text-charcoal-muted">Extras podem usar o tempo já reservado.</p><label className="mt-3 block text-sm">Observações<textarea className="mt-1 w-full bg-charcoal p-2" value={editNotes} onChange={e=>setEditNotes(e.target.value)}/></label><p className="mt-3 text-sm text-charcoal-muted">Serviços adicionais</p><div className="mt-2 max-h-72 space-y-2 overflow-y-auto">
               {shopServices.filter(service => service.is_active!==false && !(editingBooking.booking_services || []).some(item => item.service_id === service.id)).map(service => (
                 <label key={service.id} className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-white/10 p-3 text-sm text-white">
                   <input type="checkbox" value={service.id} className="h-4 w-4 accent-amber-500" checked={extraServiceIds.includes(service.id)}
@@ -704,13 +704,13 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
           <div className="w-full max-w-md rounded-2xl border border-brass/30 bg-charcoal p-5 shadow-2xl sm:p-6">
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brass">Confirmar rota</p>
             <h3 id="transport-confirm-title" className="mt-1 text-xl font-semibold text-white">Táxi Dog / Táxi Pet</h3>
-            <p className="mt-2 text-sm leading-6 text-charcoal-muted">Revise o local da busca e informe o valor combinado antes de confirmar o agendamento.</p>
+            <p className="mt-2 text-sm leading-6 text-charcoal-muted">Confira o endereço e o valor da busca.</p>
             <div className="mt-4 rounded-xl border border-charcoal-light bg-charcoal-dark/50 p-4 text-sm">
               <p className="font-medium text-white">{confirmingTransportBooking.pet_transport_address}</p>
               {confirmingTransportBooking.pet_transport_notes ? <p className="mt-1 text-charcoal-muted">{confirmingTransportBooking.pet_transport_notes}</p> : null}
             </div>
             <label className="mt-4 block text-sm font-medium text-white">Valor do transporte (R$)<input autoFocus type="text" inputMode="decimal" value={confirmationTransportFee} onChange={(event) => setConfirmationTransportFee(event.target.value.replace(/[^0-9,.]/g, ''))} placeholder="0,00" className="mt-1.5 min-h-11 w-full rounded-xl border border-charcoal-light bg-charcoal-dark px-3 text-white outline-none focus:border-brass" /></label>
-            <p className="mt-2 text-xs text-charcoal-muted">Use 0,00 quando a busca for gratuita. O valor será somado ao total do agendamento.</p>
+            <p className="mt-2 text-xs text-charcoal-muted">Busca gratuita: R$ 0,00.</p>
             <div className="mt-6 flex gap-3">
               <button type="button" onClick={() => setConfirmingTransportBooking(null)} disabled={statusUpdatingId === confirmingTransportBooking.id} className="min-h-11 flex-1 rounded-xl border border-charcoal-light px-4 text-sm text-charcoal-muted hover:text-white disabled:opacity-50">Voltar</button>
               <button type="button" onClick={confirmTransportAndBooking} disabled={statusUpdatingId === confirmingTransportBooking.id} className="min-h-11 flex-1 rounded-xl bg-brass px-4 text-sm font-semibold text-charcoal disabled:opacity-50">{statusUpdatingId === confirmingTransportBooking.id ? 'Confirmando...' : 'Salvar e confirmar'}</button>

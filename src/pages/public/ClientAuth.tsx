@@ -8,7 +8,6 @@ import { BrandAccent } from '../../components/BrandAccent'
 import { BackArrow } from '../../components/SegmentMark'
 import { AuthDivider, GoogleSignInButton } from '../../components/GoogleSignInButton'
 import {
-  FieldHint,
   FieldLabel,
   PasswordRequirements,
   isPasswordStrong,
@@ -172,9 +171,7 @@ export function ClientAuth() {
                 placeholder="Ex: (11) 99999-9999"
                 className="w-full rounded-lg border border-paper-dark px-4 py-2 placeholder:text-ink-muted/50 focus:border-brass focus:outline-none"
               />
-              <FieldHint tone="light">
-                Usado pelo estabelecimento para confirmar ou lembrar do horário.
-              </FieldHint>
+
             </div>
           </>
         )}

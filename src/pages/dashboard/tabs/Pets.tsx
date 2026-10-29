@@ -250,9 +250,7 @@ export function PetsTab({ shopId }: Props) {
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="font-display text-2xl text-white">Pets</h2>
-          <p className="text-sm text-charcoal-muted mt-1">
-            Cadastre os animais com porte, foto e observações. O porte define a duração na agenda.
-          </p>
+          <p className="text-sm text-charcoal-muted mt-1">Pets e histórico de cuidados.</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
@@ -586,9 +584,7 @@ export function PetsTab({ shopId }: Props) {
                   <p className="text-xs font-medium uppercase tracking-[0.16em] text-charcoal-muted">
                     Serviços do pet
                   </p>
-                  <p className="mt-1 text-sm text-charcoal-muted">
-                    Uma visão rápida do que já foi registrado nos atendimentos.
-                  </p>
+
                 </div>
                 {(() => {
                   const serviceStats = new Map<string, { count: number; lastDate: string }>()

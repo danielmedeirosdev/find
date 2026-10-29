@@ -99,7 +99,7 @@ export function OverviewTab({ shopId, onNavigate }: Props) {
     <div className="space-y-8">
       <div>
         <h2 className="font-display text-2xl text-white mb-2">Visão geral</h2>
-        <p className="text-sm text-charcoal-muted">Operação do dia.</p>
+
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

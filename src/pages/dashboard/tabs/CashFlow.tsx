@@ -75,9 +75,7 @@ export function CashFlowTab({ shopId }: Props) {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-2xl text-white">Fluxo de Caixa</h2>
-          <p className="text-sm text-charcoal-muted mt-1">
-            Valores recebidos e despesas manuais (aluguel, produtos, etc.).
-          </p>
+          <p className="text-sm text-charcoal-muted mt-1">Recebimentos e despesas.</p>
         </div>
         <button
           onClick={() => setShowForm(true)}

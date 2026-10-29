@@ -95,7 +95,7 @@ export function StaffClientsTab({ shopId, barberId }: Props) {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><h2 className="font-display text-2xl text-white">Meus clientes</h2><button type="button" onClick={()=>setAdding(v=>!v)} className="rounded-xl bg-brass px-4 py-2 font-semibold text-charcoal-dark">+ Cadastrar cliente</button></div>
-      <p className="mb-4 text-sm text-charcoal-muted">Consulte seus atendimentos ou cadastre um cliente para agendar.</p>
+      <p className="mb-4 text-sm text-charcoal-muted">Clientes dos seus atendimentos.</p>
       {notice && <p role="status" className="mb-4 text-sm text-emerald-300">{notice}</p>}
       {adding && <form onSubmit={saveCustomer} className="mb-5 grid gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
         <label className="grid gap-1 text-sm text-white">Nome do cliente<input required value={customerName} onChange={e=>setCustomerName(e.target.value)} className="rounded-lg border border-white/15 bg-charcoal p-3"/></label>

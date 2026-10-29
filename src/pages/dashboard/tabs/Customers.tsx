@@ -153,9 +153,7 @@ export function CustomersTab({ shopId }: Props) {
     <div>
       <Toast message={toast} onClose={() => setToast(null)} />
       <h2 className="font-display text-2xl text-white mb-2">Clientes</h2>
-      <p className="text-sm text-charcoal-muted mb-6">
-        Cada cliente pode ter vários pets, pacotes e histórico de atendimentos.
-      </p>
+
 
       <details className="of-section mb-5"><summary className="cursor-pointer font-medium text-brass">Cadastrar cliente</summary><div className="mt-4 grid gap-3 sm:grid-cols-3">
         <div>

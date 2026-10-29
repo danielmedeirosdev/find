@@ -136,14 +136,14 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
               </label>
             ))}
           </div>
-          <p className="mt-3 text-xs text-charcoal-muted">Selecione aqui os serviços adicionais realizados.</p>
+
         </div>
 
         {(booking.booking_custom_field_answers?.length || booking.pet_transport_requested) ? (
           <div className="mb-6 rounded-xl border border-charcoal-light bg-charcoal-light/20 p-4">
             <p className="mb-2 text-sm font-medium text-white">Detalhes combinados</p>
             {booking.booking_custom_field_answers?.map((answer) => <p key={answer.id} className="text-sm text-charcoal-muted"><span className="text-white">{answer.field_label}:</span> {answer.answer}{Number(answer.price_delta) > 0 ? ` · + ${formatPrice(Number(answer.price_delta))}` : ''}</p>)}
-            {booking.pet_transport_requested && <div className="mt-3 border-t border-charcoal-light pt-3 text-sm"><p className="font-medium text-brass">Táxi Dog / Táxi Pet — buscar em casa</p><p className="mt-1 text-white">{booking.pet_transport_address}</p>{booking.pet_transport_notes && <p className="mt-1 text-charcoal-muted">{booking.pet_transport_notes}</p>}<label className="mt-4 block font-medium text-white">Valor do transporte (R$)<input type="text" inputMode="decimal" value={transportFee} onChange={(event) => setTransportFee(event.target.value.replace(/[^0-9,.]/g, ''))} placeholder="0,00" className="mt-1.5 min-h-11 w-full rounded-lg border border-charcoal-light bg-charcoal px-3 text-white outline-none focus:border-brass" /></label><p className="mt-1 text-xs text-charcoal-muted">Confirme o valor da rota. Ele será somado ao total e registrado no financeiro.</p></div>}
+            {booking.pet_transport_requested && <div className="mt-3 border-t border-charcoal-light pt-3 text-sm"><p className="font-medium text-brass">Táxi Dog / Táxi Pet — buscar em casa</p><p className="mt-1 text-white">{booking.pet_transport_address}</p>{booking.pet_transport_notes && <p className="mt-1 text-charcoal-muted">{booking.pet_transport_notes}</p>}<label className="mt-4 block font-medium text-white">Valor do transporte (R$)<input type="text" inputMode="decimal" value={transportFee} onChange={(event) => setTransportFee(event.target.value.replace(/[^0-9,.]/g, ''))} placeholder="0,00" className="mt-1.5 min-h-11 w-full rounded-lg border border-charcoal-light bg-charcoal px-3 text-white outline-none focus:border-brass" /></label></div>}
           </div>
         ) : null}
 
@@ -166,9 +166,9 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
           </div>
         )}
 
-        {selectedPackageId && <p className="mb-4 text-sm text-brass">Uma sessão do pacote selecionado será descontada ao finalizar. Os serviços já reservados serão cobertos. Novos serviços selecionados aqui e transporte continuam sendo cobrados.</p>}
+        {selectedPackageId && <p className="mb-4 text-sm text-brass">Usa 1 sessão. Novos extras e transporte são cobrados à parte.</p>}
         <div className="mb-4 grid grid-cols-2 gap-2">{[[true,'Pago agora'],[false,'Pagar depois']].map(([value,label])=><button key={String(value)} type="button" onClick={()=>setPaidNow(value===true)} className={`min-h-12 rounded-lg border p-2 text-sm ${paidNow===(value===true)?'border-brass text-brass':'border-charcoal-light text-white'}`}>{label}</button>)}</div>
-        {!paidNow && <p className="mb-4 text-sm text-charcoal-muted">O atendimento será concluído e o valor ficará pendente no financeiro, sem entrada no caixa.</p>}
+        {!paidNow && <p className="mb-4 text-sm text-charcoal-muted">Valor pendente, sem entrada no caixa.</p>}
         <div className={paidNow ? "mb-6" : "hidden"}>
           <p className="text-sm font-medium text-white mb-3">Forma de pagamento</p>
           <div className="grid grid-cols-3 gap-2">

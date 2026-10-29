@@ -190,9 +190,7 @@ export function PetServices({ shopId }: Props) {
   return (
     <div>
       <h2 className="font-display text-2xl text-white mb-2">Serviços de banho e tosa</h2>
-      <p className="text-sm text-charcoal-muted mb-6">
-        Cadastre banho, tosa e outros serviços. Defina duração e preço por porte do pet.
-      </p>
+
 
       <section className="mb-8 rounded-2xl border border-brass/35 bg-gradient-to-br from-brass/10 to-transparent p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -203,9 +201,7 @@ export function PetServices({ shopId }: Props) {
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brass">Serviço do estabelecimento</p>
               <h3 className="mt-1 text-lg font-semibold text-white">Táxi Dog / Táxi Pet</h3>
-              <p className="mt-1 text-sm leading-6 text-charcoal-muted">
-                Informe se sua equipe busca o animal na casa do cliente. Ao ativar, a opção aparece no agendamento e a taxa entra no valor final.
-              </p>
+              <p className="mt-1 text-sm leading-6 text-charcoal-muted">Oferecer busca do pet no agendamento.</p>
             </div>
           </div>
           <button
@@ -246,9 +242,7 @@ export function PetServices({ shopId }: Props) {
                 <button type="button" onClick={() => saveShopTransport(true, 'fixed')} disabled={transportSaving} className="min-h-11 rounded-xl border border-brass/40 px-4 text-sm font-semibold text-brass transition hover:bg-brass/10 disabled:opacity-50">Salvar taxa fixa</button>
               </div>
             ) : (
-              <p className="mt-4 rounded-xl bg-charcoal/40 px-4 py-3 text-sm leading-6 text-charcoal-muted">
-                Na confirmação, o cliente verá “valor a confirmar”. O endereço ficará destacado na agenda para você calcular a rota.
-              </p>
+              <p className="mt-4 rounded-xl bg-charcoal/40 px-4 py-3 text-sm leading-6 text-charcoal-muted">Valor combinado após conferir a rota.</p>
             )}
           </div>
         ) : null}
@@ -338,7 +332,7 @@ export function PetServices({ shopId }: Props) {
                   </div>
 
                   <div className="border-t border-charcoal-light pt-5">
-                    <p className="mb-3 text-xs text-charcoal-muted">Pré-triagem opcional: escolha abaixo o que sua equipe precisa saber, como pelagem e presença de nós. Nome do tutor, pet, raça, porte e serviço já fazem parte do agendamento; não é preciso perguntar novamente.</p>
+                    <p className="mb-3 text-xs text-charcoal-muted">Perguntas opcionais sobre os cuidados com o pet.</p>
                     <ServiceAdvancedSettings shopId={shopId} serviceId={s.id} />
                   </div>
 

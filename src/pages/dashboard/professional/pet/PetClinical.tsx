@@ -102,7 +102,7 @@ export function PetClinical({ shopId }: Props) {
 
   return <div className="space-y-9">
     <Toast message={toast} onClose={() => setToast(null)} />
-    <div><h2 className="font-display text-2xl text-white">Clínica básica</h2><p className="mt-1 text-sm text-charcoal-muted">Consultas, peso, observações, retornos e vacinas. Este módulo não emite prescrições.</p></div>
+    <div><h2 className="font-display text-2xl text-white">Clínica básica</h2><p className="mt-1 text-sm text-charcoal-muted">Registro de cuidados, sem emissão de receitas.</p></div>
     <div className="grid gap-6 xl:grid-cols-2">
       <section className="rounded-xl border border-charcoal-light p-5">
         <h3 className="font-medium text-white">Registrar consulta</h3>

@@ -46,9 +46,7 @@ export function PlatformHome() {
         <p className="platform-fade platform-fade-delay-2 mt-6 max-w-lg text-lg leading-relaxed text-ink sm:text-xl">
           Organize atendimentos e informações do seu pet em um só lugar.
         </p>
-        <p className="platform-fade platform-fade-delay-2 mt-2 max-w-md text-sm text-ink-muted">
-          Clientes, pets, serviços e histórico organizados para a rotina do estabelecimento.
-        </p>
+        <p className="platform-fade platform-fade-delay-2 mt-2 max-w-md text-sm text-ink-muted">Gerencie seu estabelecimento.</p>
 
         <div className="mt-12 grid w-full gap-5 sm:grid-cols-2 sm:gap-6">
           {ACTIVE_SEGMENTS.map((id, index) => {
@@ -112,9 +110,7 @@ export function PlatformHome() {
 
         <div className="platform-fade platform-fade-delay-4 mt-10 w-full max-w-lg rounded-xl border border-ink/10 bg-white/70 px-5 py-6">
           <p className="font-display text-xl tracking-wide text-ink">Tem um negócio?</p>
-          <p className="mt-1 text-sm text-ink-muted">
-            Cadastre seu negócio pet e organize atendimentos pelo onefind.
-          </p>
+          <p className="mt-1 text-sm text-ink-muted">Cadastre seu estabelecimento.</p>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <Link to="/painel?modo=cadastro" className="btn-primary inline-flex items-center justify-center">
               Cadastrar empresa

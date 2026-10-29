@@ -23,7 +23,7 @@ export function BookingTransportFields({ enabled, onEnabled, pending, fee, addre
     {enabled && <div className="space-y-3">
       <label className="block text-sm font-medium">Endereço da busca<input required value={address} onChange={e => onAddress(e.target.value)} placeholder="Rua, número, bairro e cidade" minLength={5} maxLength={500} className={input}/></label>
       <label className="block text-sm font-medium">Instruções para a equipe (opcional)<textarea value={notes} onChange={e => onNotes(e.target.value)} placeholder="Complemento, referência ou cuidados na retirada" rows={2} maxLength={500} className={input}/></label>
-      {onFeeInput && <div><label className="block text-sm font-medium">Valor do Táxi Pet (opcional)<input type="text" inputMode="decimal" value={feeInput || ''} onChange={e => onFeeInput(e.target.value)} placeholder={pending ? 'A confirmar' : fee.toFixed(2).replace('.', ',')} className={input}/></label><p className={`mt-1 block text-xs ${muted}`}>Deixe em branco para usar a taxa configurada ou confirmar o valor depois.</p></div>}
+      {onFeeInput && <div><label className="block text-sm font-medium">Valor do Táxi Pet (opcional)<input type="text" inputMode="decimal" value={feeInput || ''} onChange={e => onFeeInput(e.target.value)} placeholder={pending ? 'A confirmar' : fee.toFixed(2).replace('.', ',')} className={input}/></label><p className={`mt-1 block text-xs ${muted}`}>Em branco: taxa padrão ou valor a confirmar.</p></div>}
     </div>}
   </section>
 }

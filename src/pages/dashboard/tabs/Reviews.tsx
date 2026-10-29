@@ -65,10 +65,7 @@ export function ReviewsTab({ shopId, segment }: Props) {
         {count === 0 ? (
           <div>
             <p className="font-display text-3xl text-brass mb-2">—</p>
-            <p className="text-sm text-charcoal-muted">
-              Ainda não há avaliações. Cada cliente pode avaliar uma única vez, no primeiro
-              atendimento concluído.
-            </p>
+            <p className="text-sm text-charcoal-muted">Ainda não há avaliações.</p>
           </div>
         ) : (
           <div className="flex flex-wrap items-end gap-6">

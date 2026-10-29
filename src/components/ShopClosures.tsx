@@ -112,9 +112,7 @@ export function ShopClosures({ shopId }: Props) {
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brass">Estabelecimento</p>
             <h3 className="mt-1 text-lg font-semibold text-white">Feriados e fechamentos</h3>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-charcoal-muted">
-              Feche toda a agenda em feriados, recessos ou manutenção. Folgas individuais continuam na seção da equipe.
-            </p>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-charcoal-muted">Bloqueio para toda a equipe.</p>
           </div>
         </div>
         <span className="rounded-full bg-brass/10 px-3 py-1 text-xs text-brass">

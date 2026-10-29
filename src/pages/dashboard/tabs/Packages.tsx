@@ -210,9 +210,7 @@ export function PackagesTab({ shopId }: Props) {
       <Toast message={toast} onClose={() => setToast(null)} />
       <div>
         <h2 className="font-display text-2xl text-white mb-2">Pacotes</h2>
-        <p className="text-sm text-charcoal-muted">
-          Controle de banho de pacote: quantidade, restantes e histórico, sem contador inconsistente.
-        </p>
+
       </div>
 
       <div className="rounded-lg border border-charcoal-light p-4 space-y-3">
@@ -264,7 +262,7 @@ export function PackagesTab({ shopId }: Props) {
           </button>
           {editingTemplateId && <button onClick={cancelEdit} className="rounded-lg border border-charcoal-light px-4 py-2 text-white">Cancelar</button>}
         </div>
-        {editingTemplateId && <p className="text-xs text-charcoal-muted">Alterações no modelo não modificam sessões já utilizadas ou a validade de pacotes anteriormente associados.</p>}
+        {editingTemplateId && <p className="text-xs text-charcoal-muted">Mudanças valem para novas vendas.</p>}
       </div>
 
       <div className="rounded-lg border border-charcoal-light p-4 space-y-3">
@@ -310,13 +308,13 @@ export function PackagesTab({ shopId }: Props) {
             ))}
           </select>
         </div>
-        <label className="block text-sm text-white">Registro financeiro<select className="mt-2 min-h-11 w-full rounded-lg bg-charcoal px-3 text-white" value={saleMode} onChange={e=>setSaleMode(e.target.value)}><option value="pending">Nova venda — receber depois</option><option value="paid">Nova venda — pagamento recebido agora</option><option value="legacy">Pacote antigo já pago — somente sessões</option></select></label>{saleMode==='paid'&&<label className="block text-sm text-white">Forma de pagamento<select className="min-h-11 w-full rounded-lg bg-charcoal px-3" value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)}><option value="pix">Pix</option><option value="cartao">Cartão</option><option value="dinheiro">Dinheiro</option></select></label>}<p className="text-xs text-charcoal-muted">A nova venda registra o valor devido. Somente pagamentos recebidos entram no caixa. Pacotes antigos não geram nova venda nem dívida.</p><button disabled={assigning} onClick={assignPackage} className="rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal">
+        <label className="block text-sm text-white">Registro financeiro<select className="mt-2 min-h-11 w-full rounded-lg bg-charcoal px-3 text-white" value={saleMode} onChange={e=>setSaleMode(e.target.value)}><option value="pending">Nova venda — receber depois</option><option value="paid">Nova venda — pagamento recebido agora</option><option value="legacy">Pacote antigo já pago — somente sessões</option></select></label>{saleMode==='paid'&&<label className="block text-sm text-white">Forma de pagamento<select className="min-h-11 w-full rounded-lg bg-charcoal px-3" value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)}><option value="pix">Pix</option><option value="cartao">Cartão</option><option value="dinheiro">Dinheiro</option></select></label>}<p className="text-xs text-charcoal-muted">Somente valores recebidos entram no caixa.</p><button disabled={assigning} onClick={assignPackage} className="rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal">
           Associar pacote
         </button>
       </div>
 
       <div className="space-y-3">
-        <div className="grid gap-3 sm:grid-cols-3"><p className="text-sm text-white">Vendido: {formatPrice(balances.reduce((v,b)=>v+Number(b.total),0))}</p><p className="text-sm text-white">Recebido: {formatPrice(balances.reduce((v,b)=>v+Number(b.received),0))}</p><p className="text-sm text-brass">A receber: {formatPrice(balances.reduce((v,b)=>v+Number(b.balance),0))}</p></div><p className="text-xs text-charcoal-muted">Valores das vendas registradas a partir desta atualização. Pacotes antigos permanecem sem reclassificação.</p>
+        <div className="grid gap-3 sm:grid-cols-3"><p className="text-sm text-white">Vendido: {formatPrice(balances.reduce((v,b)=>v+Number(b.total),0))}</p><p className="text-sm text-white">Recebido: {formatPrice(balances.reduce((v,b)=>v+Number(b.received),0))}</p><p className="text-sm text-brass">A receber: {formatPrice(balances.reduce((v,b)=>v+Number(b.balance),0))}</p></div><p className="text-xs text-charcoal-muted">Totais das novas vendas. Pacotes antigos não incluídos.</p>
         <h3 className="font-medium text-white">Pacotes ativos</h3>
         {assigned.length === 0 ? (
           <p className="text-charcoal-muted text-sm">Nenhum pacote associado.</p>
@@ -368,7 +366,7 @@ export function PackagesTab({ shopId }: Props) {
                       <label className="text-sm text-charcoal-muted">Sessões utilizadas<input type="number" readOnly min="0" value={assignedUsed} onChange={e => setAssignedUsed(e.target.value)} className="mt-1 w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2 text-white" /></label>
                       <label className="text-sm text-charcoal-muted">Validade<input type="date" value={assignedExpiry} onChange={e => setAssignedExpiry(e.target.value)} className="mt-1 w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2 text-white" /></label>
                     </div>
-                    <p className="text-xs text-charcoal-muted">As sessões utilizadas são preservadas pelo histórico. Você pode alterar o total de sessões e a validade.</p>
+                    <p className="text-xs text-charcoal-muted">Sessões utilizadas não podem ser alteradas.</p>
                     <div className="flex gap-2">
                       <button disabled={savingAssigned} onClick={() => saveAssigned(pkg)} className="rounded-lg bg-brass px-3 py-2 text-sm font-semibold text-charcoal disabled:opacity-50">Salvar alterações</button>
                       <button onClick={() => setEditingAssignedId(null)} className="rounded-lg border border-charcoal-light px-3 py-2 text-sm text-white">Cancelar</button>

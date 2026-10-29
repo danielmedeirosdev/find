@@ -70,14 +70,14 @@ export function BookingCustomerPicker({ shopId, clients, pets, clientId, petId, 
       <div data-testid="customer-contact"><p className="text-xs text-charcoal-muted">WhatsApp do cadastro</p><p className="mt-1 text-sm text-white">{formatPhone(selectedClient.phone)}</p></div>
       {!selectedClient.name.trim() && <div className="space-y-2">
         <label className="grid gap-2 text-sm text-white">Nome do cliente (opcional)<input value={clientName} onChange={e => setClientName(e.target.value)} maxLength={120} placeholder="Como o cliente se chama?" className="min-h-12 w-full rounded-xl bg-charcoal p-3" onKeyDown={e => { if(e.key==='Enter'){e.preventDefault();void saveClientName()} }}/></label>
-        <p className="text-xs text-charcoal-muted">O telefone localiza este cadastro e mantém os dados vinculados. Ele não substitui o nome.</p>
+
         <button type="button" disabled={saving || !clientName.trim()} onClick={() => void saveClientName()} className="min-h-11 rounded-xl border border-brass/40 px-4 py-2 text-sm font-semibold text-brass disabled:opacity-50">{saving?'Salvando...':'Salvar nome do cliente'}</button>
       </div>}
     </div>}
     <button type="button" className="min-h-11 text-sm font-medium text-brass" onClick={() => { setQuick(!quick); setError('') }}>{quick ? 'Fechar cadastro rápido' : '+ Buscar ou cadastrar por WhatsApp'}</button>
     {quick && <div className="space-y-3 rounded-xl border border-brass/30 p-3">
       <label className="grid gap-2 text-sm text-white">WhatsApp do cliente<input type="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={e => setPhone(formatPhone(e.target.value))} placeholder="(19) 99999-9999" className="min-h-12 w-full rounded-xl bg-charcoal p-3" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); void register() } }}/></label>
-      <p className="text-xs text-charcoal-muted">Só o telefone é necessário. Se já estiver cadastrado, os dados serão reaproveitados.</p>
+      <p className="text-xs text-charcoal-muted">Cadastros existentes serão reaproveitados.</p>
       <button type="button" disabled={saving} onClick={() => void register()} className="min-h-11 w-full rounded-xl bg-brass p-3 text-sm font-semibold text-charcoal disabled:opacity-50">{saving ? 'Conferindo...' : 'Usar este WhatsApp'}</button>
     </div>}
     {notice && <p role="status" className="text-sm text-brass">{notice}</p>}

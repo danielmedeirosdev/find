@@ -40,9 +40,7 @@ export function StaffServicesTab({ shopId }: Props) {
   return (
     <div>
       <h2 className="font-display text-2xl text-white mb-2">Meus serviços</h2>
-      <p className="text-sm text-charcoal-muted mb-6">
-        Catálogo do estabelecimento (somente leitura). Alterações são feitas pelo dono.
-      </p>
+      <p className="text-sm text-charcoal-muted mb-6">Somente o responsável pode editar os serviços.</p>
       {error && (
         <div className="mb-4">
           <InlineError message={error} />

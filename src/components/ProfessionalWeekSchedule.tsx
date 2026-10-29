@@ -98,10 +98,7 @@ export function ProfessionalWeekSchedule({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-charcoal-muted">
-        Marque os dias de trabalho e defina o intervalo. Se vários dias estiverem ativos, você
-        poderá copiar o mesmo horário para todos.
-      </p>
+      <p className="text-xs text-charcoal-muted">Defina os dias e horários de trabalho.</p>
 
       <div className="space-y-2">
         {DAY_NAMES.map((dayName, dayIndex) => {

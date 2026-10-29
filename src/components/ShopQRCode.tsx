@@ -30,9 +30,7 @@ export function ShopQRCode({ slug }: { slug: string | null }) {
   return (
     <div className="rounded-lg border border-charcoal-light p-6 space-y-4">
       <h3 className="font-medium text-white">QR code da loja</h3>
-      <p className="text-sm text-charcoal-muted">
-        Aponte a câmera para abrir a página de agendamento. Você pode imprimir ou divulgar a imagem.
-      </p>
+      <p className="text-sm text-charcoal-muted">Compartilhe ou imprima seu QR Code.</p>
       {error ? (
         <p className="text-sm text-red-400">Não foi possível gerar o QR code. Tente novamente.</p>
       ) : image ? (

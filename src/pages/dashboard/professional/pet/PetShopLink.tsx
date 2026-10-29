@@ -107,18 +107,12 @@ export function PetShopLink({ shop, onUpdate }: Props) {
 
       <div>
         <h2 className="font-display text-2xl text-white mb-2">Link do Pet Shop</h2>
-        <p className="text-sm text-charcoal-muted">
-          Página pública exclusiva com logo, fotos, equipe e agendamento.
-        </p>
+
       </div>
 
       <div className="rounded-lg border border-charcoal-light p-6 space-y-4">
-        <p className="text-sm text-white">Endereço público (slug)</p>
-        <FieldHint>
-          Endereço que será usado no link público. Use só letras minúsculas, números e hífen.
-          <br />
-          Exemplo: {displayHost}/{SLUG_EXAMPLE}
-        </FieldHint>
+        <p className="text-sm text-white">Endereço do link</p>
+        <FieldHint>Letras minúsculas, números e hífen.</FieldHint>
         <div className="flex flex-wrap items-center gap-2 font-mono text-sm pt-1">
           <span className="text-charcoal-muted">{displayHost}/</span>
           {editing ? (
@@ -182,9 +176,7 @@ export function PetShopLink({ shop, onUpdate }: Props) {
           )}
         </div>
 
-        <p className="text-xs text-charcoal-muted">
-          Exemplo: {displayHost}/{shop.slug || SLUG_EXAMPLE}
-        </p>
+
       </div>
 
       <ShopQRCode slug={shop.slug ?? null} />

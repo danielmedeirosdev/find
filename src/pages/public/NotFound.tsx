@@ -8,9 +8,7 @@ export function NotFound() {
       <BrandLogo />
       <h1 className="font-display text-4xl text-ink sm:text-5xl">Página não encontrada</h1>
       <BrandAccent className="mx-auto mt-4 max-w-xs" />
-      <p className="mt-4 text-ink-muted">
-        O endereço que você abriu não existe ou foi movido. Volte ao início para continuar.
-      </p>
+      <p className="mt-4 text-ink-muted">Página não encontrada.</p>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Link to="/" className="btn-primary px-5 py-2.5">
           Ir para o início

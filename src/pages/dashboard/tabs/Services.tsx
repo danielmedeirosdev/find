@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { formatPrice, formatDuration } from '../../../lib/format'
-import { FieldHint, FieldLabel } from '../../../components/FormHints'
+import { FieldLabel } from '../../../components/FormHints'
 import { ServiceProfessionalPicker } from '../../../components/ServiceProfessionalPicker'
 import { ServiceAdvancedSettings } from '../../../components/ServiceAdvancedSettings'
 import type { Service } from '../../../lib/types'
@@ -62,9 +62,7 @@ export function ServicesTab({ shopId }: Props) {
   return (
     <div>
       <h2 className="font-display text-2xl text-white mb-2">Serviços e preços</h2>
-      <p className="text-sm text-charcoal-muted mb-6">
-        Cadastre todos os serviços que podem ser agendados pelos clientes.
-      </p>
+
 
       <div className="mb-8 grid gap-3 sm:grid-cols-4">
         <div>
@@ -86,7 +84,7 @@ export function ServicesTab({ shopId }: Props) {
             placeholder="Ex: 45,00"
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 font-mono text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
-          <FieldHint>Informe apenas números. Ex: 45,00</FieldHint>
+
         </div>
         <div>
           <FieldLabel>Duração (min)</FieldLabel>

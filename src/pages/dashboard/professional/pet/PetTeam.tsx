@@ -180,9 +180,7 @@ export function PetTeam({ shopId }: Props) {
     <div>
       <Toast message={toast} onClose={() => setToast(null)} />
       <h2 className="font-display text-2xl text-white mb-2">Equipe e horários</h2>
-      <p className="text-sm text-charcoal-muted mb-6">
-        Organize cargo, especialidade, comissão e horários de cada profissional.
-      </p>
+
 
       <div className="mb-8 flex flex-wrap gap-2">
         <input

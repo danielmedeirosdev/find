@@ -87,7 +87,7 @@ export function ServiceAdvancedSettings({ shopId, serviceId }: Props) {
       {error && <InlineError message={error} />}
       <section>
         <h4 className="text-sm font-semibold text-white">Perguntas no agendamento</h4>
-        <p className="mt-1 text-xs text-charcoal-muted">Ex.: tipo de pelo, possui nós ou alguma preferência. Opções podem acrescentar valor.</p>
+        <p className="mt-1 text-xs text-charcoal-muted">Opções podem ter valor adicional.</p>
         <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_180px_auto_auto]">
           <input value={fieldLabel} onChange={(e) => setFieldLabel(e.target.value)} placeholder="Nome da pergunta" className="min-h-11 rounded-xl border border-charcoal-light bg-charcoal px-3 text-sm text-white" />
           <select value={fieldType} onChange={(e) => setFieldType(e.target.value as ServiceCustomFieldType)} className="min-h-11 rounded-xl border border-charcoal-light bg-charcoal px-3 text-sm text-white"><option value="single_choice">Seleção única</option><option value="text">Texto livre</option></select>
@@ -108,7 +108,7 @@ export function ServiceAdvancedSettings({ shopId, serviceId }: Props) {
         </div>
       </section>
 
-      <section className="border-t border-charcoal-light pt-5"><h4 className="text-sm font-semibold text-white">Desconto por dia</h4><p className="mt-1 text-xs text-charcoal-muted">Percentual aplicado automaticamente conforme a data escolhida.</p><div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">{DAY_NAMES.map((day, index) => <label key={day} className="text-xs text-charcoal-muted">{day.slice(0, 3)}<input type="number" min="0" max="100" defaultValue={discounts.find((item) => item.day_of_week === index)?.discount_percent || ''} onBlur={(e) => saveDiscount(index, e.target.value)} placeholder="0%" className="mt-1 min-h-10 w-full rounded-lg border border-charcoal-light bg-charcoal px-2 text-sm text-white" /></label>)}</div></section>
+      <section className="border-t border-charcoal-light pt-5"><h4 className="text-sm font-semibold text-white">Desconto por dia</h4><div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">{DAY_NAMES.map((day, index) => <label key={day} className="text-xs text-charcoal-muted">{day.slice(0, 3)}<input type="number" min="0" max="100" defaultValue={discounts.find((item) => item.day_of_week === index)?.discount_percent || ''} onBlur={(e) => saveDiscount(index, e.target.value)} placeholder="0%" className="mt-1 min-h-10 w-full rounded-lg border border-charcoal-light bg-charcoal px-2 text-sm text-white" /></label>)}</div></section>
     </div>
   )
 }

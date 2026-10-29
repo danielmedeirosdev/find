@@ -89,9 +89,7 @@ export function StaffProfileTab({ shop, barber, onUpdate }: Props) {
     <div className="max-w-xl">
       <Toast message={toast} onClose={() => setToast(null)} />
       <h2 className="font-display text-2xl text-white mb-2">Meu perfil</h2>
-      <p className="text-sm text-charcoal-muted mb-6">
-        Dados visíveis na agenda pública. Horários são definidos pelo dono.
-      </p>
+      <p className="text-sm text-charcoal-muted mb-6">Horários definidos pelo responsável.</p>
       {error && (
         <div className="mb-4">
           <InlineError message={error} />

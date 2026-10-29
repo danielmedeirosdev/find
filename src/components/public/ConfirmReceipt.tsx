@@ -72,9 +72,7 @@ export function ConfirmReceipt({
             <BrandLogo />
           </p>
           <h1 className="mt-2 font-display text-3xl text-ink">Horário confirmado</h1>
-          <p className="mt-2 text-sm text-ink-muted">
-            Guarde este comprovante. O estabelecimento já recebeu o agendamento.
-          </p>
+          <p className="mt-2 text-sm text-ink-muted">Agendamento enviado ao estabelecimento.</p>
         </div>
         <BrandAccent height="h-1.5" segment={view.isPet ? 'pet' : 'barbershop'} />
 
@@ -131,7 +129,7 @@ export function ConfirmReceipt({
             </span>
             <span className="font-display text-2xl text-brass">{formatPrice(total)}</span>
           </div>
-          {transportPricePending ? <p className="-mt-2 pb-4 text-xs text-ink-muted">O valor do Táxi Pet será acrescentado quando o estabelecimento confirmar a rota.</p> : null}
+          {transportPricePending ? <p className="-mt-2 pb-4 text-xs text-ink-muted">Transporte a confirmar.</p> : null}
         </div>
       </div>
 

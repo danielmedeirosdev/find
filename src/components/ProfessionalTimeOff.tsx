@@ -98,9 +98,7 @@ export function ProfessionalTimeOff({ shopId, barberId }: Props) {
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brass">Disponibilidade</p>
           <h3 className="mt-1 text-lg font-semibold text-white">Folgas e bloqueios</h3>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-charcoal-muted">
-            Bloqueie um dia inteiro, férias ou apenas algumas horas. Esses períodos deixam de aparecer no agendamento online.
-          </p>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-charcoal-muted">Bloqueie dias ou horários na agenda.</p>
         </div>
         <span className="rounded-full border border-brass/25 bg-brass/5 px-3 py-1 text-xs text-brass">
           {items.length} {items.length === 1 ? 'período futuro' : 'períodos futuros'}

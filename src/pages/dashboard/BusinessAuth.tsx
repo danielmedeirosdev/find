@@ -9,7 +9,6 @@ import { BrandAccent } from '../../components/BrandAccent'
 import { AuthDivider, GoogleSignInButton } from '../../components/GoogleSignInButton'
 import { BackArrow } from '../../components/SegmentMark'
 import {
-  FieldHint,
   FieldLabel,
   PasswordRequirements,
   isPasswordStrong,
@@ -245,7 +244,7 @@ export function BusinessAuth() {
                 placeholder={meta.namePlaceholder}
                 className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
               />
-              <FieldHint>Aparece no painel e na página pública dos clientes.</FieldHint>
+
             </div>
           </>
         )}
@@ -261,7 +260,7 @@ export function BusinessAuth() {
             placeholder="Ex: contato@negocio.com"
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
-          <FieldHint>Usado para entrar no painel e receber avisos da assinatura.</FieldHint>
+
         </div>
 
         {!resetMode && <div>

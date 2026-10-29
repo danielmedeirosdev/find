@@ -54,7 +54,7 @@ export function PetInventory({ shopId }: Props) {
 
   return <div className="space-y-8">
     <Toast message={toast} onClose={() => setToast(null)} />
-    <div><h2 className="font-display text-2xl text-white">Estoque</h2><p className="mt-1 text-sm text-charcoal-muted">Controle básico de produtos, custos, preços e estoque mínimo.</p></div>
+    <div><h2 className="font-display text-2xl text-white">Estoque</h2></div>
     {lowStock.length > 0 ? <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4"><p className="font-medium text-amber-200">{lowStock.length} {lowStock.length === 1 ? 'produto está' : 'produtos estão'} no estoque mínimo.</p><p className="mt-1 text-sm text-amber-100/70">{lowStock.map((product) => product.name).join(' · ')}</p></div> : null}
     <section className="rounded-xl border border-charcoal-light p-5"><h3 className="font-medium text-white">Novo produto</h3><div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <Input label="Produto" value={name} onChange={setName} />

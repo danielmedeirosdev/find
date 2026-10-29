@@ -53,20 +53,14 @@ export function PetReviews({ shopId }: Props) {
     <div className="max-w-3xl space-y-8">
       <div>
         <h2 className="font-display text-2xl text-white mb-1">Avaliações do Pet Shop</h2>
-        <p className="text-sm text-charcoal-muted">
-          Reputação do pet shop com base em atendimentos de banho, tosa e cuidados concluídos no
-          onefind.
-        </p>
+
       </div>
 
       <div className="rounded-lg border border-charcoal-light bg-charcoal-light/40 p-6">
         {count === 0 ? (
           <div>
             <p className="font-display text-3xl text-brass mb-2">—</p>
-            <p className="text-sm text-charcoal-muted">
-              Ainda não há avaliações. Cada cliente avalia o pet shop uma única vez, no primeiro
-              atendimento.
-            </p>
+            <p className="text-sm text-charcoal-muted">Ainda não há avaliações.</p>
           </div>
         ) : (
           <div className="flex flex-wrap items-end gap-6">

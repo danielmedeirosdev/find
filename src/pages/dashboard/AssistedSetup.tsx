@@ -300,7 +300,7 @@ export function AssistedSetup() {
       <div>
         <Link to="/interno" className="text-sm text-brass">← Voltar ao painel</Link>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Configuração assistida completa</h1>
-        <p className="mt-1 text-sm text-neutral-400">Monte a loja antes de entregar o acesso: perfil, fotos, serviços, táxi dog, equipe, horários, pacotes e dias fechados.</p>
+        <p className="mt-1 text-sm text-neutral-400">Configure a loja e gere o link de ativação.</p>
       </div>
       {shopId && <button type="button" onClick={() => { setShopId(''); setLink(''); setShopName(''); setEmail('') }} className="rounded-xl border border-white/15 px-4 py-2 text-sm text-neutral-300">Trocar loja</button>}
     </div>
@@ -312,7 +312,7 @@ export function AssistedSetup() {
 
     {!shopId && readyShops.length>0 && <div className="rounded-2xl border border-white/10 p-4">
       <h2 className="mb-2 text-sm font-semibold text-brass">Lojas já preparadas · renovar convite</h2>
-      <p className="mb-3 text-xs text-neutral-400">Gere outro link para uma loja já configurada, sem recriar a conta. O link anterior deixa de ser necessário.</p>
+      <p className="mb-3 text-xs text-neutral-400">Gere um novo link para uma loja existente.</p>
       <div className="grid gap-2 sm:grid-cols-2">{readyShops.map(s=><div key={s.id} className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 p-3"><span className="min-w-0 truncate text-sm text-white">{s.name}</span><button type="button" disabled={!!renewingId} onClick={()=>void renewInvite(s.id)} className="shrink-0 rounded-lg border border-brass/40 px-3 py-2 text-xs text-brass disabled:opacity-50">{renewingId===s.id?'Gerando...':'Novo link'}</button></div>)}</div>
     </div>}
 

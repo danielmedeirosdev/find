@@ -3,7 +3,7 @@ import { supabase } from '../../../../lib/supabase'
 import { deleteShopMedia, uploadShopMedia } from '../../../../lib/media'
 import { ImageDropzone, ProgressBar, Toast } from '../../../../components/MediaUI'
 import { DeleteShopControl } from '../../../../components/DeleteShopControl'
-import { FieldHint, FieldLabel } from '../../../../components/FormHints'
+import { FieldLabel } from '../../../../components/FormHints'
 import { PET_BUSINESS_TYPES } from '../../../../lib/onboarding'
 import { formatPhone, phoneDigits } from '../../../../lib/format'
 import type { PetBusinessType, Shop, ShopPhoto } from '../../../../lib/types'
@@ -172,16 +172,12 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
             Perfil do estabelecimento
           </p>
           <h2 className="mt-1 font-display text-2xl text-white">Informações da loja</h2>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-charcoal-muted">
-            Dados principais, contato e apresentação do seu negócio em uma visão mais clara.
-          </p>
+
         </div>
 
         <div className="rounded-lg border border-charcoal-light p-5">
           <h3 className="font-medium text-white mb-1">Logo do Pet Shop</h3>
-          <FieldHint>
-            Será exibida no site público, agendamentos e futuras notificações.
-          </FieldHint>
+
           <div className="mt-3 flex flex-wrap items-start gap-4">
             {logoUrl ? (
               <div className="relative">
@@ -217,10 +213,7 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
 
         <div className="rounded-lg border border-charcoal-light p-5">
           <h3 className="font-medium text-white mb-1">Fotos do estabelecimento</h3>
-          <FieldHint>
-            Adicione fotos da fachada, ambiente e estrutura para transmitir mais confiança aos
-            clientes.
-          </FieldHint>
+
           <div className="mt-3 flex flex-wrap gap-3 mb-4">
             {photos.map((photo) => (
               <div
@@ -251,9 +244,7 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
               <span className="text-[10px] text-charcoal-muted">Adicionar</span>
             </ImageDropzone>
           </div>
-          <p className="text-xs text-charcoal-muted">
-            Arraste para reordenar. As fotos aparecem em grade na página pública (sem esticar).
-          </p>
+          <p className="text-xs text-charcoal-muted">Arraste para reordenar.</p>
         </div>
 
         <div className="grid gap-4 rounded-2xl border border-charcoal-light p-5 sm:grid-cols-2">
@@ -276,9 +267,7 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
               </option>
             ))}
           </select>
-          <FieldHint>
-            Organiza recursos e indicadores sem criar outro dashboard.
-          </FieldHint>
+
           </div>
 
           <div>
@@ -297,10 +286,10 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
           <input
             value={slogan}
             onChange={(e) => setSlogan(e.target.value)}
-            placeholder="Ex: Cuidado profissional para quem você ama."
+            placeholder="Uma frase sobre seu negócio"
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
-          <FieldHint>Frase curta que aparece sob o nome na página pública.</FieldHint>
+
           </div>
 
           <div className="sm:col-span-2">
@@ -309,7 +298,7 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={4}
-            placeholder="Conte um pouco sobre o pet shop, serviços e diferenciais."
+            placeholder="Sobre o pet shop"
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
           </div>
@@ -319,7 +308,7 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
           <input
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            placeholder="Ex: Rua das Palmeiras, 482 - Centro"
+            placeholder="Rua, número e bairro"
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
           </div>
@@ -332,7 +321,7 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
             placeholder="Ex: (11) 99999-9999"
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
-          <FieldHint>Sempre exibido no padrão brasileiro, como (19) 97428-0798.</FieldHint>
+
           </div>
         </div>
 

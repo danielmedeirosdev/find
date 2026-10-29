@@ -79,7 +79,7 @@ export function ServiceProfessionalPicker({ shopId, serviceId }: Props) {
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-sm font-semibold text-white">Profissionais que executam</p>
-          <p className="text-xs text-charcoal-muted">O cliente verá somente quem atende todos os serviços escolhidos.</p>
+          <p className="text-xs text-charcoal-muted">Profissionais disponíveis para este serviço.</p>
         </div>
         {mappings.length > 0 && <button type="button" onClick={allowAll} disabled={busy} className="text-xs text-brass hover:underline disabled:opacity-50">Liberar para toda a equipe</button>}
       </div>

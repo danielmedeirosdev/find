@@ -164,10 +164,7 @@ export function TeamScheduleTab({ shopId }: Props) {
     <div>
       <Toast message={toast} onClose={() => setToast(null)} />
       <h2 className="font-display text-2xl text-white mb-2">Equipe e horários</h2>
-      <p className="text-sm text-charcoal-muted mb-6">
-        Cadastre a equipe, horários e, se quiser, um acesso individual ao painel (só a própria
-        agenda — sem financeiro ou assinatura).
-      </p>
+      <p className="text-sm text-charcoal-muted mb-6">Acesso individual à própria agenda, sem financeiro.</p>
 
       <div className="mb-8 flex flex-wrap gap-2">
         <input

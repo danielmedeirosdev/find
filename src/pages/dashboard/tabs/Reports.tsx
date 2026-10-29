@@ -161,8 +161,8 @@ export function ReportsTab({ shopId }: Props) {
             </div>
           </div>
 
-          <div className="mb-6 rounded-lg border border-charcoal-light p-4"><p className="text-sm text-charcoal-muted">Cobranças concluídas no período</p><p className="text-2xl text-brass">{formatPrice(completedBookings.reduce((sum,b)=>sum+Number(b.amount_due||0),0))}</p><p className="mt-2 text-xs text-charcoal-muted">Faturamento a cobrar fora de pacotes, nos atendimentos finalizados com a nova opção de pagamento. Inclui pagos e pendentes. Sessões cobertas não são cobradas novamente. Recebimentos de pacotes continuam no caixa.</p></div>
-          <div className="mb-6 rounded-lg border border-charcoal-light p-4"><p className="text-sm text-white">Vendas de pacotes no período: {formatPrice(packageSales)}</p><p className="mt-2 text-xs text-charcoal-muted">Valor das novas vendas, incluindo pagamentos pendentes. O uso de uma sessão não gera outra venda.</p></div><h3 className="font-medium text-white mb-4">Por profissional</h3>
+          <div className="mb-6 rounded-lg border border-charcoal-light p-4"><p className="text-sm text-charcoal-muted">Cobranças concluídas no período</p><p className="text-2xl text-brass">{formatPrice(completedBookings.reduce((sum,b)=>sum+Number(b.amount_due||0),0))}</p><p className="mt-2 text-xs text-charcoal-muted">Inclui pagos e pendentes das novas finalizações, sem sessões cobertas por pacote.</p></div>
+          <div className="mb-6 rounded-lg border border-charcoal-light p-4"><p className="text-sm text-white">Vendas de pacotes no período: {formatPrice(packageSales)}</p><p className="mt-2 text-xs text-charcoal-muted">Inclui vendas pagas e pendentes.</p></div><h3 className="font-medium text-white mb-4">Por profissional</h3>
           {barberStats.length === 0 ? (
             <p className="text-charcoal-muted">Nenhum atendimento concluído no período.</p>
           ) : (

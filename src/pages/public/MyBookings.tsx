@@ -123,19 +123,14 @@ export function MyBookings() {
       ) : bookings.length === 0 ? (
         <div className="mx-auto max-w-lg rounded-2xl border border-ink/10 bg-white px-6 py-10 text-center">
           <p className="font-display text-2xl text-ink">Nenhuma reserva ainda</p>
-          <p className="mt-2 text-sm text-ink-muted">
-            Para marcar um horário, abra o link de agendamento enviado pela sua barbearia ou pet shop.
-            Você também pode encontrá-lo no perfil do estabelecimento.
-          </p>
+          <p className="mt-2 text-sm text-ink-muted">Agende pelo link do estabelecimento.</p>
         </div>
       ) : (
         <div className="space-y-8">
           {awaitingReview.length > 0 && (
             <section>
               <h2 className="font-display text-2xl text-ink mb-2">Como foi seu atendimento?</h2>
-              <p className="text-sm text-ink-muted mb-4">
-                Sua opinião ajuda outras pessoas a escolherem e ajuda o profissional a melhorar.
-              </p>
+
               <div className="space-y-4">
                 {awaitingReview.map((b) => (
                   <BookingCard

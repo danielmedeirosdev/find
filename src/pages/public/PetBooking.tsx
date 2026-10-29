@@ -481,9 +481,7 @@ export function PetBooking() {
         {step === 2 && (
           <div>
             <h2 className="font-display text-2xl mb-2">Qual pet?</h2>
-            <p className="text-sm text-ink-muted mb-4">
-              Pode escolher até 2 pets no mesmo horário (só da mesma pessoa).
-            </p>
+            <p className="text-sm text-ink-muted mb-4">Até 2 pets do mesmo tutor.</p>
             {(!customer || !customer.name.trim()) && (
               <div className="mb-4">
                 <label className="block text-sm mb-1">Seu nome</label>
@@ -723,7 +721,7 @@ export function PetBooking() {
               {extrasAmount > 0 && <p className="text-ink-muted">Adicionais: + {formatPrice(extrasAmount)}</p>}
               {petTransport && <p className="text-ink-muted">Táxi Pet: {transportPricePending ? 'valor a confirmar' : `+ ${formatPrice(taxiFee)}`} · {transportAddress}</p>}
               <p className="font-mono text-brass text-lg">{formatPrice(quotedTotal)}</p>
-              {petTransport && transportPricePending && <p className="text-xs text-ink-muted">Subtotal dos serviços. A taxa do transporte será acrescentada após a confirmação da rota.</p>}
+              {petTransport && transportPricePending && <p className="text-xs text-ink-muted">Transporte cobrado após confirmar a rota.</p>}
               <p className="text-ink-muted">
                 {customerName || customer?.name} · {phone}
               </p>

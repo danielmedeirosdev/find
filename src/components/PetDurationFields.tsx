@@ -16,6 +16,6 @@ export function PetDurationFields({ value, onChange, disabled = false }: { value
     </label> : <div className="grid gap-3 sm:grid-cols-3">{PET_SIZES.map(({ value: size, label }) => <label key={size} className="text-xs text-charcoal-muted">{label} (min)
       <input type="number" min="1" max="720" step="1" required value={value.sizes[size] ?? ''} onChange={(e) => onChange({ ...value, sizes: { ...value.sizes, [size]: e.target.value } })} className={inputClass} />
     </label>)}</div>}
-    <p className="text-xs text-charcoal-muted">Digite a duração em minutos, sem precisar usar múltiplos de 15.</p>
+    <p className="text-xs text-charcoal-muted">De 1 a 720 minutos.</p>
   </fieldset>
 }

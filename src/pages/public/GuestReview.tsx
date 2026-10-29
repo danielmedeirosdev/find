@@ -63,10 +63,7 @@ export function GuestReview() {
     return (
       <div className="mx-auto max-w-md text-center">
         <h1 className="font-display text-3xl text-ink mb-2">Avaliação indisponível</h1>
-        <p className="text-ink-muted text-sm mb-6">
-          Este atendimento não está disponível para avaliação. Já foi avaliado, ou a avaliação
-          deste estabelecimento já foi usada no primeiro serviço.
-        </p>
+        <p className="text-ink-muted text-sm mb-6">Este atendimento não está disponível para avaliação.</p>
         <Link to="/" className="text-brass hover:underline">
           Voltar ao FIND
         </Link>
