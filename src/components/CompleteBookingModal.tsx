@@ -2,10 +2,12 @@ import { Modal } from './Modal'
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { customerLabel, formatPrice } from '../lib/format'
+import { applyWeekdayDiscount } from '../lib/servicePricing'
+import { getPetServicesPrice } from '../lib/pet'
 import { amountDue, selectedBookingTotal } from '../lib/finance'
 import { packageRemaining } from '../lib/notifications'
 import { userFacingError } from '../lib/userFacingError'
-import type { BookingWithDetails, CustomerPackage, PaymentMethod, Service } from '../lib/types'
+import type { BookingWithDetails, CustomerPackage, PaymentMethod, Service, ServiceSizeRule, ServiceWeekdayDiscount } from '../lib/types'
 
 interface Props {
   booking: BookingWithDetails
@@ -20,6 +22,11 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
     [booking]
   )
   const [selectedIds, setSelectedIds] = useState<Set<string>>(initialIds)
+  const [paidNow,setPaidNow] = useState(true)
+  const [rules,setRules] = useState<ServiceSizeRule[]>([])
+  const [discounts,setDiscounts] = useState<ServiceWeekdayDiscount[]>([])
+  const [pricesReady,setPricesReady] = useState(false)
+  const [packagesReady,setPackagesReady] = useState(!booking.pet_id)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix')
   const [packages, setPackages] = useState<CustomerPackage[]>([])
   const [selectedPackageId, setSelectedPackageId] = useState<string>('')
@@ -28,25 +35,31 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
   const [error, setError] = useState('')
 
   useEffect(() => {
+    let active=true;
+    Promise.all([
+      supabase.from('service_size_rules').select('*').in('service_id',shopServices.map(s=>s.id)),
+      supabase.from('service_weekday_discounts').select('*').in('service_id',shopServices.map(s=>s.id))
+    ]).then(([r,d])=>{if(!active)return;if(r.error||d.error){setError('Não foi possível conferir os preços. Reabra o atendimento.');return}setRules(r.data||[]);setDiscounts(d.data||[]);setPricesReady(true)})
+    return ()=>{active=false}
+  },[shopServices])
+  useEffect(() => {
     if (!booking.pet_id) return
-    supabase
-      .from('customer_packages')
-      .select('*, service_packages(*)')
-      .eq('shop_id', booking.shop_id)
-      .eq('pet_id', booking.pet_id)
-      .eq('status', 'active')
-      .then(({ data }) => {
+    supabase.rpc('completion_packages', {p_booking_id:booking.id})
+      .then(({ data, error: packageError }) => {
+        if(packageError){setError("Não foi possível conferir os pacotes. Reabra o atendimento.");setPackagesReady(false);return}
         const list = ((data as CustomerPackage[]) || []).filter(
           (p) => packageRemaining(p.total_sessions, p.used_sessions) > 0 && (!p.expires_at || p.expires_at >= new Date().toLocaleDateString('en-CA'))
         )
+        setPackagesReady(true)
         setPackages(list)
         if (list.length === 1) setSelectedPackageId(list[0].id)
       })
-  }, [booking.pet_id,booking.shop_id])
+  }, [booking.id,booking.pet_id])
 
   const selectedServices = shopServices.filter((s) => selectedIds.has(s.id))
   const parsedTransportFee = Number(transportFee.replace(',', '.'))
-  const quotedTotal = selectedBookingTotal(booking, selectedIds, shopServices, booking.pet_transport_requested && Number.isFinite(parsedTransportFee) ? parsedTransportFee : 0)
+  const pricedServices=shopServices.map(s=>({...s,price:Math.round(applyWeekdayDiscount(getPetServicesPrice([s],booking.pets?.size||'medio',rules),s.id,booking.date,discounts)*100)/100}))
+  const quotedTotal = selectedBookingTotal(booking, selectedIds, pricedServices, booking.pet_transport_requested && Number.isFinite(parsedTransportFee) ? parsedTransportFee : 0)
   const total = amountDue(quotedTotal,Number(booking.services_amount ?? booking.booking_services?.reduce((sum,s)=>sum+Number(s.services.price),0) ?? 0),Boolean(selectedPackageId))
 
   const toggleService = (id: string) => {
@@ -59,6 +72,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
   }
 
   const handleConfirm = async () => {
+    if (submitting || !pricesReady || !packagesReady) return
     if (selectedServices.length === 0) {
       setError('Selecione ao menos um serviço.')
       return
@@ -71,21 +85,9 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
     setSubmitting(true)
     setError('')
 
-    if (booking.pet_transport_requested) {
-      const { error: transportError } = await supabase.rpc('set_pet_transport_fee', {
-        p_booking_id: booking.id,
-        p_fee: parsedTransportFee,
-      })
-
-      if (transportError) {
-        setError(userFacingError(transportError, 'Não foi possível salvar o valor do Táxi Pet.'))
-        setSubmitting(false)
-        return
-      }
-    }
-
-    const { error: rpcError } = await supabase.rpc('complete_booking', {
+    const { error: rpcError } = await supabase.rpc('complete_booking_payment', {
       p_booking_id: booking.id,
+      p_paid_now: paidNow, p_transport_fee: booking.pet_transport_requested ? parsedTransportFee : null, p_reserved_minutes: booking.duration_minutes || null,
       p_service_ids: selectedServices.map((s) => s.id),
       p_payment_method: paymentMethod,
       p_amount: total,
@@ -130,7 +132,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
                   />
                   <span className="min-w-0 break-words text-sm text-white">{s.name}</span>
                 </div>
-                <span className="shrink-0 text-right text-xs font-medium tabular-nums text-brass sm:text-sm">{formatPrice(Number(s.price))}</span>
+                <span className="shrink-0 text-right text-xs font-medium tabular-nums text-brass sm:text-sm">{formatPrice(Number(pricedServices.find(item=>item.id===s.id)?.price ?? s.price))}</span>
               </label>
             ))}
           </div>
@@ -164,8 +166,10 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
           </div>
         )}
 
-        {selectedPackageId && <p className="mb-4 text-sm text-brass">Uma sessão do pacote selecionado será descontada ao finalizar. Adicionais e transporte continuam sendo cobrados.</p>}
-        <div className="mb-6">
+        {selectedPackageId && <p className="mb-4 text-sm text-brass">Uma sessão do pacote selecionado será descontada ao finalizar. Os serviços já reservados serão cobertos. Novos serviços selecionados aqui e transporte continuam sendo cobrados.</p>}
+        <div className="mb-4 grid grid-cols-2 gap-2">{[[true,'Pago agora'],[false,'Pagar depois']].map(([value,label])=><button key={String(value)} type="button" onClick={()=>setPaidNow(value===true)} className={`min-h-12 rounded-lg border p-2 text-sm ${paidNow===(value===true)?'border-brass text-brass':'border-charcoal-light text-white'}`}>{label}</button>)}</div>
+        {!paidNow && <p className="mb-4 text-sm text-charcoal-muted">O atendimento será concluído e o valor ficará pendente no financeiro, sem entrada no caixa.</p>}
+        <div className={paidNow ? "mb-6" : "hidden"}>
           <p className="text-sm font-medium text-white mb-3">Forma de pagamento</p>
           <div className="grid grid-cols-3 gap-2">
             {(['pix', 'cartao', 'dinheiro'] as PaymentMethod[]).map((method) => (
@@ -186,7 +190,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
         </div>
 
         <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-brass/25 bg-brass/10 p-4">
-          <span className="text-white">A receber agora</span>
+          <span className="text-white">{paidNow ? 'Receber agora' : 'Ficará pendente'}</span>
           <span className="break-all text-right text-lg font-semibold tabular-nums text-brass">{formatPrice(total)}</span>
         </div>
 
@@ -195,14 +199,14 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={onClose}
-            disabled={submitting}
+            disabled={submitting || !pricesReady || !packagesReady}
             className="min-h-12 rounded-xl border border-charcoal-light px-2 py-3 text-sm text-charcoal-muted hover:text-white"
           >
             Cancelar
           </button>
           <button
             onClick={handleConfirm}
-            disabled={submitting}
+            disabled={submitting || !pricesReady || !packagesReady}
             className="min-h-12 rounded-xl bg-brass px-2 py-3 text-sm font-semibold text-charcoal disabled:opacity-50"
           >
             {submitting ? 'Salvando...' : 'Confirmar'}

@@ -128,6 +128,7 @@ export interface Booking {
   review_status?: ReviewStatus | null
   pet_id?: string | null
   shop_customer_id?: string | null
+  amount_due?: number | null
   duration_minutes?: number | null
   customer_package_id?: string | null
   notes?: string | null

@@ -107,6 +107,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
   const [extraServiceIds, setExtraServiceIds] = useState<string[]>([])
   const [savingExtras, setSavingExtras] = useState(false)
   const [extraError, setExtraError] = useState('')
+  const [reservedMinutes,setReservedMinutes] = useState('60')
   const [editStaffId,setEditStaffId] = useState('')
   const [editDate,setEditDate] = useState('')
   const [editTime,setEditTime] = useState('')
@@ -127,12 +128,13 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
 
   const saveExtraServices = async () => {
     if (!editingBooking || savingExtras) return
+    if (!Number.isInteger(Number(reservedMinutes)) || Number(reservedMinutes)<1 || Number(reservedMinutes)>720) {setExtraError('Informe de 1 a 720 minutos.');return}
     if (!['in_progress','awaiting_payment'].includes(editingBooking.status || '') && !editScheduleValid) { setExtraError('Escolha um horário disponível.'); return }
     setSavingExtras(true)
     setExtraError('')
     const ids = [...new Set([...(editingBooking.booking_services || []).map(s => s.service_id), ...extraServiceIds])]
-    const { error } = await supabase.rpc('edit_operational_booking_professional', {
-      p_barber_id: editStaffId,
+    const { error } = await supabase.rpc('edit_booking_reservation', {
+      p_barber_id: editStaffId, p_reserved_minutes: Number(reservedMinutes),
       p_booking_id: editingBooking.id, p_service_ids: ids,
       p_date: editDate, p_time: editTime, p_notes: editNotes,
     })
@@ -625,7 +627,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
                   <p className="font-mono text-brass">{formatPrice(total)}</p>
                 </div>
           <BookingConfirmationReminder booking={b} shopName={shopName} due={pendingReminderIds.includes(b.id)} onUpdate={async()=>{await load();onReminderUpdate?.()}}/>
-          <button type="button" onClick={() => { setEditStaffId(b.barber_id); setEditingBooking(b); setExtraServiceIds([]); setExtraError('');setEditScheduleValid(false);setEditDate(b.date);setEditTime(b.time.slice(0,5));setEditNotes(b.notes||'') }}
+          <button type="button" onClick={() => { setReservedMinutes(String(b.duration_minutes || 30)); setEditStaffId(b.barber_id); setEditingBooking(b); setExtraServiceIds([]); setExtraError('');setEditScheduleValid(false);setEditDate(b.date);setEditTime(b.time.slice(0,5));setEditNotes(b.notes||'') }}
             className="min-h-11 w-full rounded-xl border border-brass/40 px-4 py-2.5 text-center text-sm font-medium text-brass hover:bg-brass/10 sm:w-auto">
             Editar / adicionar serviços
           </button>
@@ -647,7 +649,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
 
       {editingBooking && (
         <Modal label="Editar atendimento" onClose={()=>setEditingBooking(null)} busy={savingExtras} className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-brass/25 bg-charcoal-dark p-5 shadow-2xl">
+          <div className="max-h-[90dvh] overflow-y-auto w-full max-w-md rounded-2xl border border-brass/25 bg-charcoal-dark p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-3">
               <div><h3 className="text-lg font-semibold text-white">Editar atendimento</h3>
                 <p className="mt-1 text-sm text-charcoal-muted">{customerLabel({name:editingBooking.shop_customers?.name ?? editingBooking.client_name,phone:editingBooking.client_phone})} · {formatDate(editingBooking.date)}</p></div>
@@ -657,14 +659,14 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
               shopId={shopId}
               professionals={barberId ? teamList.filter(person=>person.id===barberId) : teamList}
               serviceIds={[...(editingBooking.booking_services || []).map(item=>item.service_id),...extraServiceIds]}
-              duration={(editingBooking.duration_minutes || 30)+getPetServicesDuration(shopServices.filter(service=>extraServiceIds.includes(service.id)),editingBooking.pets?.size||'medio',sizeRules)}
+              duration={Number(reservedMinutes) || 1}
               value={{professionalId:editStaffId,date:editDate,time:editTime}}
               excludeBooking={{professionalId:editingBooking.barber_id,date:editingBooking.date,time:editingBooking.time}}
               onChange={selection=>{setEditStaffId(selection.professionalId);setEditDate(selection.date);setEditTime(selection.time)}}
               onValidityChange={setEditScheduleValid}
               tone="dark"
             />}</div>
-            <label className="mt-3 block text-sm">Observações<textarea className="mt-1 w-full bg-charcoal p-2" value={editNotes} onChange={e=>setEditNotes(e.target.value)}/></label><p className="mt-3 text-sm text-charcoal-muted">Serviços adicionais</p><div className="mt-2 max-h-72 space-y-2 overflow-y-auto">
+            <label className="mt-4 block text-sm text-white">Tempo reservado na agenda (min)<input type="number" min="1" max="720" step="1" className="mt-1 min-h-11 w-full rounded-lg border border-charcoal-light bg-charcoal p-2" value={reservedMinutes} onChange={e=>setReservedMinutes(e.target.value)}/></label><p className="mt-1 text-xs text-charcoal-muted">Mantenha o tempo se os extras couberem no horário. Aumentos dependem da disponibilidade.</p><label className="mt-3 block text-sm">Observações<textarea className="mt-1 w-full bg-charcoal p-2" value={editNotes} onChange={e=>setEditNotes(e.target.value)}/></label><p className="mt-3 text-sm text-charcoal-muted">Serviços adicionais</p><div className="mt-2 max-h-72 space-y-2 overflow-y-auto">
               {shopServices.filter(service => service.is_active!==false && !(editingBooking.booking_services || []).some(item => item.service_id === service.id)).map(service => (
                 <label key={service.id} className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-white/10 p-3 text-sm text-white">
                   <input type="checkbox" value={service.id} className="h-4 w-4 accent-amber-500" checked={extraServiceIds.includes(service.id)}

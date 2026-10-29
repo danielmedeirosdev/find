@@ -24,7 +24,7 @@ export function ReportsTab({ shopId }: Props) {
   const [period, setPeriod] = useState<Period>('month')
   const [loading, setLoading] = useState(true)
   const [error,setError] = useState('')
-  const [transactions, setTransactions] = useState<FinancialTransaction[]>([])
+  const [transactions, setTransactions] = useState<(FinancialTransaction & {bookings?:{barber_id:string}|null})[]>([])
   const [completedBookings, setCompletedBookings] = useState<BookingWithDetails[]>([])
   const [barbers, setBarbers] = useState<Barber[]>([])
 
@@ -35,7 +35,7 @@ export function ReportsTab({ shopId }: Props) {
     const [{ data: tx, error: txError }, { data: bookings, error: bookingsError }, { data: barb, error: barbersError }] = await Promise.all([
       supabase
         .from('financial_transactions')
-        .select('*')
+        .select('*, bookings(barber_id)')
         .eq('shop_id', shopId)
         .eq('type', 'entrada')
         .gte('created_at', start),
@@ -92,14 +92,16 @@ export function ReportsTab({ shopId }: Props) {
 
       entry.completedCount += 1
       const services = (booking.booking_services || []).map((bs) => bs.services)
-      const bookingTotal = cashTotals(transactions.filter(t => t.booking_id === booking.id)).income
-      entry.revenue += bookingTotal
 
       for (const s of services) {
         entry.serviceCounts[s.name] = (entry.serviceCounts[s.name] || 0) + 1
       }
     }
 
+    for (const tx of transactions) {
+      const entry=tx.bookings?.barber_id ? statsMap.get(tx.bookings.barber_id) : undefined
+      if(entry)entry.revenue+=Number(tx.amount)
+    }
     for (const entry of statsMap.values()) {
       const pct = entry.barber.commission_percent
       if (pct != null && pct > 0) {
@@ -107,7 +109,7 @@ export function ReportsTab({ shopId }: Props) {
       }
     }
 
-    return Array.from(statsMap.values()).filter((s) => s.completedCount > 0 || barbers.length <= 4)
+    return Array.from(statsMap.values()).filter((s) => s.completedCount > 0 || s.revenue > 0 || barbers.length <= 4)
   }, [barbers, completedBookings, transactions])
 
   if(error && !loading) return <div><InlineError message={error}/><button type="button" onClick={()=>void load()} className="mt-3 text-brass">Tentar novamente</button></div>
@@ -156,6 +158,7 @@ export function ReportsTab({ shopId }: Props) {
             </div>
           </div>
 
+          <div className="mb-6 rounded-lg border border-charcoal-light p-4"><p className="text-sm text-charcoal-muted">Cobranças concluídas no período</p><p className="text-2xl text-brass">{formatPrice(completedBookings.reduce((sum,b)=>sum+Number(b.amount_due||0),0))}</p><p className="mt-2 text-xs text-charcoal-muted">Faturamento a cobrar fora de pacotes, nos atendimentos finalizados com a nova opção de pagamento. Inclui pagos e pendentes. Sessões cobertas não são cobradas novamente. Recebimentos de pacotes continuam no caixa.</p></div>
           <h3 className="font-medium text-white mb-4">Por profissional</h3>
           {barberStats.length === 0 ? (
             <p className="text-charcoal-muted">Nenhum atendimento concluído no período.</p>

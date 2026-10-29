@@ -1,3 +1,4 @@
+import { BookingReceivables } from '../../../components/BookingReceivables'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { periodStart, cashTotals } from '../../../lib/finance'
 import { InlineError, LoadingBlock } from '../../../components/EmptyState'
@@ -75,7 +76,7 @@ export function CashFlowTab({ shopId }: Props) {
         <div>
           <h2 className="font-display text-2xl text-white">Fluxo de Caixa</h2>
           <p className="text-sm text-charcoal-muted mt-1">
-            Entradas dos atendimentos finalizados e despesas manuais (aluguel, produtos, etc.).
+            Valores recebidos e despesas manuais (aluguel, produtos, etc.).
           </p>
         </div>
         <button
@@ -86,6 +87,7 @@ export function CashFlowTab({ shopId }: Props) {
         </button>
       </div>
 
+      <BookingReceivables shopId={shopId} onReceived={()=>void load()}/>
       <div className="mb-6 flex gap-2">
         {([
           ['today', 'Hoje'],
@@ -168,7 +170,7 @@ export function CashFlowTab({ shopId }: Props) {
         <div className="rounded-xl border border-dashed border-charcoal-light px-5 py-10 text-center">
           <p className="text-white font-medium">Nenhum lançamento neste período.</p>
           <p className="mt-2 text-sm text-charcoal-muted">
-            Atendimentos finalizados e despesas manuais aparecem aqui.
+            Recebimentos e despesas manuais aparecem aqui.
           </p>
           <button
             type="button"

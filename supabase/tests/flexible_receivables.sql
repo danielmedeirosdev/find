@@ -1,0 +1,45 @@
+-- Execute migration + this file in a transaction ending with ROLLBACK.
+do $$
+declare u uuid:=gen_random_uuid(); sh uuid; c uuid:=gen_random_uuid(); pet uuid:=gen_random_uuid(); staff uuid:=gen_random_uuid(); s uuid:=gen_random_uuid(); extra uuid:=gen_random_uuid(); b uuid; b2 uuid; d date:=current_date+7; rejected boolean; req uuid:=gen_random_uuid(); tpl uuid:=gen_random_uuid(); pkg uuid:=gen_random_uuid();
+begin
+ insert into auth.users(id,email,raw_user_meta_data) values(u,'qa.flex.'||u||'@example.com','{"role":"barber","segment":"pet","shop_name":"QA flex rollback"}');
+ select id into sh from shops where owner_user_id=u;
+ insert into barbers(id,shop_id,name) values(staff,sh,'QA');
+ insert into barber_schedule(barber_id,day_of_week,is_active,start_time,end_time) select staff,day,true,'09:00','18:00' from generate_series(0,6) day;
+ insert into shop_customers(id,shop_id,name,phone) values(c,sh,'QA','19999990000');
+ insert into pets(id,shop_id,customer_id,name) values(pet,sh,c,'QA');
+ insert into services(id,shop_id,name,price,duration_minutes) values(s,sh,'Banho',50,60),(extra,sh,'Extra',20,15);
+ perform set_config('request.jwt.claim.sub',u::text,true);
+ perform set_config('request.jwt.claims',json_build_object('sub',u,'role','authenticated')::text,true);
+ b:=create_operational_booking(sh,staff,c,pet,d,'10:00',array[s]);
+ perform create_operational_booking(sh,staff,c,pet,d,'11:00',array[s]);
+ perform edit_booking_reservation(b,array[s,extra],d,'10:00',null,null,60);
+ if not exists(select 1 from bookings where id=b and duration_minutes=60 and quoted_amount=70) then raise exception 'FAIL flexible extra'; end if;
+ rejected:=false;begin perform edit_booking_reservation(b,array[s,extra],d,'10:00',null,null,75);exception when others then rejected:=true;end;
+ if not rejected then raise exception 'FAIL overlap';end if;
+ perform complete_booking_payment(b,array[s,extra],null,70,null,false,null,60);
+ if not exists(select 1 from bookings where id=b and status='completed' and amount_due=70 and duration_minutes=60) then raise exception 'FAIL deferred completion';end if;
+ if exists(select 1 from financial_transactions where booking_id=b) then raise exception 'FAIL false cash';end if;
+ perform complete_booking_payment(b,array[s,extra],null,70,null,false,null,60);
+ perform receive_booking_payment(b,20,'pix',req);
+ perform receive_booking_payment(b,20,'pix',req);
+ if (select count(*) from financial_transactions where booking_id=b)<>1 then raise exception 'FAIL duplicate';end if;
+ if (select balance from booking_receivables(sh) where booking_id=b)<>50 then raise exception 'FAIL partial';end if;
+ rejected:=false;begin perform receive_booking_payment(b,51,'pix',gen_random_uuid());exception when others then rejected:=true;end;
+ if not rejected then raise exception 'FAIL overpayment';end if;
+ perform receive_booking_payment(b,50,'dinheiro',gen_random_uuid());
+ if exists(select 1 from booking_receivables(sh) where booking_id=b) then raise exception 'FAIL paid debt remains';end if;
+ b2:=create_operational_booking(sh,staff,c,pet,d,'14:00',array[s]);
+ update bookings set pet_transport_requested=true,pet_transport_fee=5,quoted_amount=55 where id=b2;
+ insert into service_packages(id,shop_id,name,total_sessions,price,active) values(tpl,sh,'Pacote QA',4,200,true);
+ insert into customer_packages(id,shop_id,package_id,customer_id,pet_id,total_sessions,used_sessions,status) values(pkg,sh,tpl,c,pet,4,0,'active');
+ perform complete_booking_payment(b2,array[s,extra],null,30,pkg,false,10,60);
+ if (select used_sessions from customer_packages where id=pkg)<>1 then raise exception 'FAIL package session';end if;
+ if (select amount_due from bookings where id=b2)<>30 then raise exception 'FAIL package extra taxi';end if;
+ perform complete_booking_payment(b2,array[s,extra],null,30,pkg,false,10,60);
+ if (select used_sessions from customer_packages where id=pkg)<>1 then raise exception 'FAIL package duplicate';end if;
+ perform set_config('request.jwt.claim.sub',gen_random_uuid()::text,true);
+ rejected:=false;begin perform receive_booking_payment(b2,30,'pix',gen_random_uuid());exception when others then rejected:=true;end;
+ if not rejected then raise exception 'FAIL unauthorized payment';end if;
+ if has_function_privilege('anon','public.receive_booking_payment(uuid,numeric,text,uuid)','execute') then raise exception 'FAIL anonymous grant';end if;
+end $$;
