@@ -19,7 +19,7 @@ test('reserved time, deferred completion, partial and full receipt on mobile',as
  const create=(time:string)=>data(page,'rpc/create_operational_booking','POST',{p_shop_id:shop.id,p_barber_id:staff.id,p_customer_id:c.id,p_pet_id:pet.id,p_date:day,p_time:time,p_service_ids:[services[0].id]})
  const id=await create('10:00');await create('11:00')
  await page.goto('/painel/dashboard?aba=agenda');await page.getByLabel('Consultar dia',{exact:true}).fill(day)
- let card=page.getByTestId(`booking-${id}`)
+ const card=page.getByTestId(`booking-${id}`)
  await card.getByRole('button',{name:'Editar / adicionar serviços'}).click()
  const edit=page.getByRole('dialog',{name:'Editar atendimento'})
  await edit.locator(`input[value="${services[1].id}"]`).check()
@@ -46,3 +46,4 @@ test('reserved time, deferred completion, partial and full receipt on mobile',as
  const tx=await data(page,`financial_transactions?booking_id=eq.${id}`);expect(tx).toHaveLength(2);expect(tx.reduce((sum:number,t:{amount:number})=>sum+Number(t.amount),0)).toBe(70)
  for(const width of [320,375,390,430]){await page.setViewportSize({width,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);await page.screenshot({path:`/tmp/onefind-flex-cash-${width}.png`})}
 })
+
