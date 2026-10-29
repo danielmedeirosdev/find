@@ -4,10 +4,11 @@ import {data} from './api'
 
 test('package receivables, historical entry, bulk archive/restore and duration preview',async({page})=>{
  test.setTimeout(300000)
+ const ownerEmail=`qa.operations.${Date.now()}@example.com`,ownerPassword='Aa1!'+crypto.randomBytes(20).toString('base64url')
  await page.goto('/painel?modo=cadastro')
  await page.locator('input[type=text]').fill('QA Operações isolado')
- await page.getByLabel('E-mail',{exact:true}).fill(`qa.operations.${Date.now()}@example.com`)
- await page.getByLabel('Senha',{exact:true}).fill('Aa1!'+crypto.randomBytes(20).toString('base64url'))
+ await page.getByLabel('E-mail',{exact:true}).fill(ownerEmail)
+ await page.getByLabel('Senha',{exact:true}).fill(ownerPassword)
  await page.getByRole('button',{name:'Criar conta',exact:true}).click()
  await expect(page.getByRole('heading',{name:'Seu dia no onefind'})).toBeVisible({timeout:30000})
  const shop=(await data(page,'shops?select=*'))[0]
@@ -98,15 +99,27 @@ test('package receivables, historical entry, bulk archive/restore and duration p
  expect((await data(page,'financial_transactions?select=id')).length).toBe(before)
  expect(await data(page,`package_usages?booking_id=eq.${hist.id}`)).toHaveLength(1)
  expect((await data(page,`bookings?id=eq.${hist.id}`))[0].status).toBe('completed')
+ const publicCustomer=(await data(page,'shop_customers','POST',{shop_id:shop.id,name:'QA Tutor público',phone:'198'+String(Date.now()).slice(-8)}))[0]
+ const publicPet=(await data(page,'pets','POST',{shop_id:shop.id,customer_id:publicCustomer.id,name:'QA Pet público',size:'medio',species:'cao'}))[0]
  // Provision a real restricted employee, then verify the deployed UI and RLS.
- await page.goto('/painel/dashboard?aba=team')
- const teamCard=page.getByRole('heading',{name:staff.name,exact:true}).locator("xpath=ancestor::div[contains(@class,'rounded-lg') and contains(@class,'p-4')][1]")
+ // Provisioning intentionally permits production/local origins only; reuse its real production UI for preview setup.
+ const accessPage=process.env.ONEFIND_BASE_URL?.includes('.vercel.app')?await page.context().newPage():page
+ if(accessPage!==page){
+  await accessPage.goto('https://www.onefind.com.br/painel')
+  await accessPage.getByPlaceholder('Ex: contato@negocio.com').fill(ownerEmail)
+  await accessPage.getByPlaceholder('Sua senha').fill(ownerPassword)
+  await accessPage.getByRole('button',{name:'Entrar',exact:true}).click()
+  await expect(accessPage.getByRole('heading',{name:'Seu dia no onefind'})).toBeVisible({timeout:30000})
+ }
+ await accessPage.goto((accessPage===page?'':'https://www.onefind.com.br')+'/painel/dashboard?aba=team')
+ const teamCard=accessPage.getByRole('heading',{name:staff.name,exact:true}).locator("xpath=ancestor::div[contains(@class,'rounded-lg') and contains(@class,'p-4')][1]")
  await teamCard.getByRole('button',{name:'Criar acesso',exact:true}).click()
  const email=`qa.operations.staff.${Date.now()}@example.com`,password='Aa1!'+crypto.randomBytes(20).toString('base64url')
  await teamCard.getByPlaceholder('E-mail de acesso').fill(email)
  await teamCard.getByPlaceholder('Senha temporária forte').fill(password)
  await teamCard.getByRole('button',{name:'Criar acesso',exact:true}).last().click()
- await expect.poll(async()=>(await data(page,`barbers?id=eq.${staff.id}`))[0].user_id,{timeout:30000}).toBeTruthy()
+ await expect.poll(async()=>(await data(accessPage,`barbers?id=eq.${staff.id}`))[0].user_id,{timeout:30000}).toBeTruthy()
+ if(accessPage!==page)await accessPage.close()
  await page.evaluate(()=>localStorage.clear())
  await page.goto('/painel')
  await page.getByPlaceholder('Ex: contato@negocio.com').fill(email)
@@ -119,9 +132,9 @@ test('package receivables, historical entry, bulk archive/restore and duration p
  // Anonymous calendar keeps occupied slots blocked and uses the updated duration.
  await page.evaluate(()=>localStorage.clear())
  await page.goto(`/pet/${shop.id}`)
- await page.getByPlaceholder('Ex: (11) 99999-9999').fill(customer.phone)
+ await page.getByPlaceholder('Ex: (11) 99999-9999').fill(publicCustomer.phone)
  await page.getByRole('button',{name:'Continuar',exact:true}).click()
- await page.getByRole('button',{name:new RegExp(pet.name)}).click()
+ await page.getByRole('button',{name:new RegExp(publicPet.name)}).click()
  await page.getByRole('button',{name:'Continuar',exact:true}).click()
  await page.getByRole('checkbox',{name:/QA Banho/}).check()
  await page.getByRole('button',{name:'Continuar',exact:true}).click()
