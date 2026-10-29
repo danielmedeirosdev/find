@@ -1,3 +1,4 @@
+import { Modal } from '../../../components/Modal'
 import { customerLabel } from '../../../lib/format'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
@@ -35,7 +36,14 @@ export function PackagesTab({ shopId }: Props) {
   const [tplDays, setTplDays] = useState('90')
 
   const assignmentId=useRef(crypto.randomUUID())
-  const [recordPayment,setRecordPayment]=useState(false)
+  const [saleMode,setSaleMode]=useState('pending')
+  const [paymentMethod,setPaymentMethod]=useState('pix')
+  const [balances,setBalances]=useState<{package_id:string;total:number;received:number;balance:number}[]>([])
+  const [receiving,setReceiving]=useState<string|null>(null)
+  const [receiveAmount,setReceiveAmount]=useState('')
+  const [receiveMethod,setReceiveMethod]=useState('pix')
+  const [receiveId,setReceiveId]=useState('')
+  const [receivingBusy,setReceivingBusy]=useState(false)
   const [assignPackageId, setAssignPackageId] = useState('')
   const [assignCustomerId, setAssignCustomerId] = useState('')
   const [assignPetId, setAssignPetId] = useState('')
@@ -52,6 +60,8 @@ export function PackagesTab({ shopId }: Props) {
       supabase.from('shop_customers').select('*').eq('shop_id', shopId).order('name'),
       supabase.from('pets').select('*').eq('shop_id', shopId).order('name'),
     ])
+    const balanceResult=await supabase.rpc('package_balances',{p_shop_id:shopId})
+    if(balanceResult.error)setToast('Não foi possível carregar os saldos dos pacotes.');else setBalances(balanceResult.data||[])
     setTemplates((t as ServicePackage[]) || [])
     setAssigned((a as CustomerPackage[]) || [])
     setCustomers((c as ShopCustomer[]) || [])
@@ -133,9 +143,8 @@ export function PackagesTab({ shopId }: Props) {
       return
     }
     setAssigning(true)
-    const {error}=await supabase.rpc('assign_operational_package',{
-      p_id:assignmentId.current,p_shop_id:shopId,p_template_id:tpl.id,p_customer_id:assignCustomerId,p_pet_id:assignPetId,p_record_payment:recordPayment,
-    })
+    const base={p_id:assignmentId.current,p_shop_id:shopId,p_template_id:tpl.id,p_customer_id:assignCustomerId,p_pet_id:assignPetId}
+    const {error}=saleMode==='legacy' ? await supabase.rpc('assign_operational_package',{...base,p_record_payment:false}) : await supabase.rpc('sell_customer_package',{...base,p_paid_now:saleMode==='paid',p_method:saleMode==='paid'?paymentMethod:null})
     if (error) {
       setAssigning(false)
       setToast(error.message)
@@ -197,6 +206,7 @@ export function PackagesTab({ shopId }: Props) {
 
   return (
     <div className="space-y-8">
+      {receiving&&<Modal label="Receber pacote" onClose={()=>setReceiving(null)} busy={receivingBusy} className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3"><div className="w-full max-w-md space-y-3 rounded-xl bg-charcoal p-4"><h3 className="text-lg text-white">Receber pacote</h3><label className="block text-sm text-white">Valor recebido (R$)<input className="min-h-11 w-full rounded-lg bg-charcoal-dark p-3" inputMode="decimal" value={receiveAmount} onChange={e=>{setReceiveAmount(e.target.value);setReceiveId(crypto.randomUUID())}}/></label><label className="block text-sm text-white">Forma de pagamento<select className="min-h-11 w-full rounded-lg bg-charcoal-dark p-3" value={receiveMethod} onChange={e=>{setReceiveMethod(e.target.value);setReceiveId(crypto.randomUUID())}}><option value="pix">Pix</option><option value="cartao">Cartão</option><option value="dinheiro">Dinheiro</option></select></label><div className="grid grid-cols-2 gap-2"><button disabled={receivingBusy} className="min-h-11 text-white" onClick={()=>setReceiving(null)}>Cancelar</button><button disabled={receivingBusy} className="min-h-11 rounded-lg bg-brass text-charcoal" onClick={async()=>{const amount=Number(receiveAmount.replace(',','.'));if(!Number.isFinite(amount)||amount<=0){setToast('Informe um valor válido.');return}setReceivingBusy(true);const r=await supabase.rpc('receive_package_payment',{p_package_id:receiving,p_amount:amount,p_method:receiveMethod,p_request_id:receiveId});if(r.error){setReceivingBusy(false);setToast(r.error.message);return}await load();setReceivingBusy(false);setReceiving(null)}}>{receivingBusy?'Salvando...':'Registrar recebimento'}</button></div></div></Modal>}
       <Toast message={toast} onClose={() => setToast(null)} />
       <div>
         <h2 className="font-display text-2xl text-white mb-2">Pacotes</h2>
@@ -300,17 +310,19 @@ export function PackagesTab({ shopId }: Props) {
             ))}
           </select>
         </div>
-        <label className="flex items-center gap-3 text-sm text-charcoal-muted"><input type="checkbox" checked={recordPayment} onChange={e=>setRecordPayment(e.target.checked)}/>Registrar recebimento do pacote por Pix agora</label><p className="text-xs text-charcoal-muted">Marque somente se recebeu o pagamento agora. Para pacotes pagos anteriormente, mantenha desmarcado.</p><button disabled={assigning} onClick={assignPackage} className="rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal">
+        <label className="block text-sm text-white">Registro financeiro<select className="mt-2 min-h-11 w-full rounded-lg bg-charcoal px-3 text-white" value={saleMode} onChange={e=>setSaleMode(e.target.value)}><option value="pending">Nova venda — receber depois</option><option value="paid">Nova venda — pagamento recebido agora</option><option value="legacy">Pacote antigo já pago — somente sessões</option></select></label>{saleMode==='paid'&&<label className="block text-sm text-white">Forma de pagamento<select className="min-h-11 w-full rounded-lg bg-charcoal px-3" value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)}><option value="pix">Pix</option><option value="cartao">Cartão</option><option value="dinheiro">Dinheiro</option></select></label>}<p className="text-xs text-charcoal-muted">A nova venda registra o valor devido. Somente pagamentos recebidos entram no caixa. Pacotes antigos não geram nova venda nem dívida.</p><button disabled={assigning} onClick={assignPackage} className="rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal">
           Associar pacote
         </button>
       </div>
 
       <div className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-3"><p className="text-sm text-white">Vendido: {formatPrice(balances.reduce((v,b)=>v+Number(b.total),0))}</p><p className="text-sm text-white">Recebido: {formatPrice(balances.reduce((v,b)=>v+Number(b.received),0))}</p><p className="text-sm text-brass">A receber: {formatPrice(balances.reduce((v,b)=>v+Number(b.balance),0))}</p></div><p className="text-xs text-charcoal-muted">Valores das vendas registradas a partir desta atualização. Pacotes antigos permanecem sem reclassificação.</p>
         <h3 className="font-medium text-white">Pacotes ativos</h3>
         {assigned.length === 0 ? (
           <p className="text-charcoal-muted text-sm">Nenhum pacote associado.</p>
         ) : (
           assigned.map((pkg) => {
+            const balance=balances.find(b=>b.package_id===pkg.id)
             const remaining = packageRemaining(pkg.total_sessions, pkg.used_sessions)
             return (
               <div key={pkg.id} className="rounded-lg border border-charcoal-light p-4">
@@ -328,7 +340,9 @@ export function PackagesTab({ shopId }: Props) {
                     </p>
                     <p className="text-xs text-charcoal-muted mt-1 uppercase tracking-wide">{pkg.status}</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    {balance&&<p className="w-full text-sm text-brass">{Number(balance.balance)>0?`Pendente ${formatPrice(Number(balance.balance))}`:'Quitado'} · Recebido {formatPrice(Number(balance.received))}</p>}
+                    {balance&&Number(balance.balance)>0&&<button className="min-h-11 rounded-lg bg-brass px-3 text-sm text-charcoal" onClick={()=>{setReceiving(pkg.id);setReceiveAmount(Number(balance.balance).toFixed(2).replace('.',','));setReceiveMethod('pix');setReceiveId(crypto.randomUUID())}}>Receber pacote</button>}
                     <button onClick={() => editAssigned(pkg)} className="rounded-lg border border-brass px-3 py-1.5 text-sm text-brass">Editar</button>
                     <button
                       onClick={() => setSelectedPkgId(pkg.id)}

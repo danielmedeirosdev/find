@@ -1,3 +1,5 @@
+import { HistoricalBooking } from '../../../../components/HistoricalBooking'
+import { AgendaManagement } from '../../../../components/AgendaManagement'
 import { BookingConfirmationReminder } from '../../../../components/BookingConfirmationReminder'
 import { applyWeekdayDiscount, petTransportFee } from '../../../../lib/servicePricing'
 import { Modal } from '../../../../components/Modal'
@@ -175,6 +177,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
       .from('bookings')
       .select(PET_BOOKING_SELECT)
       .eq('shop_id', shopId)
+      .is('archived_at',null)
       .order('date')
       .order('time')
     query = dayFilter === 'upcoming' ? query.gte('date', today) : query.eq('date', selectedDay)
@@ -539,6 +542,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
         </div>
       </details>
 
+      {!barberId && <div className="mb-4 flex flex-wrap gap-2"><HistoricalBooking rules={sizeRules} discounts={weekdayDiscounts} shopId={shopId} services={shopServices} onSaved={()=>void load()}/><AgendaManagement loading={loading} shopId={shopId} bookings={filtered} services={shopServices} rules={sizeRules} onChanged={()=>void load()}/></div>}
       {loading ? <LoadingBlock label="Carregando agenda..." /> : loadError ? <button type="button" onClick={() => void load()} className="min-h-11 rounded-xl border border-charcoal-light px-4 text-sm text-white">Tentar novamente</button> : filtered.length === 0 ? (
         <EmptyState
           title={dayFilter === 'upcoming' ? 'Nenhum agendamento neste período.' : 'Nenhum agendamento neste dia.'}

@@ -34,6 +34,7 @@ export function MyBookings() {
         booking_pets(pet_id, pets(name, size)),
         booking_services(service_id, services(name, price))
       `)
+      .is('archived_at', null)
       .order('date', { ascending: true })
       .order('time', { ascending: true })
 

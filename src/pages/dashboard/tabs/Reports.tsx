@@ -22,6 +22,7 @@ interface BarberStats {
 
 export function ReportsTab({ shopId }: Props) {
   const [period, setPeriod] = useState<Period>('month')
+  const [packageSales,setPackageSales]=useState(0)
   const [loading, setLoading] = useState(true)
   const [error,setError] = useState('')
   const [transactions, setTransactions] = useState<(FinancialTransaction & {bookings?:{barber_id:string}|null})[]>([])
@@ -32,7 +33,7 @@ export function ReportsTab({ shopId }: Props) {
     setLoading(true)
     const start = periodStart(period)
 
-    const [{ data: tx, error: txError }, { data: bookings, error: bookingsError }, { data: barb, error: barbersError }] = await Promise.all([
+    const [{ data: tx, error: txError }, { data: bookings, error: bookingsError }, { data: barb, error: barbersError }, {data:sales,error:salesError}] = await Promise.all([
       supabase
         .from('financial_transactions')
         .select('*, bookings(barber_id)')
@@ -50,9 +51,11 @@ export function ReportsTab({ shopId }: Props) {
         .eq('status', 'completed')
         .gte('completed_at', start),
       supabase.from('barbers').select('*').eq('shop_id', shopId).order('name'),
+      supabase.from('customer_packages').select('sale_amount').eq('shop_id',shopId).gte('sold_at',start),
     ])
 
-    setError(txError || bookingsError || barbersError ? 'Não foi possível carregar os relatórios. Tente novamente.' : '')
+    setPackageSales((sales||[]).reduce((sum,item)=>sum+Number(item.sale_amount||0),0))
+    setError(txError || bookingsError || barbersError || salesError ? 'Não foi possível carregar os relatórios. Tente novamente.' : '')
     setTransactions((tx as FinancialTransaction[]) || [])
     setCompletedBookings((bookings as BookingWithDetails[]) || [])
     setBarbers(barb || [])
@@ -159,7 +162,7 @@ export function ReportsTab({ shopId }: Props) {
           </div>
 
           <div className="mb-6 rounded-lg border border-charcoal-light p-4"><p className="text-sm text-charcoal-muted">Cobranças concluídas no período</p><p className="text-2xl text-brass">{formatPrice(completedBookings.reduce((sum,b)=>sum+Number(b.amount_due||0),0))}</p><p className="mt-2 text-xs text-charcoal-muted">Faturamento a cobrar fora de pacotes, nos atendimentos finalizados com a nova opção de pagamento. Inclui pagos e pendentes. Sessões cobertas não são cobradas novamente. Recebimentos de pacotes continuam no caixa.</p></div>
-          <h3 className="font-medium text-white mb-4">Por profissional</h3>
+          <div className="mb-6 rounded-lg border border-charcoal-light p-4"><p className="text-sm text-white">Vendas de pacotes no período: {formatPrice(packageSales)}</p><p className="mt-2 text-xs text-charcoal-muted">Valor das novas vendas, incluindo pagamentos pendentes. O uso de uma sessão não gera outra venda.</p></div><h3 className="font-medium text-white mb-4">Por profissional</h3>
           {barberStats.length === 0 ? (
             <p className="text-charcoal-muted">Nenhum atendimento concluído no período.</p>
           ) : (

@@ -38,6 +38,7 @@ export function PetOverview({ shopId, onNavigate }: Props) {
           "*,barbers(name),shop_customers(name,phone),pets!bookings_pet_id_fkey(name),booking_services(service_id,services(name,price))",
         )
         .eq("shop_id", shopId)
+        .is("archived_at", null)
         .eq("date", localDateIso())
         .order("time"),
       supabase

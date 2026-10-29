@@ -71,6 +71,7 @@ export function ShopClosures({ shopId }: Props) {
         .from('bookings')
         .select('id', { count: 'exact', head: true })
         .eq('shop_id', shopId)
+        .is('archived_at', null)
         .gte('date', startsOn)
         .lte('date', endsOn)
         .in('status', ACTIVE_BOOKING_STATUSES),
