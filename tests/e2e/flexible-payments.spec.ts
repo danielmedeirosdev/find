@@ -45,5 +45,17 @@ test('reserved time, deferred completion, partial and full receipt on mobile',as
  await receipt.getByRole('button',{name:'Registrar',exact:true}).click();await expect(receipt).toBeHidden()
  const tx=await data(page,`financial_transactions?booking_id=eq.${id}`);expect(tx).toHaveLength(2);expect(tx.reduce((sum:number,t:{amount:number})=>sum+Number(t.amount),0)).toBe(70)
  for(const width of [320,375,390,430]){await page.setViewportSize({width,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);await page.screenshot({path:`/tmp/onefind-flex-cash-${width}.png`})}
-})
+ const template=(await data(page,'service_packages','POST',{shop_id:shop.id,name:'QA pacote',total_sessions:4,price:200,validity_days:90,active:true}))[0]
+ const pkg=(await data(page,'customer_packages','POST',{shop_id:shop.id,package_id:template.id,customer_id:c.id,pet_id:pet.id,total_sessions:4,used_sessions:0,status:'active'}))[0]
+ const packageBooking=await create('14:00')
+ await page.goto('/painel/dashboard?aba=agenda');await page.getByLabel('Consultar dia',{exact:true}).fill(day)
+ const packageCard=page.getByTestId(`booking-${packageBooking}`)
+ await packageCard.getByRole('button',{name:'Confirmar',exact:true}).click();await packageCard.getByRole('button',{name:'Iniciar',exact:true}).click();await packageCard.getByRole('button',{name:'Finalizar atendimento',exact:true}).click()
+ await expect(completion.locator('select')).toHaveValue(pkg.id)
+ await completion.getByText(services[1].name,{exact:true}).click()
+ await completion.getByRole('button',{name:'Confirmar',exact:true}).click();await expect(completion).toBeHidden()
+ expect(Number((await data(page,`customer_packages?id=eq.${pkg.id}`))[0].used_sessions)).toBe(1)
+ const packageTx=await data(page,`financial_transactions?booking_id=eq.${packageBooking}`);expect(packageTx).toHaveLength(1);expect(Number(packageTx[0].amount)).toBe(20)
+ expect((await data(page,`bookings?id=eq.${packageBooking}`))[0].duration_minutes).toBe(60)
 
+})
