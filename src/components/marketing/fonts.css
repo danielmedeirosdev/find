@@ -1,0 +1,57 @@
+@font-face {
+  font-family: "Onefind Display";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/assets/marketing/space-0.woff) format("woff");
+}
+@font-face {
+  font-family: "Onefind Display";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(/assets/marketing/space-1.woff) format("woff");
+}
+@font-face {
+  font-family: "Onefind Display";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(/assets/marketing/space-2.woff) format("woff");
+}
+@font-face {
+  font-family: "Onefind Display";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(/assets/marketing/space-3.woff) format("woff");
+}
+
+@font-face {
+  font-family: "Onefind Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/assets/marketing/dm-0.woff) format("woff");
+}
+@font-face {
+  font-family: "Onefind Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(/assets/marketing/dm-1.woff) format("woff");
+}
+@font-face {
+  font-family: "Onefind Sans";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(/assets/marketing/dm-2.woff) format("woff");
+}
+@font-face {
+  font-family: "Onefind Sans";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(/assets/marketing/dm-3.woff) format("woff");
+}

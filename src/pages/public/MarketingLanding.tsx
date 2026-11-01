@@ -1,253 +1,351 @@
-import { BrandLogo } from "../../components/BrandLogo";
-import { MarketingHeader } from "../../components/MarketingHeader";
-import { HeroTitle } from "../../components/HeroTitle";
-import { AppIcon } from "../../components/AppIcon";
-import { trackFunnel } from "../../lib/analytics";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { CtaArrow } from "../../components/SegmentMark";
+import {
+  useMarketingMeta,
+  useMarketingScroll,
+} from "../../components/marketing/hooks";
+import { AppIcon } from "../../components/AppIcon";
+import { features } from "../../components/marketing/content";
+import { FeatureDemo } from "../../components/marketing/FeatureDemo";
+import {
+  StoryHeader,
+  StoryFooter,
+  StartLink,
+} from "../../components/marketing/StoryShell";
 
-
-const steps = [
+const faqs = [
   [
-    "01",
-    "Cadastre seu pet shop",
-    "Crie sua conta e informe os dados básicos do estabelecimento.",
+    "Preciso de cartão para testar?",
+    "Não. São 30 dias grátis, sem cadastrar cartão. Depois, o plano custa R$ 60 por mês, por estabelecimento.",
   ],
   [
-    "02",
-    "Organize sua operação",
-    "Cadastre clientes, pets, serviços, equipe e a forma como você atende.",
+    "Posso continuar agendando pelo WhatsApp?",
+    "Sim. Combine com o tutor e registre pelo painel. Você também pode compartilhar o link do estabelecimento para receber agendamentos.",
   ],
   [
-    "03",
-    "Divulgue seu link",
-    "Coloque o link do seu estabelecimento no Instagram, WhatsApp e Google.",
+    "Consigo usar pelo celular?",
+    "Sim. Você acessa o onefind pelo navegador do celular ou do computador.",
   ],
   [
-    "04",
-    "Gerencie os atendimentos",
-    "Acompanhe a rotina, histórico dos pets e informações do negócio em um só lugar.",
+    "E se o cliente pagar depois?",
+    "Você conclui o atendimento e deixa o valor pendente. Quando receber, registra o pagamento, inclusive parcial.",
+  ],
+  [
+    "Vocês ajudam na configuração?",
+    "Sim. A configuração assistida oferece orientação humana para preparar o estabelecimento.",
   ],
 ];
-
 export function MarketingLanding() {
-  const location = useLocation();
-  const heroRef = useRef<HTMLElement>(null);
-  const [showMobileCta, setShowMobileCta] = useState(false);
-
-  useEffect(() => {
-    const hero = heroRef.current;
-    if (!hero) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      setShowMobileCta(!entry.isIntersecting && entry.boundingClientRect.top < 0);
-    });
-    observer.observe(hero);
-    return () => observer.disconnect();
-  }, []);
-  const signupPath = "/painel?segment=pet&modo=cadastro";
-
-  useEffect(() => {
-    const isPetPage = location.pathname === "/pet";
-    const canonicalUrl = isPetPage
-      ? "https://www.onefind.com.br/pet"
-      : "https://www.onefind.com.br/";
-    const title = isPetPage
-      ? "onefind para Pet Shops e Banho e Tosa | Gestão PET"
-      : "onefind · Gestão para pet shops e banho e tosa";
-    const description = isPetPage
-      ? "Gestão para pet shops e banho e tosa. Organize clientes, pets, serviços, atendimentos e histórico em um só lugar. Teste grátis por 30 dias."
-      : "onefind é a plataforma de gestão para pet shops, banho e tosa e outros negócios pet. Organize clientes, pets, serviços, atendimentos e a rotina do estabelecimento em um só lugar.";
-
-    document.title = title;
-
-    const setMeta = (selector: string, attr: string, value: string) => {
-      const el = document.querySelector<HTMLMetaElement>(selector);
-      if (el) el.setAttribute(attr, value);
-    };
-
-    setMeta('meta[name="description"]', "content", description);
-    setMeta('meta[property="og:title"]', "content", title);
-    setMeta('meta[property="og:description"]', "content", description);
-    setMeta('meta[property="og:url"]', "content", canonicalUrl);
-
-    const canonical = document.querySelector<HTMLLinkElement>(
-      'link[rel="canonical"]',
-    );
-    if (canonical) canonical.href = canonicalUrl;
-
-    return () => {
-      document.title = "onefind · Gestão para pet shops e banho e tosa";
-    };
-  }, [location.pathname]);
-
-  useEffect(() => {
-    if (location.hash === '#inicio') {
-      requestAnimationFrame(() => {
-        document.getElementById('inicio')?.scrollIntoView({ behavior: 'instant' })
-      })
-    }
-  }, [location.hash])
-
+  const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const { pathname } = useLocation();
+  const feature = features[active];
+  useMarketingMeta(
+    "onefind · Gestão para pet shops e banho e tosa",
+    "Agenda, clientes, pets, pacotes e financeiro em um só lugar. Conheça o onefind e teste 30 dias grátis, sem cartão.",
+    pathname === "/pet" ? "/pet" : "/",
+  );
+  useMarketingScroll();
   return (
-    <div className="premium-landing editorial-home">
-      <MarketingHeader />
+    <div className="mkt-site">
+      <StoryHeader />
       <main>
-        <section className="premium-hero" id="inicio" ref={heroRef}>
-          <div className="premium-hero-copy">
-            <p className="premium-eyebrow">
-              <AppIcon name="paw" size={17} /> Feito para pet shops e banho e
-              tosa
+        <section className="mkt-hero" id="inicio">
+          <img
+            className="mkt-hero-image"
+            src="/assets/marketing/onefind-studio-mobile.webp"
+            alt=""
+            width="1024"
+            height="1536"
+            fetchPriority="high"
+          />
+          <div className="mkt-hero-shade" />
+          <div className="mkt-hero-copy">
+            <p className="mkt-eyebrow">ONEFIND / BANHO E TOSA</p>
+            <h1>
+              Mais tempo
+              <br />
+              para cuidar.
+              <br />
+              <span>Menos para organizar.</span>
+            </h1>
+            <p className="mkt-hero-description">
+              Agenda, clientes e financeiro.
+              <br />
+              Seu banho e tosa em um só lugar.
             </p>
-            <HeroTitle />
-            <p className="hero-description">
-              Gestão para pet shops<br />e banho e tosa.
+            <div className="mkt-hero-actions">
+              <StartLink placement="hero" />
+              <a href="#recursos" className="mkt-secondary">
+                Ver como funciona <AppIcon name="arrow-right" size={18} />
+              </a>
+            </div>
+            <p className="mkt-hero-terms">
+              30 dias grátis <i /> Sem cartão
             </p>
-            <p className="hero-detail">
-              Chega de procurar recados no WhatsApp e conferir a agenda no caderno. Reúna clientes, pets, atendimentos e financeiro em um só lugar.
-            </p>
-            <Link
-              to={signupPath}
-              className="premium-button"
-              onClick={() => trackFunnel("landing_cta", { placement: "hero" })}
-            >
-              Testar 30 dias grátis <CtaArrow />
-            </Link>
-            <p className="hero-terms">
-              30 dias grátis <span>·</span> sem cartão
-            </p>
-            <p className="hero-assistance">Configuração assistida disponível</p>
           </div>
+          <a className="mkt-scroll-hint" href="#negocio">
+            Conheça o onefind <span>↓</span>
+          </a>
         </section>
-        <section className="premium-section" id="negocio">
-          <div className="section-heading">
-            <p className="premium-eyebrow">Para seu negócio</p>
+        <section
+          className={`mkt-intro ${paused ? "is-paused" : ""}`}
+          id="negocio"
+        >
+          <div className="mkt-container mkt-centered">
+            <p className="mkt-eyebrow">
+              DO PRIMEIRO HORÁRIO AO ÚLTIMO RECEBIMENTO
+            </p>
             <h2>
-              Menos recados perdidos.<br /><span>Mais controle da sua rotina.</span>
+              Uma rotina inteira.
+              <br />
+              <span>Tudo se conecta.</span>
             </h2>
             <p>
-              Cada pet exige um cuidado diferente. Você define os serviços, os horários e os ajustes necessários após a avaliação.
+              Do cadastro do pet ao pagamento.
+              <br />
+              Encontre o que precisa, sem juntar anotações.
             </p>
           </div>
-          <div className="premium-features" id="recursos">
-            {[
-              [
-                "paw",
-                "Clientes e pets",
-                "Encontre o contato do tutor e os cuidados de cada pet sem procurar em conversas antigas.",
-              ],
-              [
-                "agenda",
-                "Agenda de atendimentos",
-                "Organize atendimentos respeitando avaliação, duração e a rotina do seu pet shop.",
-              ],
-              [
-                "wallet",
-                "Equipe e financeiro",
-                "Veja os serviços realizados, quem atendeu e os valores recebidos sem juntar anotações no fim do dia.",
-              ],
-              [
-                "agenda",
-                "Confirmação pelo WhatsApp",
-                "Abra uma mensagem pronta com cliente, serviço, data e horário para confirmar o atendimento em poucos segundos.",
-              ],
-            ].map(([icon, title, detail]) => (
-              <article key={title}>
-                <AppIcon name={icon as "paw" | "agenda" | "wallet"} size={26} />
-                <h3>{title}</h3>
-                <p>{detail}</p>
-              </article>
+          <div className="mkt-rails" aria-label="Explore os recursos">
+            <div className="mkt-rail">
+              {features.map((f) => (
+                <Link key={f.id} to={`/recursos/${f.id}`}>
+                  <AppIcon name={f.icon} size={25} />
+                  {f.label}
+                  <AppIcon name="arrow-right" size={16} />
+                </Link>
+              ))}
+            </div>
+            <div className="mkt-rail mkt-rail-reverse">
+              {[
+                features[3],
+                features[4],
+                features[5],
+                features[0],
+                features[1],
+                features[2],
+              ].map((f) => (
+                <Link key={f.id} to={`/recursos/${f.id}`}>
+                  <AppIcon name={f.icon} size={25} />
+                  {f.label}
+                  <AppIcon name="arrow-right" size={16} />
+                </Link>
+              ))}
+            </div>
+          </div>
+          <button
+            className="mkt-motion-toggle"
+            aria-pressed={paused}
+            onClick={() => setPaused(!paused)}
+          >
+            {paused ? "Retomar movimento" : "Pausar movimento"}
+          </button>
+        </section>
+        <section className="mkt-showcase mkt-container" id="recursos">
+          <div className="mkt-centered mkt-section-heading">
+            <p className="mkt-eyebrow">VEJA NA PRÁTICA</p>
+            <h2>
+              Feito para o seu
+              <br />
+              <span>dia a dia.</span>
+            </h2>
+            <p>Escolha um recurso e veja como ele ajuda.</p>
+          </div>
+          <div
+            className="mkt-feature-tabs"
+            role="tablist"
+            aria-label="Recursos do onefind"
+          >
+            {features.map((f, i) => (
+              <button
+                key={f.id}
+                type="button"
+                id={`tab-${f.id}`}
+                role="tab"
+                aria-selected={active === i}
+                aria-controls="feature-panel"
+                tabIndex={active === i ? 0 : -1}
+                onClick={() => setActive(i)}
+                onKeyDown={(e) => {
+                  let next: number;
+                  if (e.key === "ArrowRight") next = (i + 1) % features.length;
+                  else if (e.key === "ArrowLeft")
+                    next = (i + features.length - 1) % features.length;
+                  else if (e.key === "Home") next = 0;
+                  else if (e.key === "End") next = features.length - 1;
+                  else return;
+                  e.preventDefault();
+                  setActive(next);
+                  document.getElementById(`tab-${features[next].id}`)?.focus();
+                }}
+              >
+                <AppIcon name={f.icon} size={23} />
+                <span>{f.label}</span>
+              </button>
             ))}
           </div>
+          <div
+            className="mkt-feature-panel"
+            role="tabpanel"
+            id="feature-panel"
+            aria-labelledby={`tab-${feature.id}`}
+            tabIndex={0}
+          >
+            <FeatureDemo id={feature.id} />
+            <div className="mkt-feature-copy" key={feature.id}>
+              <p className="mkt-eyebrow">
+                0{active + 1} / {feature.label}
+              </p>
+              <h3>{feature.title}</h3>
+              <p>{feature.description}</p>
+              <Link className="mkt-text-link" to={`/recursos/${feature.id}`}>
+                Conhecer {feature.label.toLocaleLowerCase("pt-BR")}
+                <AppIcon name="arrow-right" size={19} />
+              </Link>
+            </div>
+          </div>
         </section>
-        <section className="premium-section getting-started">
-          <div className="section-heading">
-            <p className="premium-eyebrow">Um começo simples</p>
+        <section className="mkt-how mkt-container" id="como-funciona">
+          <div className="mkt-section-heading">
+            <p className="mkt-eyebrow">UM COMEÇO SIMPLES</p>
             <h2>
-              Como começar
+              Do seu jeito.
+              <br />
+              <span>No seu tempo.</span>
             </h2>
           </div>
-          <div className="premium-steps">
-            {steps.map(([number, title, description]) => (
-              <article key={number}>
-                <span>{number}</span>
-                <h3>{title}</h3>
-                <p>{description}</p>
+          <div className="mkt-steps">
+            {[
+              [
+                "01",
+                "Prepare seu espaço",
+                "Crie sua conta e cadastre os serviços, horários e profissionais.",
+              ],
+              [
+                "02",
+                "Traga sua rotina",
+                "Adicione clientes e pets. Registre os próximos atendimentos.",
+              ],
+              [
+                "03",
+                "Cuide do dia a dia",
+                "Acompanhe a agenda, conclua os serviços e confira os pagamentos.",
+              ],
+            ].map(([n, t, d]) => (
+              <article key={n}>
+                <span>{n}</span>
+                <h3>{t}</h3>
+                <p>{d}</p>
               </article>
             ))}
           </div>
-          <p className="setup-note">
-            Configure no seu tempo ou escolha receber ajuda humana na
-            configuração inicial.
-          </p>
+          <div className="mkt-assistance">
+            <AppIcon name="heart" />
+            <p>
+              Quer ajuda no começo? <strong>Tem configuração assistida.</strong>
+            </p>
+            <StartLink placement="assistance">Começar com o onefind</StartLink>
+          </div>
         </section>
-        <section className="premium-section" id="planos">
-          <div className="premium-pricing">
-            <div>
-              <p className="premium-eyebrow">Plano mensal</p>
+        <section className="mkt-price-section" id="planos">
+          <div className="mkt-container mkt-price-layout">
+            <div className="mkt-section-heading">
+              <p className="mkt-eyebrow">UM PLANO. SUA ROTINA COMPLETA.</p>
               <h2>
-                Teste antes de assinar.
+                Primeiro, conheça.
+                <br />
+                <span>Depois, decida.</span>
               </h2>
-              <p>30 dias de acesso grátis. Sem cartão para iniciar.</p>
-              <p className="price">
-                <strong>R$ 60</strong> / mês após o teste
+              <p>
+                Teste por 30 dias sem cartão.
+                <br />
+                Veja como o onefind se encaixa no seu negócio.
               </p>
-              <ul className="plan-inclusions" aria-label="O que está incluído no plano">
-                <li>Cadastro de clientes e pets, com histórico e observações</li>
-                <li>Agenda e gestão dos atendimentos, com agendamento direto no painel</li>
-                <li>Agendamentos recorrentes semanais e quinzenais</li>
-                <li>Confirmação de horário pelo WhatsApp com mensagem pronta</li>
-                <li>Serviços, preços e organização da equipe</li>
-                <li>Equipe pode agendar com acesso separado do financeiro</li>
-                <li>Comprovantes de agendamento com compartilhamento pelo WhatsApp</li>
-                <li>Controle financeiro do estabelecimento</li>
-                <li>Página da loja, link de agendamento e QR code</li>
+              <div className="mkt-plan-note">
+                <AppIcon name="store" />
+                <span>
+                  Por estabelecimento.
+                  <br />
+                  No celular e no computador.
+                </span>
+              </div>
+            </div>
+            <div className="mkt-price-card">
+              <div className="mkt-price-top">
+                <span>onefind</span>
+                <span>Plano mensal</span>
+              </div>
+              <p className="mkt-price">
+                <strong>R$ 60</strong>
+                <span>/mês</span>
+              </p>
+              <p className="mkt-after-trial">Após os 30 dias grátis</p>
+              <ul>
+                {[
+                  "Agenda e agendamento pelo painel",
+                  "Clientes, pets e histórico",
+                  "Serviços e duração flexível",
+                  "Pacotes e controle de sessões",
+                  "Financeiro e pagamentos pendentes",
+                  "Equipe com acessos separados",
+                  "Página da loja e link de agendamento",
+                  "Comprovante e mensagem para WhatsApp",
+                ].map((t) => (
+                  <li key={t}>
+                    <AppIcon name="check" size={17} />
+                    {t}
+                  </li>
+                ))}
               </ul>
-            </div>
-            <div className="pricing-action">
-              <Link
-                className="premium-button"
-                to={signupPath}
-                onClick={() =>
-                  trackFunnel("landing_cta", { placement: "pricing" })
-                }
-              >
-                Testar 30 dias grátis <CtaArrow />
-              </Link>
-              <p>Sem cartão para começar.</p>
-              <a href="#duvidas">Tire suas dúvidas</a>
+              <StartLink placement="pricing" />
+              <small>Sem cartão para começar.</small>
             </div>
           </div>
         </section>
-        <section className="premium-section landing-faq" id="duvidas">
-          <div className="section-heading">
-            <p className="premium-eyebrow">Antes de começar</p>
-            <h2>Suas dúvidas, respondidas.</h2>
+        <section className="mkt-faq mkt-container" id="duvidas">
+          <div className="mkt-section-heading">
+            <p className="mkt-eyebrow">ANTES DE COMEÇAR</p>
+            <h2>Ficou alguma dúvida?</h2>
           </div>
-          <div className="faq-questions">
-            <details><summary>Preciso de cartão para testar?<span aria-hidden="true">+</span></summary><p>Não. Você tem 30 dias grátis, sem cadastrar cartão. Depois do teste, o plano custa R$ 60 por mês, por estabelecimento.</p></details>
-            <details><summary>Como solicito o cancelamento?<span aria-hidden="true">+</span></summary><p>Durante o teste, não há assinatura paga para cancelar. Se você já assinou, <a href="https://wa.me/5519974280798" target="_blank" rel="noreferrer">fale com o atendimento</a> para solicitar o cancelamento e conferir a situação das cobranças.</p></details>
-            <details><summary>Tem ajuda para trazer meus dados e configurar?<span aria-hidden="true">+</span></summary><p>Você pode escolher a configuração com assistente e receber orientação humana pelo WhatsApp. Conte como guarda seus cadastros hoje para combinar o que pode ser transferido e como será feito.</p></details>
-            <details><summary>Posso avaliar o pet antes de confirmar o horário?<span aria-hidden="true">+</span></summary><p>Sim. Você define os serviços, a duração e a disponibilidade. Quando precisar de uma avaliação, combine os detalhes com o tutor antes de registrar ou confirmar o atendimento.</p></details>
+          <div>
+            {faqs.map(([q, a], i) => (
+              <details key={q}>
+                <summary>
+                  <span className="mkt-faq-number">0{i + 1}</span>
+                  {q}
+                  <span className="mkt-plus" aria-hidden="true">
+                    +
+                  </span>
+                </summary>
+                <p>{a}</p>
+              </details>
+            ))}
           </div>
-          <Link className="all-questions" to="/faq">Ver todas as perguntas</Link>
+          <Link to="/faq" className="mkt-text-link">
+            Ver todas as perguntas
+            <AppIcon name="arrow-right" size={18} />
+          </Link>
         </section>
-        <section className="premium-section referral-compact" aria-label="Indicações"><h2>Já usa o onefind?</h2><p>Uma indicação que se torna assinante vale um mês grátis.</p><Link to="/painel/dashboard?aba=referral">Ver programa de indicação</Link></section>
+        <section className="mkt-final mkt-container">
+          <p className="mkt-eyebrow">PRONTO PARA O PRÓXIMO ATENDIMENTO</p>
+          <h2>
+            Seu cuidado faz a diferença.
+            <br />
+            <span>A organização também.</span>
+          </h2>
+          <StartLink placement="final" />
+          <p>30 dias para conhecer. Sem cartão.</p>
+        </section>
+        <aside className="mkt-referral mkt-container">
+          <span>Já usa o onefind?</span>
+          <Link to="/painel/dashboard?aba=referral">
+            Conheça o programa de indicação{" "}
+            <AppIcon name="arrow-right" size={17} />
+          </Link>
+        </aside>
       </main>
-      <footer className="premium-footer">
-        <Link to="/#inicio">
-          <BrandLogo />
-        </Link>
-        <nav aria-label="Rodapé">
-          <Link to="/faq">Ajuda</Link>
-          <Link to="/privacidade">Privacidade</Link>
-          <Link to="/entrar">Sou cliente</Link>
-        </nav>
-      </footer>
-      {showMobileCta && <div className="mobile-signup-bar">
-        <Link to={signupPath} className="premium-button" onClick={() => trackFunnel("landing_cta", { placement: "mobile_sticky" })}>Testar 30 dias grátis <CtaArrow /></Link>
-        <p>Sem cartão para começar</p>
-      </div>}
+      <StoryFooter />
     </div>
   );
 }

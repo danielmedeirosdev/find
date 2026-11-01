@@ -6,6 +6,7 @@ import { ReferralCapture } from './components/ReferralCapture'
 import { PublicLayout } from './components/PublicLayout'
 import { DashboardLayout } from './components/DashboardLayout'
 import { InternalAdminLayout } from './components/InternalAdminLayout'
+import { FeaturePage } from './pages/public/FeaturePage'
 import { MarketingLanding } from './pages/public/MarketingLanding'
 import { ShopPublic } from './pages/public/ShopPublic'
 import { PetBooking } from './pages/public/PetBooking'
@@ -37,6 +38,7 @@ export default function App() {
           <Route index element={<MarketingLanding />} />
           <Route path="apresentacao" element={<MarketingLanding />} />
           <Route path="pet" element={<MarketingLanding />} />
+          <Route path="recursos/:featureId" element={<FeaturePage />} />
           <Route path="faq" element={<Faq />} />
           <Route path="solucoes" element={<Navigate to="/" replace />} />
 
