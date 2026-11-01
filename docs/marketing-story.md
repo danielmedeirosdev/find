@@ -4,7 +4,7 @@ The public home and six `/recursos/:featureId` pages use a scoped `mkt-` stylesh
 
 ## Design
 
-Black and muted gold, self-hosted Space Grotesk and DM Sans (OFL licenses included), mobile-first original photographic background, CSS fade into the page, responsive typography, a compact fixed header, linked resource rails with pause control, keyboard-accessible feature tabs, six illustrative demos, pricing and FAQs. Illustrations use explicitly fictional data; they are not screenshots of customer records.
+Black and muted gold, self-hosted Space Grotesk and DM Sans (OFL licenses included), mobile-first original photographic background, CSS fade into the page, responsive typography, a compact fixed header, linked resource rails driven by scrolling, keyboard-accessible feature tabs, six illustrative demos, pricing and FAQs. Illustrations use explicitly fictional data; they are not screenshots of customer records.
 
 ## Verified product sources
 
@@ -23,4 +23,6 @@ Prompt: Create a new portrait 1024x1536 premium photorealistic website backgroun
 
 ## Verification
 
-`tests/e2e/marketing-story.spec.ts` checks the home, six feature pages, tab mouse and keyboard navigation, mobile menu, FAQ, image/font loading, canonical URLs, reduced motion, pause and signup destination at 320, 375, 390, 430 and 1440 px. Uses only read-only public interactions; does not create accounts or mutate business data.
+`tests/e2e/marketing-story.spec.ts` checks the home, six feature pages, tab mouse and keyboard navigation, mobile menu, FAQ, image/font loading, canonical URLs, reduced motion, scroll-only rail movement, login and signup destinations at 320, 375, 390, 430 and 1440 px. Uses only read-only public interactions; does not create accounts or mutate business data.
+
+Navigation clarification: the header routes existing users to /painel; the menu separates panel entry from public information. The original HeroTitle typing sequence is reused.

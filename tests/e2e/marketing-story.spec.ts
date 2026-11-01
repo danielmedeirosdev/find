@@ -24,7 +24,10 @@ test("marketing pages, demos and navigation work across mobile sizes", async ({
   for (const width of [320, 375, 390, 430, 1440]) {
     await page.setViewportSize({ width, height: width > 700 ? 1000 : 844 });
     await page.goto("/");
-    await expect(page.locator("h1")).toContainText("Mais tempo");
+    await expect(page.locator("h1")).toContainText("Comece em");
+    await expect(page.locator("h1 > [aria-hidden=true]")).toContainText(
+      "1 minuto.",
+    );
     await page.evaluate(() => document.fonts.ready);
     await expect(page.locator(".mkt-hero-image")).toHaveJSProperty(
       "naturalWidth",
@@ -95,11 +98,29 @@ test("marketing pages, demos and navigation work across mobile sizes", async ({
         .getByRole("button", { name: "Abrir menu", exact: true })
         .click();
       await expect(page.locator("#mkt-menu")).toBeVisible();
+      await expect(page.locator("#mkt-menu")).toContainText(
+        "Conhecer o onefind",
+      );
+      await expect(
+        page
+          .locator("#mkt-menu")
+          .getByRole("link", { name: "Entrar no painel", exact: true }),
+      ).toHaveAttribute("href", "/painel");
+      await expect(
+        page
+          .locator("#mkt-menu")
+          .getByRole("link", { name: "Agenda", exact: true }),
+      ).toHaveCount(0);
+      if (width === 390)
+        await page.screenshot({
+          path: "/tmp/onefind-menu-clarified.png",
+          animations: "disabled",
+        });
       await page
         .locator("#mkt-menu")
-        .getByRole("link", { name: "Agenda", exact: true })
+        .getByRole("link", { name: "Conhecer os recursos", exact: true })
         .click();
-      await expect(page).toHaveURL(/\/recursos\/agenda$/);
+      await expect(page).toHaveURL(/\/#recursos$/);
       await expect(page.locator("#mkt-menu")).toHaveCount(0);
     }
     for (const feature of features) {
@@ -117,19 +138,36 @@ test("marketing pages, demos and navigation work across mobile sizes", async ({
       );
     }
   }
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  await page
-    .getByRole("button", { name: "Pausar movimento", exact: true })
-    .click();
-  await expect(page.locator(".mkt-rail").first()).toHaveCSS(
-    "animation-play-state",
-    "paused",
+  await expect(
+    page.getByRole("button", { name: "Pausar movimento" }),
+  ).toHaveCount(0);
+  const rail = page.locator(".mkt-rail").first();
+  await page.evaluate(() => window.scrollTo({ top: 650, behavior: "instant" }));
+  await expect
+    .poll(() => rail.evaluate((el) => getComputedStyle(el).transform))
+    .not.toBe("matrix(1, 0, 0, 1, 0, 0)");
+  const first = await rail.evaluate((el) => getComputedStyle(el).transform);
+  await page.waitForTimeout(500);
+  expect(await rail.evaluate((el) => getComputedStyle(el).transform)).toBe(
+    first,
   );
+  await page.evaluate(() => window.scrollBy({ top: 180, behavior: "instant" }));
+  await expect
+    .poll(() => rail.evaluate((el) => getComputedStyle(el).transform))
+    .not.toBe(first);
+  await page.evaluate(() =>
+    window.scrollBy({ top: -180, behavior: "instant" }),
+  );
+  await expect
+    .poll(() => rail.evaluate((el) => getComputedStyle(el).transform))
+    .toBe(first);
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await expect(page.locator(".mkt-rail").first()).toHaveCSS(
-    "animation-name",
-    "none",
-  );
+  await expect(rail).toHaveCSS("transform", "none");
+  await page.locator(".mkt-nav-start").click();
+  await expect(page).toHaveURL(/\/painel$/);
+  await page.goto("/");
   await page
     .getByRole("link", { name: "Testar 30 dias grátis", exact: true })
     .first()

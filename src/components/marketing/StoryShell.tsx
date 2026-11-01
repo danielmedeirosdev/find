@@ -2,12 +2,14 @@ import { useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { BrandLogo } from "../BrandLogo";
 import { AppIcon } from "../AppIcon";
+import { useAuth } from "../../contexts/AuthContext";
 import { SessionAccount } from "../SessionAccount";
 import { trackFunnel } from "../../lib/analytics";
 import { features, signupPath } from "./content";
 import "./story.css";
 
 export function StoryHeader() {
+  const { user, loading } = useAuth();
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const toggle = useRef<HTMLButtonElement>(null);
@@ -26,16 +28,19 @@ export function StoryHeader() {
           <BrandLogo />
         </Link>
         <nav className="mkt-desktop-nav" aria-label="Navegação principal">
-          <a href="/#recursos">Recursos</a>
+          <a href="/#recursos">Conhecer os recursos</a>
           <a href="/#como-funciona">Como funciona</a>
           <a href="/#planos">Plano</a>
           <Link to="/faq">Ajuda</Link>
         </nav>
         <div className="mkt-nav-actions">
-          <SessionAccount />
-          <Link to={signupPath} className="mkt-nav-start">
-            Iniciar <AppIcon name="arrow-right" size={16} />
-          </Link>
+          {user || loading ? (
+            <SessionAccount />
+          ) : (
+            <Link to="/painel" className="mkt-nav-start">
+              Entrar <AppIcon name="arrow-right" size={16} />
+            </Link>
+          )}
           <button
             ref={toggle}
             className="mkt-menu-toggle"
@@ -71,15 +76,15 @@ export function StoryHeader() {
           aria-label="Menu de recursos"
           onClick={() => setOpen(false)}
         >
-          {features.map((f) => (
-            <Link key={f.id} to={`/recursos/${f.id}`}>
-              <AppIcon name={f.icon} />
-              {f.label}
-            </Link>
-          ))}
+          <Link className="mkt-menu-panel" to="/painel">
+            <AppIcon name="arrow-right" />
+            Entrar no painel
+          </Link>
+          <p className="mkt-menu-label">Conhecer o onefind</p>
+          <a href="/#recursos">Conhecer os recursos</a>
+          <a href="/#como-funciona">Como funciona</a>
           <a href="/#planos">Plano e preço</a>
           <Link to="/faq">Dúvidas</Link>
-          <Link to="/painel">Entrar no painel</Link>
         </nav>
       )}
     </header>

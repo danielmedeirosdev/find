@@ -359,12 +359,10 @@
   display: flex;
   gap: 12px;
   width: max-content;
-  animation: mkt-rail 22s ease-in-out infinite alternate;
+  transform: translateX(var(--rail-shift, 0px));
+  will-change: transform;
 }
-.mkt-rail-reverse {
-  animation-direction: alternate-reverse;
-  animation-duration: 25s;
-}
+
 .mkt-rail a {
   display: flex;
   align-items: center;
@@ -387,21 +385,6 @@
   background: #202328;
   color: #e3e1db;
   border-color: #ffffff20;
-}
-.mkt-rails:hover .mkt-rail,
-.mkt-rails:focus-within .mkt-rail,
-.is-paused .mkt-rail {
-  animation-play-state: paused;
-}
-.mkt-motion-toggle {
-  display: block;
-  margin: 18px auto 0;
-  padding: 8px 12px;
-  color: #b3aea3;
-  font-size: 11px;
-  background: none;
-  border: 0;
-  min-height: 40px;
 }
 .mkt-showcase {
   padding: 76px 0 96px;
@@ -1194,14 +1177,6 @@
     transform: translateY(0);
   }
 }
-@keyframes mkt-rail {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(min(0px, calc(100vw - 100%)));
-  }
-}
 @keyframes mkt-grow {
   from {
     transform: scaleX(0);
@@ -1716,9 +1691,6 @@
     overflow-x: auto;
     mask-image: none;
   }
-  .mkt-motion-toggle {
-    display: none;
-  }
 }
 
 @media (max-width: 700px) {
@@ -1737,5 +1709,47 @@
   }
   .mkt-nav .account-name {
     display: none;
+  }
+}
+
+/* Keep the original typed message within the refreshed typography. */
+.mkt-site .mkt-hero h1.premium-hero-title {
+  min-height: 2.2em;
+  max-width: 710px;
+}
+.mkt-site .mkt-hero h1.premium-hero-title > span {
+  color: var(--mkt-ink);
+}
+.mkt-site .mkt-hero h1.premium-hero-title em {
+  color: var(--mkt-gold);
+  font-style: normal;
+}
+.mkt-menu-label {
+  grid-column: 1 / -1;
+  padding: 14px 12px 2px;
+  color: var(--mkt-muted);
+  font-size: 11px;
+}
+.mkt-menu a.mkt-menu-panel {
+  grid-column: 1 / -1;
+  color: var(--mkt-gold);
+  background: #d3b47816;
+  border: 1px solid #d3b47840;
+  font-weight: 600;
+}
+.mkt-rails:focus-within {
+  overflow-x: auto;
+  mask-image: none;
+}
+.mkt-rails:focus-within .mkt-rail {
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mkt-rail {
+    transform: none;
+    will-change: auto;
+  }
+  html:has(.mkt-site) {
+    scroll-behavior: auto;
   }
 }

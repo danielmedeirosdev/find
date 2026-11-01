@@ -3,7 +3,9 @@ import { Link, useLocation } from "react-router-dom";
 import {
   useMarketingMeta,
   useMarketingScroll,
+  useScrollRails,
 } from "../../components/marketing/hooks";
+import { HeroTitle } from "../../components/HeroTitle";
 import { AppIcon } from "../../components/AppIcon";
 import { features } from "../../components/marketing/content";
 import { FeatureDemo } from "../../components/marketing/FeatureDemo";
@@ -37,7 +39,7 @@ const faqs = [
 ];
 export function MarketingLanding() {
   const [active, setActive] = useState(0);
-  const [paused, setPaused] = useState(false);
+  const railsRef = useScrollRails();
   const { pathname } = useLocation();
   const feature = features[active];
   useMarketingMeta(
@@ -62,13 +64,7 @@ export function MarketingLanding() {
           <div className="mkt-hero-shade" />
           <div className="mkt-hero-copy">
             <p className="mkt-eyebrow">ONEFIND / BANHO E TOSA</p>
-            <h1>
-              Mais tempo
-              <br />
-              para cuidar.
-              <br />
-              <span>Menos para organizar.</span>
-            </h1>
+            <HeroTitle />
             <p className="mkt-hero-description">
               Agenda, clientes e financeiro.
               <br />
@@ -88,10 +84,7 @@ export function MarketingLanding() {
             Conheça o onefind <span>↓</span>
           </a>
         </section>
-        <section
-          className={`mkt-intro ${paused ? "is-paused" : ""}`}
-          id="negocio"
-        >
+        <section className="mkt-intro" id="negocio">
           <div className="mkt-container mkt-centered">
             <p className="mkt-eyebrow">
               DO PRIMEIRO HORÁRIO AO ÚLTIMO RECEBIMENTO
@@ -107,7 +100,11 @@ export function MarketingLanding() {
               Encontre o que precisa, sem juntar anotações.
             </p>
           </div>
-          <div className="mkt-rails" aria-label="Explore os recursos">
+          <div
+            className="mkt-rails"
+            ref={railsRef}
+            aria-label="Explore os recursos"
+          >
             <div className="mkt-rail">
               {features.map((f) => (
                 <Link key={f.id} to={`/recursos/${f.id}`}>
@@ -134,13 +131,6 @@ export function MarketingLanding() {
               ))}
             </div>
           </div>
-          <button
-            className="mkt-motion-toggle"
-            aria-pressed={paused}
-            onClick={() => setPaused(!paused)}
-          >
-            {paused ? "Retomar movimento" : "Pausar movimento"}
-          </button>
         </section>
         <section className="mkt-showcase mkt-container" id="recursos">
           <div className="mkt-centered mkt-section-heading">
