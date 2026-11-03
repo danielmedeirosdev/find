@@ -359,7 +359,7 @@
   display: flex;
   gap: 12px;
   width: max-content;
-  transform: translateX(var(--rail-shift, 0px));
+  transform: translate3d(0, 0, 0);
   will-change: transform;
 }
 
@@ -1742,11 +1742,11 @@
   mask-image: none;
 }
 .mkt-rails:focus-within .mkt-rail {
-  transform: none;
+  transform: none !important;
 }
 @media (prefers-reduced-motion: reduce) {
   .mkt-rail {
-    transform: none;
+    transform: none !important;
     will-change: auto;
   }
   html:has(.mkt-site) {
@@ -1930,7 +1930,7 @@
 }
 
 .mkt-rail {
-  transition: transform 120ms linear;
+  transition: none;
 }
 .mkt-google {
   min-width: 240px;
