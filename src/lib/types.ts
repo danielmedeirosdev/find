@@ -472,4 +472,4 @@ export const PET_SIZES: { value: PetSize; label: string }[] = [
 export const SUBSCRIPTION_PRICE = 60
 
 export type BillingType = 'PIX' | 'CREDIT_CARD'
-export type SubscribeHandler = (billingType: BillingType) => void
+export type SubscribeHandler = (billingType: BillingType, cpfCnpj?: string) => void

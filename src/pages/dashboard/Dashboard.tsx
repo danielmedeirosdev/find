@@ -116,11 +116,17 @@ export function Dashboard() {
     loadMembership()
   }, [user, authLoading])
 
-  const handleSubscribe = async (billingType: 'PIX' | 'CREDIT_CARD' = 'PIX') => {
-    if (!shop || role !== 'owner') return
+  const handleSubscribe = async (billingType: 'PIX' | 'CREDIT_CARD' = 'PIX', cpfCnpj?: string) => {
+    if (!shop || !user || role !== 'owner') return
     setSubscribing(true)
     setSubscribeError('')
     try {
+      const document = (cpfCnpj ?? shop.cpf_cnpj ?? '').replace(/\D/g, '')
+      if (document.length !== 11 && document.length !== 14) throw new Error('Informe o CPF ou CNPJ do responsável antes de continuar.')
+      if (document !== shop.cpf_cnpj) {
+        const saved = await supabase.from('shops').update({cpf_cnpj:document}).eq('id',shop.id).eq('owner_user_id',user.id).select('id').single()
+        if(saved.error || !saved.data) throw new Error('Não foi possível salvar o CPF/CNPJ. Tente novamente.')
+      }
       const result = await invokeFunction<{ paymentLink?: string; alreadyActive?: boolean }>(
         'create-subscription',
         {
@@ -130,12 +136,14 @@ export function Dashboard() {
       )
       if (result.alreadyActive) {
         await loadMembership()
+        setSubscribing(false)
         return
       }
       if (!result.paymentLink) {
         setSubscribeError(
           'Pagamento criado, mas o Asaas não retornou link. Tente novamente em alguns segundos.'
         )
+        setSubscribing(false)
         return
       }
       const paymentUrl = new URL(result.paymentLink)
@@ -151,7 +159,8 @@ export function Dashboard() {
       }
       await loadMembership()
     } catch (err) {
-      setSubscribeError(err instanceof Error ? err.message : 'Erro ao criar assinatura.')
+      const message = err instanceof Error ? err.message : 'Erro ao criar assinatura.'
+      setSubscribeError(message === 'CPF/CNPJ required' ? 'Informe o CPF ou CNPJ do responsável antes de continuar.' : message)
     }
     setSubscribing(false)
   }
@@ -205,6 +214,7 @@ export function Dashboard() {
       <SegmentProvider segment={isPet ? 'pet' : 'barbershop'}>
         <BlockedOverlay
           shopName={shop.name}
+          cpfCnpj={shop.cpf_cnpj}
           segment={isPet ? 'pet' : 'barbershop'}
           blockReason={blockReason}
           onSubscribe={handleSubscribe}
