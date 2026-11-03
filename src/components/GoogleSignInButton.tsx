@@ -67,7 +67,7 @@ export function GoogleSignInButton({
           theme: tone === 'dark' ? 'filled_black' : 'outline',
           size: 'large',
           text: 'continue_with',
-          shape: 'rectangular',
+          shape: 'pill',
           logo_alignment: 'left',
           width: Math.min(hostRef.current.clientWidth || 320, 400),
           locale: 'pt-BR',

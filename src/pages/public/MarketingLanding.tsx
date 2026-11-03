@@ -79,41 +79,42 @@ export function MarketingLanding() {
             </p>
             <div className="mkt-hero-actions">
               <StartLink placement="hero" />
-              {user ? (
-                <a href="#recursos" className="mkt-secondary">
-                  Ver como funciona <AppIcon name="arrow-right" size={18} />
-                </a>
-              ) : (
-                <div className="mkt-google">
-                  <GoogleSignInButton
-                    tone="dark"
-                    disabled={googleBusy}
-                    onError={setGoogleError}
-                    onCredential={async (response, nonce) => {
-                      setGoogleBusy(true);
-                      setGoogleError("");
-                      try {
-                        const result = await completeGoogleCredentialLogin(
-                          "barber",
-                          response,
-                          nonce,
-                          "Meu Pet Shop",
-                          "pet",
-                        );
-                        navigate(result.redirectTo);
-                      } catch (error) {
-                        setGoogleError(
-                          error instanceof Error
-                            ? error.message
-                            : "Não foi possível entrar. Tente pelo cadastro.",
-                        );
-                        setGoogleBusy(false);
-                      }
-                    }}
-                  />
-                </div>
-              )}
+              <a href="#recursos" className="mkt-secondary">
+                Ver como funciona <AppIcon name="arrow-right" size={18} />
+              </a>
             </div>
+            <p className="mkt-hero-terms">
+              30 dias grátis <i /> Sem cartão
+            </p>
+            {!user && (
+              <div className="mkt-google">
+                <GoogleSignInButton
+                  disabled={googleBusy}
+                  onError={setGoogleError}
+                  onCredential={async (response, nonce) => {
+                    setGoogleBusy(true);
+                    setGoogleError("");
+                    try {
+                      const result = await completeGoogleCredentialLogin(
+                        "barber",
+                        response,
+                        nonce,
+                        "Meu Pet Shop",
+                        "pet",
+                      );
+                      navigate(result.redirectTo);
+                    } catch (error) {
+                      setGoogleError(
+                        error instanceof Error
+                          ? error.message
+                          : "Não foi possível entrar. Tente pelo cadastro.",
+                      );
+                      setGoogleBusy(false);
+                    }
+                  }}
+                />
+              </div>
+            )}
             {googleError && (
               <p className="mkt-google-error" role="alert">
                 Google indisponível.{" "}
@@ -122,9 +123,6 @@ export function MarketingLanding() {
                 </Link>
               </p>
             )}
-            <p className="mkt-hero-terms">
-              30 dias grátis <i /> Sem cartão
-            </p>
           </div>
           <a className="mkt-scroll-hint" href="#negocio">
             Conheça o onefind <span>↓</span>
