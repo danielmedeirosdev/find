@@ -48,9 +48,10 @@ export async function asaasFetch<T>(opts: {
   apiKey: string;
   method?: string;
   body?: unknown;
+  timeoutMs?: number;
 }): Promise<T> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? TIMEOUT_MS);
   try {
     const res = await fetch(`${ASAAS_API_URL}${opts.path}`, {
       method: opts.method ?? "GET",

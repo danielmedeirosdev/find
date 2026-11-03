@@ -9,6 +9,7 @@ const TIMEOUT_MS = 20000;
 export type AsaasSubscription = {
   id: string;
   customer?: string;
+  billingType?: string;
   status?: string;
   nextDueDate?: string;
   invoiceUrl?: string;

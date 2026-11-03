@@ -185,6 +185,16 @@ Deno.serve(async (req) => {
 
     if (subscription) {
       await persistSubscriptionLink(admin, shop_id, subscription.id, "create-subscription-reuse");
+      // Reusing a Pix subscription must honor the owner's selected payment method.
+      // Updating the method does not by itself confirm a payment or card registration.
+      if (subscription.billingType !== billingType) {
+        subscription = await asaasFetch<AsaasSubscription>({
+          path: `/subscriptions/${subscription.id}`,
+          apiKey: asaasApiKey,
+          method: "PUT",
+          body: { billingType, updatePendingPayments: true },
+        });
+      }
       if (dueDateStr > (subscription.nextDueDate ?? "")) {
         subscription = await updateSubscriptionNextDueDate(
           asaasApiKey,
