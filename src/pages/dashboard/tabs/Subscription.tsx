@@ -141,7 +141,7 @@ export function SubscriptionTab({ shop, onUpdate, onSubscribe, subscribing, subs
             <p className="text-white">Acesso pago até <strong>{billingDate(billing.paidUntil)}</strong></p>
             <p className="text-charcoal-muted">{billing.daysRemaining === 1 ? '1 dia restante' : `${billing.daysRemaining} dias restantes`}</p>
           </>}
-          {billing?.nextDueDate && <p className="text-white">Próxima cobrança: <strong>{billingDate(billing.nextDueDate)}</strong></p>}
+          {billing?.nextDueDate && billing.nextDueDate.slice(0,10) !== billing.paidUntil?.slice(0,10) && <p className="text-white">Próxima cobrança: <strong>{billingDate(billing.nextDueDate)}</strong></p>}
           {billing && <p className="text-charcoal-muted">{!billing.hasSubscription ? 'Assinatura ainda não contratada.' : billing.automaticRenewal ? `Renovação automática no cartão${billing.cardLast4 ? ` final ${billing.cardLast4}` : ''}.` : billing.billingType === 'CREDIT_CARD' ? 'Cartão ainda não confirmado para renovação automática.' : 'Pix manual: pague a fatura a cada mês.'}</p>}
           {billing && shop.subscription_status==='active' && !billing.paidUntil && <p className="text-charcoal-muted">Período pago ainda não confirmado pelo Asaas.</p>}
           {billingError && <p role="alert" className="text-red-400">{billingError}</p>}

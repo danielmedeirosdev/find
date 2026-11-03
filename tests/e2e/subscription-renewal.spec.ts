@@ -29,7 +29,8 @@ test('paid dates, authorized card renewal, decline and manual Pix work on mobile
    return route.fulfill({json:billing()});
  });
  await page.goto('/painel/dashboard?aba=subscription');
- await expect(page.getByText('04/12/2026',{exact:true})).toHaveCount(2);
+ await expect(page.getByText('04/12/2026',{exact:true})).toHaveCount(1);
+ await expect(page.getByText('Próxima cobrança:',{exact:false})).toHaveCount(0);
  await expect(page.getByText('31 dias restantes',{exact:true})).toBeVisible();
  await expect(page.getByText('Pix manual: pague a fatura a cada mês.',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Cadastrar cartão de crédito',exact:true}).click();
