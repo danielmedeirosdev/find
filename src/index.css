@@ -1,9 +1,10 @@
 @import "tailwindcss";
+@import "./components/marketing/fonts.css";
 
 @theme {
-  --font-display: "Bebas Neue", sans-serif;
-  --font-body: "Inter", sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  --font-display: "Onefind Sans", Arial, sans-serif;
+  --font-body: "Onefind Sans", Arial, sans-serif;
+  --font-mono: "Onefind Sans", Arial, sans-serif;
 
   --color-paper: #f5f0e8;
   --color-paper-dark: #e8e0d4;
@@ -79,10 +80,13 @@ html {
 
 .font-display {
   font-family: var(--font-display);
-  letter-spacing: 0.04em;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
 .font-mono {
+  font-variant-numeric: tabular-nums;
   font-family: var(--font-mono);
 }
 
@@ -799,11 +803,11 @@ html {
   font-size: 14px;
 }
 .premium-landing .font-display {
-  font-family: Inter, Arial, sans-serif;
+  font-family: var(--font-display);
   letter-spacing: -0.025em;
 }
 .premium-dashboard {
-  --font-display: Inter, Arial, sans-serif;
+  --font-display: "Onefind Sans", Arial, sans-serif;
   --color-brass: #c5a166;
   --color-charcoal-muted: #a7adb7;
   background:

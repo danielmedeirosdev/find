@@ -1,4 +1,3 @@
-@import "./fonts.css";
 .mkt-site {
   --mkt-bg: #111214;
   --mkt-panel: #1b1c1e;
@@ -21,9 +20,9 @@
 .mkt-site h2,
 .mkt-site h3,
 .mkt-site h4 {
-  font-family: "Onefind Display", sans-serif;
-  letter-spacing: -0.045em;
-  font-weight: 500;
+  font-family: "Onefind Sans", Arial, sans-serif;
+  letter-spacing: -0.035em;
+  font-weight: 600;
   line-height: 1.12;
   text-wrap: balance;
 }
@@ -64,10 +63,10 @@
   text-align: center;
 }
 .mkt-eyebrow {
-  font-family: "JetBrains Mono", monospace !important;
+  font-family: "Onefind Sans", Arial, sans-serif !important;
   font-size: 10px !important;
   font-weight: 500;
-  letter-spacing: 0.14em !important;
+  letter-spacing: 0.1em !important;
   line-height: 1.7 !important;
   color: var(--mkt-gold) !important;
   text-transform: uppercase;
@@ -373,7 +372,7 @@
   background: #27251f;
   color: #e5d7b7;
   font-size: 22px;
-  font-family: "Onefind Display", sans-serif;
+  font-family: "Onefind Sans", Arial, sans-serif;
   white-space: nowrap;
   min-width: 220px;
 }
@@ -461,7 +460,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-family: "Onefind Display", sans-serif;
+  font-family: "Onefind Sans", Arial, sans-serif;
   font-size: 15px;
   color: #ece6d9;
   font-weight: 600;
@@ -493,7 +492,7 @@
 .mkt-demo-heading small,
 .mkt-demo-note > small,
 .mkt-package-card > small {
-  font-family: "JetBrains Mono", monospace;
+  font-family: "Onefind Sans", Arial, sans-serif;
   font-size: 9px;
   letter-spacing: 0.07em;
   color: #aaa69b;
@@ -519,7 +518,7 @@
   color: #9d9da2;
 }
 .mkt-demo-week b {
-  font-family: "Onefind Display", sans-serif;
+  font-family: "Onefind Sans", Arial, sans-serif;
   font-weight: 500;
   font-size: 20px;
   color: #eee9de;
@@ -539,7 +538,7 @@
   border-top: 1px solid var(--mkt-line);
 }
 .mkt-demo-appointments time {
-  font-family: "JetBrains Mono", monospace;
+  font-family: "Onefind Sans", Arial, sans-serif;
   font-size: 11px;
   color: #b4b2ab;
 }
@@ -674,7 +673,7 @@
 }
 .mkt-time-block strong {
   font-size: 26px;
-  font-family: "Onefind Display", sans-serif;
+  font-family: "Onefind Sans", Arial, sans-serif;
   font-weight: 500;
   display: block;
 }
@@ -762,7 +761,7 @@
 }
 .mkt-money-grid strong {
   display: block;
-  font-family: "Onefind Display", sans-serif;
+  font-family: "Onefind Sans", Arial, sans-serif;
   font-size: 30px;
   font-weight: 500;
   margin: 6px 0;
@@ -829,7 +828,7 @@
 .mkt-steps article > span {
   display: block;
   font-size: 12px;
-  font-family: "JetBrains Mono", monospace;
+  font-family: "Onefind Sans", Arial, sans-serif;
   color: var(--mkt-gold);
   border-top: 1px solid #d3b47850;
   padding-top: 16px;
@@ -908,7 +907,7 @@
   font-size: 12px;
 }
 .mkt-price-top span:first-child {
-  font-family: "Onefind Display", sans-serif;
+  font-family: "Onefind Sans", Arial, sans-serif;
   font-size: 21px;
   font-weight: 600;
   letter-spacing: -0.03em;
@@ -920,7 +919,7 @@
   margin-top: 24px !important;
 }
 .mkt-price strong {
-  font-family: "Onefind Display", sans-serif;
+  font-family: "Onefind Sans", Arial, sans-serif;
   font-size: 60px;
   font-weight: 500;
   line-height: 1.1;
@@ -985,7 +984,7 @@
 .mkt-faq-number {
   color: var(--mkt-gold);
   font-size: 10px;
-  font-family: "JetBrains Mono", monospace;
+  font-family: "Onefind Sans", Arial, sans-serif;
 }
 .mkt-plus {
   font-size: 24px;
@@ -1763,7 +1762,7 @@
 .mkt-legacy h1,
 .mkt-legacy h2,
 .mkt-legacy h3 {
-  font-family: "Onefind Display", sans-serif;
+  font-family: "Onefind Sans", Arial, sans-serif;
   letter-spacing: -0.035em;
   text-transform: none;
   color: var(--mkt-ink);
