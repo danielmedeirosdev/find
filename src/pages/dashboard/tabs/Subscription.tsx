@@ -159,7 +159,6 @@ export function SubscriptionTab({ shop, onUpdate, onSubscribe, subscribing, subs
           <button type="button" onClick={()=>{setCardOpen(true);setBillingMessage('')}} disabled={!billing.canConfigureCard || billingLoading} className="mt-4 min-h-12 w-full rounded-lg bg-brass px-4 py-3 text-sm font-semibold text-charcoal disabled:opacity-50">{billing.automaticRenewal?'Trocar cartão':'Cadastrar cartão de crédito'}</button>
           {!billing.canConfigureCard && <p className="mt-2 text-sm text-charcoal-muted">Regularize a mensalidade atual antes de configurar o cartão.</p>}
           {billing.automaticRenewal && <button type="button" onClick={()=>setDisableOpen(true)} className="mt-3 min-h-11 w-full text-sm text-charcoal-muted hover:text-white">Desativar renovação automática</button>}
-          <p className="mt-4 text-xs leading-5 text-charcoal-muted">Cartão de débito não está disponível para esta renovação automática.</p><p className="mt-2 text-xs leading-5 text-charcoal-muted">Pix Automático {billing.pixAutomatic==='unavailable'?'indisponível para a conta recebedora atual.':'ainda não habilitado.'} O Pix disponível continua sendo manual.</p>
         </>}
         {cardOpen && <SubscriptionCardForm shop={shop} email={user?.email??''} billing={billing} onCancel={()=>setCardOpen(false)} onSaved={()=>{setCardOpen(false);setBillingMessage('Cartão confirmado para renovação mensal.');void loadBilling()}}/>}
         {disableOpen && <div className="mt-4 space-y-3">
