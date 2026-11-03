@@ -101,7 +101,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
   const [searching, setSearching] = useState(false)
   const [actionError, setActionError] = useState('')
   const [loadError, setLoadError] = useState('')
-  const [dayFilter, setDayFilter] = useState<DayFilter>('today')
+  const [dayFilter, setDayFilter] = useState<DayFilter>('date')
   const [consultationDate, setConsultationDate] = useState(localDateIso())
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null)
   const [showAvailability, setShowAvailability] = useState(false)
@@ -148,8 +148,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
   }
 
   const today = addDaysIso(0)
-  const tomorrow = addDaysIso(1)
-  const selectedDay = dayFilter === 'today' ? today : dayFilter === 'tomorrow' ? tomorrow : consultationDate
+  const selectedDay = consultationDate
   const chooseDay = (date: string) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return
     setConsultationDate(date)
@@ -180,7 +179,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
       .is('archived_at',null)
       .order('date')
       .order('time')
-    query = dayFilter === 'upcoming' ? query.gte('date', today) : query.eq('date', selectedDay)
+    query = query.eq('date', selectedDay)
     if (barberId) query = query.eq('barber_id', barberId)
 
     const [{ data, error }, { data: svc }, {data: team, error: teamError}] = await Promise.all([
@@ -388,9 +387,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
       b.status === 'awaiting_payment' ||
       !b.status
   )
-  const filtered = dayFilter === 'upcoming'
-    ? activeBookings.filter((b) => b.date >= today)
-    : bookings.filter((b) => b.date === selectedDay)
+  const filtered = activeBookings.filter((b) => b.date === selectedDay)
 
   return (
     <div className="of-workspace overflow-x-hidden">
@@ -457,53 +454,32 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
         </div>
       )}
 
-      <div className="mb-4 grid grid-cols-3 gap-2 sm:flex sm:overflow-x-auto sm:pb-1">
-        {([['today', 'Hoje'], ['tomorrow', 'Amanhã'], ['upcoming', 'Próximos']] as const).map(
-          ([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => { if (key !== 'upcoming') setConsultationDate(key === 'today' ? today : tomorrow); setDayFilter(key) }}
-              aria-pressed={dayFilter === key}
-              className={`min-h-11 rounded-xl px-2 py-2.5 text-center text-sm sm:shrink-0 sm:px-4 ${
-                dayFilter === key
-                  ? 'bg-brass text-charcoal font-semibold'
-                  : 'border border-charcoal-light text-charcoal-muted'
-              }`}
-            >
-              {label}
-            </button>
-          )
-        )}
-      </div>
-
       <section aria-label="Consulta por dia" className="of-work-panel mb-4 min-w-0">
         <div className="of-week-strip" aria-label="Dias próximos">
           {Array.from({ length: 5 }, (_, index) => {
             const date = new Date(`${selectedDay}T12:00:00`)
             date.setDate(date.getDate() + index - 2)
             const value = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
-            return <button key={value} type="button" aria-pressed={value === selectedDay && dayFilter !== 'upcoming'} aria-label={new Intl.DateTimeFormat('pt-BR',{dateStyle:'full'}).format(date)} onClick={() => chooseDay(value)}><span>{new Intl.DateTimeFormat('pt-BR',{weekday:'short'}).format(date)}</span><strong>{date.getDate()}</strong></button>
+            return <button key={value} type="button" aria-pressed={value === selectedDay} aria-label={new Intl.DateTimeFormat('pt-BR',{dateStyle:'full'}).format(date)} onClick={() => chooseDay(value)}><span>{new Intl.DateTimeFormat('pt-BR',{weekday:'short'}).format(date)}</span><strong>{date.getDate()}</strong></button>
           })}
         </div>
-        <div className="agenda-day-navigation grid min-w-0 grid-cols-[44px_minmax(0,1fr)_44px] items-end gap-3">
+        <div className="agenda-day-navigation mx-auto grid min-w-0 max-w-sm grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-2">
           <button type="button" aria-label="Dia anterior" onClick={() => moveDay(-1)} className="min-h-11 rounded-lg border border-charcoal-light text-xl text-white">‹</button>
-          <label className="block min-w-0 text-xs text-charcoal-muted">Consultar dia
-            <input style={{width:"100%",minWidth:0,boxSizing:"border-box",appearance:"none"}} type="date" value={selectedDay} onChange={event => chooseDay(event.target.value)} className="mt-1 block min-h-11 w-full min-w-0 max-w-full rounded-lg border border-charcoal-light bg-charcoal px-2 text-sm text-white [color-scheme:dark]" />
+          <label className="block min-w-0 text-center text-[10px] uppercase tracking-[.16em] text-charcoal-muted">Ir para uma data
+            <input style={{width:"100%",minWidth:0,boxSizing:"border-box"}} type="date" value={selectedDay} onChange={event => chooseDay(event.target.value)} className="mt-1 block min-h-10 w-full min-w-0 max-w-full border-0 border-b border-charcoal-light bg-transparent px-1 text-center text-sm text-white [color-scheme:dark]" />
           </label>
           <button type="button" aria-label="Dia seguinte" onClick={() => moveDay(1)} className="min-h-11 rounded-lg border border-charcoal-light text-xl text-white">›</button>
         </div>
-        <p aria-live="polite" className="mt-2 text-center text-sm text-white">
-          {dayFilter === 'upcoming' ? 'Próximos atendimentos' : new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(`${selectedDay}T12:00:00`))}
-          {!loading && !loadError && <span className="ml-1 text-charcoal-muted">· {filtered.length} {filtered.length === 1 ? 'atendimento' : 'atendimentos'}</span>}
+        <p aria-live="polite" className="mt-3 text-center text-xs text-charcoal-muted">
+          {!loading && !loadError && `${filtered.length} ${filtered.length === 1 ? 'atendimento' : 'atendimentos'} neste dia`}
         </p>
       </section>
 
-      <details className="group mb-5 rounded-xl border border-charcoal-light bg-charcoal-dark/30 p-3 sm:mb-8 sm:rounded-2xl sm:p-4">
+      <details className="group mb-4 ml-auto w-fit max-w-full rounded-lg border border-charcoal-light bg-charcoal-dark/30 px-3 py-2">
         <summary className="cursor-pointer list-none font-medium text-white">
-          <span className="flex items-center justify-between">Histórico do cliente ou pet <span className="text-xs font-normal text-brass group-open:hidden">Abrir busca</span></span>
+          <span className="flex items-center gap-2 text-xs">Buscar histórico <span className="font-normal text-brass group-open:hidden">cliente ou pet</span></span>
         </summary>
-        <div className="mt-4">
+        <div className="mt-4 w-[min(32rem,calc(100vw-3rem))]">
         <div className="flex flex-col gap-2 sm:flex-row">
           <input
             value={clientSearch}
@@ -553,7 +529,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
       {!barberId && <div className="mb-4 flex flex-wrap gap-2"><HistoricalBooking rules={sizeRules} discounts={weekdayDiscounts} shopId={shopId} services={shopServices} onSaved={()=>void load()}/><AgendaManagement loading={loading} shopId={shopId} bookings={filtered} services={shopServices} rules={sizeRules} onChanged={()=>void load()}/></div>}
       {loading ? <LoadingBlock label="Carregando agenda..." /> : loadError ? <button type="button" onClick={() => void load()} className="min-h-11 rounded-xl border border-charcoal-light px-4 text-sm text-white">Tentar novamente</button> : filtered.length === 0 ? (
         <EmptyState
-          title={dayFilter === 'upcoming' ? 'Nenhum agendamento neste período.' : 'Nenhum agendamento neste dia.'}
+          title="Nenhum agendamento neste dia."
           description="Quando houver reservas, elas aparecem aqui com pet, horário e serviço."
         />
       ) : (

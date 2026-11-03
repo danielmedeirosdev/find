@@ -324,7 +324,19 @@ export function PackagesTab({ shopId }: Props) {
             const remaining = packageRemaining(pkg.total_sessions, pkg.used_sessions)
             return (
               <div key={pkg.id} className="of-work-panel">
-                <div className="of-package-progress"><div className="flex justify-between gap-3 text-sm"><span>{pkg.used_sessions} usadas</span><span>{remaining} restantes</span></div><progress aria-label="Sessões utilizadas" value={pkg.used_sessions} max={Math.max(1, pkg.total_sessions)} /><p className="text-sm text-charcoal-muted">{pkg.total_sessions} sessões no pacote</p></div>
+                <div className="of-package-session-card">
+                  <p className="of-kicker">{pkg.pets?.name ? `Pacote de ${pkg.pets.name}` : 'Pacote ativo'}</p>
+                  <h4>{pkg.total_sessions} sessões</h4>
+                  <div className="of-session-track" aria-label={`${pkg.used_sessions} de ${pkg.total_sessions} sessões utilizadas`}>
+                    {Array.from({ length: Math.min(pkg.total_sessions, 12) }, (_, index) => (
+                      <span key={index} className={`of-session-dot ${index < pkg.used_sessions ? 'is-used' : ''}`}>
+                        {index < pkg.used_sessions ? '✓' : index + 1}
+                      </span>
+                    ))}
+                    {pkg.total_sessions > 12 && <span className="of-session-more">+{pkg.total_sessions - 12}</span>}
+                  </div>
+                  <div className="of-session-counts"><strong>{pkg.used_sessions} usadas</strong><span>{remaining} restantes</span></div>
+                </div>
                 <div className="flex flex-wrap justify-between gap-2">
                   <div>
                     <p className="text-white font-medium">

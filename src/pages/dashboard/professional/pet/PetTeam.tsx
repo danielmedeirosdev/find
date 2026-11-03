@@ -22,6 +22,7 @@ export function PetTeam({ shopId }: Props) {
   const [toast, setToast] = useState<string | null>(null)
   const [uploadingId, setUploadingId] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     const { data: barb } = await supabase
@@ -182,7 +183,9 @@ export function PetTeam({ shopId }: Props) {
       <h2 className="font-display text-2xl text-white mb-2">Equipe e horários</h2>
 
 
-      <div className="mb-8 flex flex-wrap gap-2">
+      <details className="of-section mb-6">
+        <summary className="cursor-pointer text-sm font-semibold text-brass">+ Adicionar profissional</summary>
+      <div className="mt-4 flex flex-wrap gap-2">
         <input
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
@@ -208,6 +211,7 @@ export function PetTeam({ shopId }: Props) {
           Adicionar
         </button>
       </div>
+      </details>
 
       {barbers.length === 0 ? (
         <EmptyState
@@ -215,60 +219,64 @@ export function PetTeam({ shopId }: Props) {
           description="Adicione o primeiro membro da equipe para organizar horários e agenda."
         />
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-4">
           {barbers.map((barber) => (
             <div key={barber.id} className="of-work-panel">
-              <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="relative">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-4">
+                  <div className="relative shrink-0">
                     {barber.photo_url ? (
                       <img
                         src={barber.photo_url}
                         alt={barber.name}
-                        className="h-16 w-16 rounded-full object-cover border border-charcoal-light"
+                        className="h-16 w-16 rounded-full border border-charcoal-light object-cover"
                       />
                     ) : (
                       <DefaultAvatar name={barber.name} className="h-16 w-16 text-xl" />
                     )}
-                    <ImageDropzone
-                      onFiles={(files) => uploadPhoto(barber, files)}
-                      disabled={uploadingId === barber.id}
-                      className="mt-2 rounded border border-dashed border-charcoal-light px-2 py-1 text-center text-[10px] text-brass hover:border-brass"
-                    >
-                      {barber.photo_url ? 'Trocar' : 'Foto'}
-                    </ImageDropzone>
-                    {barber.photo_url && (
-                      <button
-                        type="button"
-                        onClick={() => removePhoto(barber)}
-                        className="mt-1 block w-full text-[10px] text-red-400"
-                      >
-                        Remover
-                      </button>
-                    )}
                   </div>
-                  <div>
-                    <h3 className="font-display text-xl text-brass">{barber.name}</h3>
+                  <div className="min-w-0">
+                    <h3 className="truncate text-lg font-semibold text-white">{barber.name}</h3>
+                    <p className="mt-1 truncate text-sm text-charcoal-muted">{barber.role || 'Profissional'}</p>
+                  </div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-xs text-charcoal-muted">{barber.specialty || 'Atendimentos'}</p>
+                  <button type="button" onClick={()=>setExpandedId(current=>current===barber.id?null:barber.id)} className="mt-2 min-h-9 text-xs font-semibold text-brass">{expandedId===barber.id?'Fechar':'Mostrar mais'}</button>
+                </div>
+              </div>
+
+              {expandedId === barber.id && <div className="mt-5 space-y-5 border-t border-charcoal-light pt-5">
+                <div className="grid gap-4 sm:grid-cols-[auto_1fr]">
+                  <div className="w-24">
+                    <ImageDropzone onFiles={(files) => uploadPhoto(barber, files)} disabled={uploadingId === barber.id} className="rounded-lg border border-dashed border-charcoal-light px-2 py-2 text-center text-xs text-brass hover:border-brass">{barber.photo_url ? 'Trocar foto' : 'Adicionar foto'}</ImageDropzone>
+                    {barber.photo_url && <button type="button" onClick={() => removePhoto(barber)} className="mt-2 block w-full text-xs text-red-400">Remover foto</button>}
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="text-xs text-charcoal-muted">Cargo
                     <input
                       defaultValue={barber.role || ''}
                       onBlur={(e) => updateRole(barber.id, e.target.value)}
                       placeholder="Cargo (ex: Banho e tosa / Tosador)"
-                      className="mt-1 w-full max-w-xs rounded border border-charcoal-light bg-charcoal px-2 py-1 text-sm text-white focus:border-brass focus:outline-none"
+                      className="mt-1 min-h-11 w-full rounded-lg border border-charcoal-light bg-charcoal px-3 text-sm text-white focus:border-brass focus:outline-none"
                     />
+                    </label>
+                    <label className="text-xs text-charcoal-muted">Especialidade
                     <input
                       defaultValue={barber.specialty || ''}
                       onBlur={(e) => updateSpecialty(barber.id, e.target.value)}
                       placeholder="Especialidade"
-                      className="mt-2 w-full max-w-xs rounded border border-charcoal-light bg-charcoal px-2 py-1 text-sm text-white focus:border-brass focus:outline-none"
+                      className="mt-1 min-h-11 w-full rounded-lg border border-charcoal-light bg-charcoal px-3 text-sm text-white focus:border-brass focus:outline-none"
                     />
+                    </label>
                     {uploadingId === barber.id && (
-                      <div className="mt-2 w-40">
+                      <div className="sm:col-span-2">
                         <ProgressBar value={progress} />
                       </div>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <label className="flex items-center gap-2 text-sm text-charcoal-muted">
                     Comissão %
                     <input
@@ -289,7 +297,6 @@ export function PetTeam({ shopId }: Props) {
                     Remover
                   </button>
                 </div>
-              </div>
 
               <ProfessionalWeekSchedule
                 barberId={barber.id}
@@ -299,6 +306,7 @@ export function PetTeam({ shopId }: Props) {
               />
 
               <StaffAccessPanel barber={barber} onChanged={load} />
+              </div>}
             </div>
           ))}
         </div>

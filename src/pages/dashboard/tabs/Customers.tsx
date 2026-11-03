@@ -255,21 +255,22 @@ export function CustomersTab({ shopId }: Props) {
             </div>
 
             <div>
-              <p className="text-sm text-charcoal-muted mb-2">Pets</p>
+              <div className="mb-3 flex items-center justify-between gap-3"><p className="of-kicker">Pets deste cliente</p><span className="text-3xl text-brass" aria-hidden="true">♡</span></div>
               <div className="space-y-2">
                 {(petsByCustomer[selected.id] || []).length === 0 ? (
                   <p className="text-sm text-charcoal-muted">Nenhum pet vinculado.</p>
                 ) : (
                   (petsByCustomer[selected.id] || []).map((pet) => (
-                    <div key={pet.id} className="flex items-center gap-3 rounded bg-charcoal-light/30 p-2">
+                    <div key={pet.id} className="of-customer-pet-card">
                       {pet.photo_url ? (
-                        <img src={pet.photo_url} alt="" className="h-10 w-10 rounded-lg object-cover" />
+                        <img src={pet.photo_url} alt="" className="h-16 w-16 rounded-2xl object-cover" />
                       ) : (
-                        <DefaultAvatar name={pet.name} className="h-10 w-10 rounded-lg" />
+                        <DefaultAvatar name={pet.name} className="h-16 w-16 rounded-2xl text-xl" />
                       )}
                       <div>
-                        <p className="text-white text-sm">{pet.name}</p>
-                        <p className="text-xs text-charcoal-muted">{petSizeLabel(pet.size)}</p>
+                        <p className="text-xl font-semibold text-white">{pet.name}</p>
+                        <p className="mt-1 text-sm text-charcoal-muted">{pet.breed ? `${pet.breed} · ` : ''}{petSizeLabel(pet.size)}</p>
+                        <p className="mt-1 text-xs text-charcoal-muted">Tutor: {customerLabel(selected)}</p>
                       </div>
                     </div>
                   ))

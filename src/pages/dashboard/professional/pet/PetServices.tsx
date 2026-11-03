@@ -295,6 +295,7 @@ export function PetServices({ shopId }: Props) {
         <div className="space-y-4">
           {services.map((s) => (
             <div key={s.id} className="of-work-panel">
+              <p className="of-kicker">Duração flexível</p>
               <div className="flex flex-col items-stretch justify-between gap-3 xl:flex-row xl:items-center">
                 <div className="min-w-0 flex-1">
                   <span className="block break-words text-lg font-semibold text-white">{s.name}</span>
@@ -315,7 +316,11 @@ export function PetServices({ shopId }: Props) {
                 </div>
               </div>
 
-              <div className="of-service-facts"><div><span>Valor base</span><strong>{formatPrice(Number(s.price))}</strong></div><div><span>Tempo reservado</span><strong>{formatDuration(s.duration_minutes)}</strong></div></div>
+              <div className="of-service-duration-card">
+                <span>Tempo reservado</span>
+                <strong>{formatDuration(s.duration_minutes)}</strong>
+                <small>Valor base {formatPrice(Number(s.price))}</small>
+              </div>
 
               {editingId === s.id && (
                 <div className="mt-4 space-y-5 border-t border-charcoal-light pt-4">
