@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import {data} from './api';
 async function login(page:Page) {
  const a=JSON.parse(fs.readFileSync('/tmp/onefind-copy-account.json','utf8'));
- await page.goto('/painel');await page.getByPlaceholder('Ex: contato@negocio.com').fill(a.email);await page.getByPlaceholder('Sua senha').fill(a.password);await page.getByRole('button',{name:'Entrar',exact:true}).click();
+ await page.goto('/painel',{waitUntil:'domcontentloaded'});await page.getByPlaceholder('Ex: contato@negocio.com').fill(a.email);await page.getByPlaceholder('Sua senha').fill(a.password);await page.getByRole('button',{name:'Entrar',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Seu dia no onefind'})).toBeVisible({timeout:30000});
 }
 test('paid dates, authorized card renewal, decline and manual Pix work on mobile without real charges',async({page})=>{
@@ -32,7 +32,7 @@ test('paid dates, authorized card renewal, decline and manual Pix work on mobile
  await expect(page.getByText('04/12/2026',{exact:true})).toHaveCount(2);
  await expect(page.getByText('31 dias restantes',{exact:true})).toBeVisible();
  await expect(page.getByText('Pix manual: pague a fatura a cada mês.',{exact:true})).toBeVisible();
- await page.getByRole('button',{name:'Cadastrar cartão',exact:true}).click();
+ await page.getByRole('button',{name:'Cadastrar cartão de crédito',exact:true}).click();
  const form=page.getByRole('form',{name:'Cadastrar renovação automática'});
  await form.getByRole('button',{name:'Autorizar renovação mensal',exact:true}).click();expect(mutations).toEqual([]);
  await form.getByLabel('Nome no cartão',{exact:true}).fill('Titular Teste');

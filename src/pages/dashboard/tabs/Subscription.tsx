@@ -3,6 +3,7 @@ import { supabase, invokeFunction } from '../../../lib/supabase'
 import { formatPrice, subscriptionLabel, getTrialDaysRemaining } from '../../../lib/format'
 import { SUBSCRIPTION_PRICE, type Shop, type BillingType, type SubscribeHandler } from '../../../lib/types'
 import { BrandAccent } from '../../../components/BrandAccent'
+import { PaymentBrands } from '../../../components/PaymentBrands'
 import { SubscriptionCardForm } from '../../../components/SubscriptionCardForm'
 import { billingDate, type SubscriptionBilling } from '../../../lib/subscriptionBilling'
 import { useAuth } from '../../../contexts/AuthContext'
@@ -86,8 +87,8 @@ export function SubscriptionTab({ shop, onUpdate, onSubscribe, subscribing, subs
     : null
 
   return (
-    <div className="max-w-lg">
-      <h2 className="font-display text-2xl text-white mb-6">Assinatura</h2>
+    <div className="of-workspace max-w-2xl">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-2"><h2 className="font-display text-2xl text-white">Assinatura</h2><button type="button" onClick={()=>void loadBilling()} disabled={billingLoading} className="min-h-11 text-xs text-charcoal-muted disabled:opacity-50">{billingLoading?'Consultando...':'Consultar situação do pagamento'}</button></div>
 
       {complimentaryActive && (
         <div className="rounded-lg border border-brass/40 bg-brass/5 p-4 mb-6">
@@ -122,7 +123,7 @@ export function SubscriptionTab({ shop, onUpdate, onSubscribe, subscribing, subs
         </div>
       )}
 
-      <div className="rounded-lg border border-charcoal-light p-6 mb-6">
+      <div className="of-work-panel mb-6">
         <BrandAccent className="mb-4" segment={shop.segment === 'pet' ? 'pet' : 'barbershop'} />
         <p className="text-charcoal-muted text-sm mb-1">Plano onefind</p>
         <p className="font-mono text-3xl text-brass mb-4">
@@ -144,18 +145,21 @@ export function SubscriptionTab({ shop, onUpdate, onSubscribe, subscribing, subs
           {billing && <p className="text-charcoal-muted">{!billing.hasSubscription ? 'Assinatura ainda não contratada.' : billing.automaticRenewal ? `Renovação automática no cartão${billing.cardLast4 ? ` final ${billing.cardLast4}` : ''}.` : billing.billingType === 'CREDIT_CARD' ? 'Cartão ainda não confirmado para renovação automática.' : 'Pix manual: pague a fatura a cada mês.'}</p>}
           {billing && shop.subscription_status==='active' && !billing.paidUntil && <p className="text-charcoal-muted">Período pago ainda não confirmado pelo Asaas.</p>}
           {billingError && <p role="alert" className="text-red-400">{billingError}</p>}
-          <button type="button" onClick={()=>void loadBilling()} disabled={billingLoading} className="min-h-11 text-brass disabled:opacity-50">{billingLoading?'Atualizando...':'Atualizar dados do plano'}</button>
+
         </div>
       </div>
 
-      {billing?.hasSubscription && shop.subscription_status==='active' && <section className="mb-6 rounded-lg border border-charcoal-light p-5">
-        <h3 className="text-base font-semibold text-white">Renovação automática</h3>
+      {billing?.hasSubscription && shop.subscription_status==='active' && <section className="of-work-panel mb-6 payment-method">
+        <div className="payment-heading"><div><p className="text-xs text-brass mb-2">FORMA DE PAGAMENTO</p><h3 className="text-xl font-semibold text-white">Cartão de crédito</h3></div><svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-brass"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 9h20M6 15h4"/></svg></div>
+        <PaymentBrands />
+        <p className="mt-3 text-sm text-charcoal-muted">Renovação mensal de R$ 60,00. Cadastro sem cobrança imediata.</p>
+        {billing.automaticRenewal && <div className="payment-saved"><span>{billing.cardBrand || 'Cartão cadastrado'}</span><strong>•••• {billing.cardLast4 || '••••'}</strong><span>Renovação automática ativada</span></div>}
         {!cardOpen && !disableOpen && <>
           <p className="mt-2 text-sm leading-6 text-charcoal-muted">{billing.automaticRenewal ? 'A mensalidade será cobrada no cartão na data do vencimento.' : 'Cadastre um cartão para renovar sem pagar a fatura manualmente.'}</p>
-          <button type="button" onClick={()=>{setCardOpen(true);setBillingMessage('')}} disabled={!billing.canConfigureCard || billingLoading} className="mt-4 min-h-12 w-full rounded-lg bg-brass px-4 py-3 text-sm font-semibold text-charcoal disabled:opacity-50">{billing.automaticRenewal?'Trocar cartão':'Cadastrar cartão'}</button>
+          <button type="button" onClick={()=>{setCardOpen(true);setBillingMessage('')}} disabled={!billing.canConfigureCard || billingLoading} className="mt-4 min-h-12 w-full rounded-lg bg-brass px-4 py-3 text-sm font-semibold text-charcoal disabled:opacity-50">{billing.automaticRenewal?'Trocar cartão':'Cadastrar cartão de crédito'}</button>
           {!billing.canConfigureCard && <p className="mt-2 text-sm text-charcoal-muted">Regularize a mensalidade atual antes de configurar o cartão.</p>}
           {billing.automaticRenewal && <button type="button" onClick={()=>setDisableOpen(true)} className="mt-3 min-h-11 w-full text-sm text-charcoal-muted hover:text-white">Desativar renovação automática</button>}
-          <p className="mt-4 text-sm text-charcoal-muted">Pix Automático {billing.pixAutomatic==='unavailable'?'indisponível para a conta recebedora atual.':'ainda não habilitado.'} O Pix disponível continua sendo manual.</p>
+          <p className="mt-4 text-xs leading-5 text-charcoal-muted">Cartão de débito não está disponível para esta renovação automática.</p><p className="mt-2 text-xs leading-5 text-charcoal-muted">Pix Automático {billing.pixAutomatic==='unavailable'?'indisponível para a conta recebedora atual.':'ainda não habilitado.'} O Pix disponível continua sendo manual.</p>
         </>}
         {cardOpen && <SubscriptionCardForm shop={shop} email={user?.email??''} billing={billing} onCancel={()=>setCardOpen(false)} onSaved={()=>{setCardOpen(false);setBillingMessage('Cartão confirmado para renovação mensal.');void loadBilling()}}/>}
         {disableOpen && <div className="mt-4 space-y-3">
@@ -166,7 +170,7 @@ export function SubscriptionTab({ shop, onUpdate, onSubscribe, subscribing, subs
         {billingMessage && <p role="status" className="mt-4 text-sm text-white">{billingMessage}</p>}
       </section>}
 
-      <div className="rounded-lg border border-charcoal-light p-6 mb-6 space-y-4">
+      <div className="of-work-panel mb-6 space-y-4">
         <h3 className="font-medium text-white">Dados de cobrança</h3>
         <p className="text-xs text-charcoal-muted">CPF ou CNPJ do responsável.</p>
         <input

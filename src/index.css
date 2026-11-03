@@ -1386,3 +1386,14 @@ html {
 .of-week-strip span {display:block; font-size:12px;}
 .of-week-strip strong {display:block; font-size:24px; font-weight:500; margin-top:4px; font-variant-numeric:tabular-nums;}
 .of-week-strip [aria-pressed=true] {background:#ceb78019; color:#ceb780;}
+
+.payment-heading {display:flex; align-items:center; justify-content:space-between; gap:16px;}
+.payment-brands {display:flex; flex-wrap:wrap; gap:8px; margin-top:20px;}
+.payment-brands > span {display:flex; align-items:center; justify-content:center; min-width:56px; height:36px; border:1px solid #484a4e; border-radius:7px; background:#f5f5f2; color:#17191d;}
+.payment-brands .payment-visa {font-style:italic; font-size:18px; font-weight:800; color:#173577;}
+.payment-brands .payment-elo {font-size:23px; font-weight:700; letter-spacing:-.06em;}
+.payment-brands .payment-amex {font-size:8px; font-weight:800; line-height:1.1; color:#1768a3; text-align:center;}
+.payment-saved {display:grid; gap:12px; border:1px solid #ceb78040; border-radius:14px; background:#ceb78008; padding:20px; margin-top:20px;}
+.payment-saved strong {font-size:24px; font-weight:500; letter-spacing:.12em;}
+.payment-saved span {font-size:13px; color:#b5b5b0;}
+.payment-form {padding-top:20px; border-top:1px solid #38393b;}
