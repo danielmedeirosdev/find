@@ -26,3 +26,9 @@ Prompt: Create a new portrait 1024x1536 premium photorealistic website backgroun
 `tests/e2e/marketing-story.spec.ts` checks the home, six feature pages, tab mouse and keyboard navigation, mobile menu, FAQ, image/font loading, canonical URLs, reduced motion, scroll-only rail movement, login and signup destinations at 320, 375, 390, 430 and 1440 px. Uses only read-only public interactions; does not create accounts or mutate business data.
 
 Navigation clarification: the header routes existing users to /painel; the menu separates panel entry from public information. The original HeroTitle typing sequence is reused.
+
+## November mobile polish
+
+The hero typing sequence now holds each phrase for 2.4 seconds and types at 52 ms per character. The photographic hero covers 100svh and ends with a masked glass fade. Rails remain scroll-driven with a short transform transition. The redundant menu panel entry was removed; logged-in account navigation is preserved. An official Google button reuses completeGoogleCredentialLogin with the existing PET onboarding. The live provider credential exchange needs an actual Google account and is not asserted by viewport tests.
+
+FAQ, privacy and MyBookings share the scoped marketing shell. Legal text is preserved. ProfessionalShell no longer repeats the shop/section breadcrumb. The day picker keeps fixed 44px buttons around a constrained date field.

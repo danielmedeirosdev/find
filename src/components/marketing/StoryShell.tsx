@@ -76,10 +76,6 @@ export function StoryHeader() {
           aria-label="Menu de recursos"
           onClick={() => setOpen(false)}
         >
-          <Link className="mkt-menu-panel" to="/painel">
-            <AppIcon name="arrow-right" />
-            Entrar no painel
-          </Link>
           <p className="mkt-menu-label">Conhecer o onefind</p>
           <a href="/#recursos">Conhecer os recursos</a>
           <a href="/#como-funciona">Como funciona</a>

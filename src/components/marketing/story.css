@@ -1753,3 +1753,222 @@
     scroll-behavior: auto;
   }
 }
+
+/* Public surfaces share one type scale and readable dark surfaces. */
+.mkt-legacy-content {
+  padding: 130px 0 60px;
+  min-height: 65svh;
+}
+.mkt-legacy .font-display,
+.mkt-legacy h1,
+.mkt-legacy h2,
+.mkt-legacy h3 {
+  font-family: "Onefind Display", sans-serif;
+  letter-spacing: -0.035em;
+  text-transform: none;
+  color: var(--mkt-ink);
+}
+.mkt-legacy h1 {
+  font-size: clamp(34px, 5vw, 56px);
+  line-height: 1.12;
+  margin: 16px 0 24px;
+}
+.mkt-legacy h2 {
+  font-size: 26px;
+  margin: 30px 0 16px;
+}
+.mkt-legacy .faq-intro {
+  margin-bottom: 40px;
+}
+.mkt-legacy .faq-layout {
+  display: block;
+}
+.mkt-legacy .faq-groups {
+  max-width: 850px;
+}
+.mkt-legacy .faq-questions details {
+  border-color: var(--mkt-line);
+}
+.mkt-legacy .faq-questions summary {
+  color: var(--mkt-ink);
+  font-size: 16px;
+  min-height: 64px;
+  gap: 14px;
+}
+.mkt-legacy .faq-questions p,
+.mkt-legacy .text-ink-muted,
+.mkt-legacy .faq-intro > p:last-child,
+.mkt-legacy .prose-privacy {
+  color: var(--mkt-muted);
+}
+.mkt-legacy .text-ink {
+  color: var(--mkt-ink);
+}
+.mkt-legacy .bg-white,
+.mkt-legacy .bg-paper {
+  background: var(--mkt-panel);
+  border-color: var(--mkt-line);
+}
+.mkt-legacy .premium-eyebrow {
+  color: var(--mkt-gold);
+}
+.mkt-legacy .prose-privacy h2 {
+  font-size: 23px;
+}
+.mkt-legacy .prose-privacy li {
+  line-height: 1.8;
+}
+.mkt-site .mkt-hero {
+  min-height: 100svh;
+  padding-bottom: 100px;
+}
+.mkt-hero-image {
+  object-position: center center;
+}
+.mkt-hero-shade {
+  background: linear-gradient(
+    180deg,
+    #11121438,
+    transparent 40%,
+    #11121420 65%,
+    #111214 100%
+  );
+}
+.mkt-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 22%;
+  z-index: -1;
+  background: linear-gradient(0deg, #111214 2%, #111214ad 40%, #11121400);
+  backdrop-filter: blur(8px);
+  mask-image: linear-gradient(0deg, #000, transparent);
+}
+.mkt-site .mkt-hero h1 {
+  font-family: "Onefind Sans", sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  min-height: 2.5em;
+  line-height: 1.12;
+}
+.mkt-hero-actions {
+  gap: 14px;
+  padding: 12px;
+  backdrop-filter: blur(18px);
+  background: #ffffff09;
+  border-color: #ffffff30;
+}
+.mkt-hero-terms {
+  margin-top: 24px !important;
+}
+.mkt-menu {
+  animation: mkt-menu-enter 0.2s cubic-bezier(0.23, 1, 0.32, 1) both;
+  transform-origin: top right;
+}
+.mkt-button:active,
+.mkt-secondary:active {
+  transform: scale(0.98);
+}
+@keyframes mkt-menu-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-5px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 700px) {
+  .mkt-site .mkt-hero {
+    padding: 120px 18px 110px;
+    min-height: 100svh;
+  }
+  .mkt-hero-copy {
+    margin: auto;
+  }
+  .mkt-site .mkt-hero h1 {
+    font-size: clamp(34px, 9.3vw, 44px);
+  }
+  .mkt-hero-image {
+    object-position: center center;
+  }
+  .mkt-hero-shade {
+    background: linear-gradient(
+      180deg,
+      #11121436,
+      #11121466 40%,
+      #11121418 75%,
+      #111214 100%
+    );
+  }
+  .mkt-intro {
+    padding-top: 28px;
+  }
+  .mkt-rail a {
+    font-size: 16px;
+    min-width: 158px;
+    padding: 13px 16px;
+    gap: 10px;
+  }
+  .mkt-rail a > svg:first-child {
+    width: 21px;
+    height: 21px;
+  }
+  .mkt-legacy-content {
+    padding: 105px 0 36px;
+  }
+  .mkt-legacy .faq-questions summary {
+    font-size: 15px;
+  }
+  .mkt-hero-actions {
+    gap: 12px;
+  }
+  .mkt-hero-terms {
+    margin-top: 22px !important;
+  }
+}
+
+.mkt-rail {
+  transition: transform 120ms linear;
+}
+.mkt-google {
+  min-width: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 0;
+}
+.mkt-google-error {
+  font-size: 12px;
+  color: #e4cda0;
+  margin-top: 12px !important;
+}
+.mkt-google-error a {
+  text-decoration: underline;
+}
+@media (max-width: 700px) {
+  .mkt-google {
+    min-width: 0;
+    min-height: 44px;
+  }
+}
+.mkt-nav .account-trigger {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  min-height: 40px;
+  gap: 7px;
+  box-shadow: none;
+}
+.mkt-nav .account-avatar,
+.mkt-nav .account-trigger > img {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 50%;
+  font-size: 12px;
+}
+.mkt-nav .account-name {
+  display: none;
+}

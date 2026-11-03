@@ -27,6 +27,7 @@ test("marketing pages, demos and navigation work across mobile sizes", async ({
     await expect(page.locator("h1")).toContainText("Comece em");
     await expect(page.locator("h1 > [aria-hidden=true]")).toContainText(
       "1 minuto.",
+      { timeout: 18000 },
     );
     await page.evaluate(() => document.fonts.ready);
     await expect(page.locator(".mkt-hero-image")).toHaveJSProperty(
@@ -47,9 +48,7 @@ test("marketing pages, demos and navigation work across mobile sizes", async ({
       animations: "disabled",
       path: `/tmp/onefind-story-hero-${width}.png`,
     });
-    await page
-      .getByRole("link", { name: "Ver como funciona", exact: true })
-      .click();
+    await page.locator("#recursos").scrollIntoViewIfNeeded();
     for (let i = 0; i < features.length; i++) {
       await page.getByRole("tab", { name: labels[i], exact: true }).click();
       await expect(
@@ -105,7 +104,7 @@ test("marketing pages, demos and navigation work across mobile sizes", async ({
         page
           .locator("#mkt-menu")
           .getByRole("link", { name: "Entrar no painel", exact: true }),
-      ).toHaveAttribute("href", "/painel");
+      ).toHaveCount(0);
       await expect(
         page
           .locator("#mkt-menu")
@@ -148,6 +147,7 @@ test("marketing pages, demos and navigation work across mobile sizes", async ({
   await expect
     .poll(() => rail.evaluate((el) => getComputedStyle(el).transform))
     .not.toBe("matrix(1, 0, 0, 1, 0, 0)");
+  await page.waitForTimeout(350);
   const first = await rail.evaluate((el) => getComputedStyle(el).transform);
   await page.waitForTimeout(500);
   expect(await rail.evaluate((el) => getComputedStyle(el).transform)).toBe(

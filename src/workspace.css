@@ -319,3 +319,5 @@
     justify-self: start;
   }
 }
+
+.agenda-day-navigation label{overflow:hidden}.agenda-day-navigation input[type=date]{inline-size:100%;min-inline-size:0;max-inline-size:100%;padding-inline:8px}.agenda-day-navigation input[type=date]::-webkit-date-and-time-value{min-width:0;text-align:center}.agenda-day-navigation>button{height:44px;align-self:end}.workspace-main>.dashboard-tab-content{padding-top:8px}

@@ -478,10 +478,10 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
       </div>
 
       <section aria-label="Consulta por dia" className="mb-4 min-w-0 rounded-xl border border-charcoal-light bg-charcoal-dark/30 p-3">
-        <div className="grid min-w-0 grid-cols-[44px_minmax(0,1fr)_44px] items-end gap-2">
+        <div className="agenda-day-navigation grid min-w-0 grid-cols-[44px_minmax(0,1fr)_44px] items-end gap-3">
           <button type="button" aria-label="Dia anterior" onClick={() => moveDay(-1)} className="min-h-11 rounded-lg border border-charcoal-light text-xl text-white">‹</button>
           <label className="block min-w-0 text-xs text-charcoal-muted">Consultar dia
-            <input type="date" value={selectedDay} onChange={event => chooseDay(event.target.value)} className="mt-1 block min-h-11 w-full min-w-0 max-w-full rounded-lg border border-charcoal-light bg-charcoal px-2 text-sm text-white [color-scheme:dark]" />
+            <input style={{width:"100%",minWidth:0,boxSizing:"border-box",appearance:"none"}} type="date" value={selectedDay} onChange={event => chooseDay(event.target.value)} className="mt-1 block min-h-11 w-full min-w-0 max-w-full rounded-lg border border-charcoal-light bg-charcoal px-2 text-sm text-white [color-scheme:dark]" />
           </label>
           <button type="button" aria-label="Dia seguinte" onClick={() => moveDay(1)} className="min-h-11 rounded-lg border border-charcoal-light text-xl text-white">›</button>
         </div>

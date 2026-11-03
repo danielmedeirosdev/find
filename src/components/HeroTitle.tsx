@@ -5,7 +5,7 @@ const phrases = [
   "Comece em 1 minuto.",
 ];
 export function HeroTitle() {
-  const [text, setText] = useState(phrases[2]);
+  const [text, setText] = useState("");
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     let timer: ReturnType<typeof setTimeout>;
@@ -18,15 +18,15 @@ export function HeroTitle() {
       }
       count += 1;
       setText(phrases[phrase].slice(0, count));
-      if (count < phrases[phrase].length) timer = setTimeout(tick, 24);
+      if (count < phrases[phrase].length) timer = setTimeout(tick, 52);
       else if (phrase < 2)
         timer = setTimeout(() => {
           phrase += 1;
           count = 0;
           tick();
-        }, 400);
+        }, 2400);
     }
-    timer = setTimeout(tick, 100);
+    timer = setTimeout(tick, 120);
     const stop = () => {
       if (media.matches) {
         clearTimeout(timer);

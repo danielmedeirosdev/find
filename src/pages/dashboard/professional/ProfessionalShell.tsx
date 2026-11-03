@@ -92,10 +92,6 @@ export function ProfessionalShell({
           <nav aria-label="Áreas do painel">{nav}</nav>
         </aside>
         <div className="workspace-main">
-          <div className="workspace-location">
-            <span>{title}</span>
-            <span>{tabs.find((t) => t.id === activeTab)?.label}</span>
-          </div>
           <div
             key={activeTab}
             ref={content}

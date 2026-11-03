@@ -1,5 +1,8 @@
+import { GoogleSignInButton } from "../../components/GoogleSignInButton";
+import { completeGoogleCredentialLogin } from "../../lib/oauth";
+import { useAuth } from "../../contexts/AuthContext";
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   useMarketingMeta,
   useMarketingScroll,
@@ -38,6 +41,10 @@ const faqs = [
   ],
 ];
 export function MarketingLanding() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [googleError, setGoogleError] = useState("");
+  const [googleBusy, setGoogleBusy] = useState(false);
   const [active, setActive] = useState(0);
   const railsRef = useScrollRails();
   const { pathname } = useLocation();
@@ -72,10 +79,49 @@ export function MarketingLanding() {
             </p>
             <div className="mkt-hero-actions">
               <StartLink placement="hero" />
-              <a href="#recursos" className="mkt-secondary">
-                Ver como funciona <AppIcon name="arrow-right" size={18} />
-              </a>
+              {user ? (
+                <a href="#recursos" className="mkt-secondary">
+                  Ver como funciona <AppIcon name="arrow-right" size={18} />
+                </a>
+              ) : (
+                <div className="mkt-google">
+                  <GoogleSignInButton
+                    tone="dark"
+                    disabled={googleBusy}
+                    onError={setGoogleError}
+                    onCredential={async (response, nonce) => {
+                      setGoogleBusy(true);
+                      setGoogleError("");
+                      try {
+                        const result = await completeGoogleCredentialLogin(
+                          "barber",
+                          response,
+                          nonce,
+                          "Meu Pet Shop",
+                          "pet",
+                        );
+                        navigate(result.redirectTo);
+                      } catch (error) {
+                        setGoogleError(
+                          error instanceof Error
+                            ? error.message
+                            : "Não foi possível entrar. Tente pelo cadastro.",
+                        );
+                        setGoogleBusy(false);
+                      }
+                    }}
+                  />
+                </div>
+              )}
             </div>
+            {googleError && (
+              <p className="mkt-google-error" role="alert">
+                Google indisponível.{" "}
+                <Link to="/painel?segment=pet&modo=cadastro">
+                  Continuar com e-mail
+                </Link>
+              </p>
+            )}
             <p className="mkt-hero-terms">
               30 dias grátis <i /> Sem cartão
             </p>

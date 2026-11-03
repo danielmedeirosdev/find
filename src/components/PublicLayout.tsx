@@ -1,40 +1,53 @@
-import { BrandLogo } from './BrandLogo'
-import { Link, Outlet, useLocation } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { SegmentProvider } from '../contexts/SegmentContext'
-import { BrandAccent } from './BrandAccent'
-import { SetupBanner } from './SetupBanner'
-import { getSegmentFromPath } from '../lib/segments'
+import { StoryHeader, StoryFooter } from "./marketing/StoryShell";
+import { BrandLogo } from "./BrandLogo";
+import { Link, Outlet, useLocation } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { SegmentProvider } from "../contexts/SegmentContext";
+import { BrandAccent } from "./BrandAccent";
+import { SetupBanner } from "./SetupBanner";
+import { getSegmentFromPath } from "../lib/segments";
 
 export function PublicLayout() {
-  const { user } = useAuth()
-  const { pathname } = useLocation()
-  const isHome = pathname === '/'
-  const isShopList = pathname === '/barbearia' || pathname === '/pet'
-  const segmentMeta = getSegmentFromPath(pathname)
+  const { user } = useAuth();
+  const { pathname } = useLocation();
+  const isHome = pathname === "/";
+  const isShopList = pathname === "/barbearia" || pathname === "/pet";
+  const segmentMeta = getSegmentFromPath(pathname);
   const segmentId =
     segmentMeta?.id ||
-    (pathname.startsWith('/b/') ||
+    (pathname.startsWith("/b/") ||
     /^\/[^/]+\/?$/.test(pathname) ||
-    pathname === '/' ||
-    pathname.startsWith('/entrar') ||
-    pathname.startsWith('/cadastro') ||
-    pathname.startsWith('/minhas-reservas') ||
-    pathname.startsWith('/confirmacao') ||
-    pathname.startsWith('/avaliar') ||
-    pathname.startsWith('/privacidade') ||
-    pathname.startsWith('/faq')
-      ? 'platform'
-      : 'barbershop')
-  const isPet = segmentId === 'pet'
+    pathname === "/" ||
+    pathname.startsWith("/entrar") ||
+    pathname.startsWith("/cadastro") ||
+    pathname.startsWith("/minhas-reservas") ||
+    pathname.startsWith("/confirmacao") ||
+    pathname.startsWith("/avaliar") ||
+    pathname.startsWith("/privacidade") ||
+    pathname.startsWith("/faq")
+      ? "platform"
+      : "barbershop");
+  const isPet = segmentId === "pet";
 
+  if (pathname === "/privacidade" || pathname === "/minhas-reservas")
+    return (
+      <div className="mkt-site mkt-legacy">
+        <StoryHeader />
+        <main className="mkt-container mkt-legacy-content">
+          <Outlet />
+        </main>
+        <StoryFooter />
+      </div>
+    );
   const content = (
-    <div className={`public-shell min-h-screen text-ink ${isPet ? 'bg-paper' : ''}`}>
+    <div
+      className={`public-shell min-h-screen text-ink ${isPet ? "bg-paper" : ""}`}
+    >
       <SetupBanner />
       <header className="sticky top-0 z-30 border-b border-paper-dark/80 bg-paper/90 backdrop-blur-md">
         <div
           className={`mx-auto flex items-center justify-between gap-3 px-4 py-3.5 ${
-            isShopList ? 'max-w-6xl' : 'max-w-5xl'
+            isShopList ? "max-w-6xl" : "max-w-5xl"
           }`}
         >
           <Link to="/" className="min-w-0">
@@ -45,9 +58,13 @@ export function PublicLayout() {
               </span>
             )}
           </Link>
-          <nav className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 text-sm"><Link to="/faq">Ajuda</Link>
+          <nav className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 text-sm">
+            <Link to="/faq">Ajuda</Link>
             {!isHome && (
-              <Link to="/" className="hidden text-ink-muted transition-colors hover:text-brass sm:inline">
+              <Link
+                to="/"
+                className="hidden text-ink-muted transition-colors hover:text-brass sm:inline"
+              >
                 Início
               </Link>
             )}
@@ -59,7 +76,10 @@ export function PublicLayout() {
                 Minhas reservas
               </Link>
             ) : (
-              <Link to="/entrar" className="text-ink-muted transition-colors hover:text-brass">
+              <Link
+                to="/entrar"
+                className="text-ink-muted transition-colors hover:text-brass"
+              >
                 Entrar
               </Link>
             )}
@@ -67,7 +87,7 @@ export function PublicLayout() {
               to={
                 segmentMeta
                   ? `/painel?segment=${segmentMeta.id}&modo=cadastro`
-                  : '/painel?modo=cadastro'
+                  : "/painel?modo=cadastro"
               }
               className="rounded-md border border-ink/15 px-3 py-1.5 text-ink-muted transition-colors hover:border-brass hover:text-brass"
             >
@@ -79,7 +99,7 @@ export function PublicLayout() {
       </header>
       <main
         className={`mx-auto px-4 py-8 ${
-          isHome ? 'max-w-4xl' : isShopList ? 'max-w-6xl' : 'max-w-5xl'
+          isHome ? "max-w-4xl" : isShopList ? "max-w-6xl" : "max-w-5xl"
         }`}
       >
         <div key={pathname} className="page-enter">
@@ -91,26 +111,31 @@ export function PublicLayout() {
           <BrandLogo />
           <p className="mx-auto mt-2 max-w-md">
             {isPet
-              ? 'Agendamento online para banho, tosa e cuidados.'
+              ? "Agendamento online para banho, tosa e cuidados."
               : segmentMeta
-                ? 'Gestão para pet shops e banho e tosa.'
-                : 'Clientes, pets e atendimentos em um só lugar.'}
+                ? "Gestão para pet shops e banho e tosa."
+                : "Clientes, pets e atendimentos em um só lugar."}
           </p>
           <p className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
             <Link to="/faq" className="transition-colors hover:text-brass">
               Perguntas frequentes
             </Link>
-            <Link to="/privacidade" className="transition-colors hover:text-brass">
+            <Link
+              to="/privacidade"
+              className="transition-colors hover:text-brass"
+            >
               Privacidade
             </Link>
           </p>
         </footer>
       )}
     </div>
-  )
+  );
 
   if (segmentMeta) {
-    return <SegmentProvider segment={segmentMeta.id}>{content}</SegmentProvider>
+    return (
+      <SegmentProvider segment={segmentMeta.id}>{content}</SegmentProvider>
+    );
   }
-  return content
+  return content;
 }
