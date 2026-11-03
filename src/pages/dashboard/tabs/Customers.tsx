@@ -150,9 +150,9 @@ export function CustomersTab({ shopId }: Props) {
   const selected = customers.find((c) => c.id === selectedId)
 
   return (
-    <div>
+    <div className="of-workspace">
       <Toast message={toast} onClose={() => setToast(null)} />
-      <h2 className="font-display text-2xl text-white mb-2">Clientes</h2>
+      <header className="of-work-heading"><h2 className="font-display text-2xl text-white">Clientes</h2><p>Contato, pets e histórico de cada tutor.</p></header>
 
 
       <details className="of-section mb-5"><summary className="cursor-pointer font-medium text-brass">Cadastrar cliente</summary><div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -195,7 +195,7 @@ export function CustomersTab({ shopId }: Props) {
               return (
                 <div
                   key={c.id}
-                  className={`flex items-center gap-2 rounded-xl border p-2 transition ${
+                  className={`flex items-center gap-3 rounded-2xl border bg-charcoal-dark/30 p-3 transition ${
                     selectedId === c.id ? 'border-brass bg-brass/10' : 'border-charcoal-light'
                   }`}
                 >
@@ -232,7 +232,7 @@ export function CustomersTab({ shopId }: Props) {
         </div>
 
         {selected && (
-          <div className="rounded-lg border border-charcoal-light p-5 space-y-5">
+          <div className="of-work-panel space-y-5">
             <div>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>

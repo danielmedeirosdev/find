@@ -188,7 +188,7 @@ export function PetServices({ shopId }: Props) {
   const transportEnabled = transportSettings.some((item) => item.enabled)
 
   return (
-    <div>
+    <div className="of-workspace">
       <h2 className="font-display text-2xl text-white mb-2">Serviços de banho e tosa</h2>
 
 
@@ -294,16 +294,10 @@ export function PetServices({ shopId }: Props) {
       ) : (
         <div className="space-y-4">
           {services.map((s) => (
-            <div key={s.id} className="rounded-lg border border-charcoal-light p-4">
+            <div key={s.id} className="of-work-panel">
               <div className="flex flex-col items-stretch justify-between gap-3 xl:flex-row xl:items-center">
                 <div className="min-w-0 flex-1">
-                  <span className="block break-words font-medium text-white">{s.name}</span>
-                  <span className="font-mono text-sm text-brass">
-                    {formatPrice(Number(s.price))}
-                  </span>
-                  <span className="ml-2 font-mono text-sm text-charcoal-muted">
-                    {formatDuration(s.duration_minutes)}
-                  </span>
+                  <span className="block break-words text-lg font-semibold text-white">{s.name}</span>
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-3">
                   <button
@@ -320,6 +314,8 @@ export function PetServices({ shopId }: Props) {
                   </button>
                 </div>
               </div>
+
+              <div className="of-service-facts"><div><span>Valor base</span><strong>{formatPrice(Number(s.price))}</strong></div><div><span>Tempo reservado</span><strong>{formatDuration(s.duration_minutes)}</strong></div></div>
 
               {editingId === s.id && (
                 <div className="mt-4 space-y-5 border-t border-charcoal-light pt-4">

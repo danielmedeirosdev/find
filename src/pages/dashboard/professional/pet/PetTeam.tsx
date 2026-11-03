@@ -177,7 +177,7 @@ export function PetTeam({ shopId }: Props) {
   if (loading) return <LoadingBlock label="Carregando equipe..." />
 
   return (
-    <div>
+    <div className="of-workspace">
       <Toast message={toast} onClose={() => setToast(null)} />
       <h2 className="font-display text-2xl text-white mb-2">Equipe e horários</h2>
 
@@ -217,7 +217,7 @@ export function PetTeam({ shopId }: Props) {
       ) : (
         <div className="space-y-8">
           {barbers.map((barber) => (
-            <div key={barber.id} className="rounded-lg border border-charcoal-light p-4">
+            <div key={barber.id} className="of-work-panel">
               <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
                 <div className="flex items-start gap-4">
                   <div className="relative">

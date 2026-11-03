@@ -205,15 +205,15 @@ export function PackagesTab({ shopId }: Props) {
   if (loading) return <p className="text-charcoal-muted">Carregando...</p>
 
   return (
-    <div className="space-y-8">
+    <div className="of-workspace space-y-8">
       {receiving&&<Modal label="Receber pacote" onClose={()=>setReceiving(null)} busy={receivingBusy} className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3"><div className="w-full max-w-md space-y-3 rounded-xl bg-charcoal p-4"><h3 className="text-lg text-white">Receber pacote</h3><label className="block text-sm text-white">Valor recebido (R$)<input className="min-h-11 w-full rounded-lg bg-charcoal-dark p-3" inputMode="decimal" value={receiveAmount} onChange={e=>{setReceiveAmount(e.target.value);setReceiveId(crypto.randomUUID())}}/></label><label className="block text-sm text-white">Forma de pagamento<select className="min-h-11 w-full rounded-lg bg-charcoal-dark p-3" value={receiveMethod} onChange={e=>{setReceiveMethod(e.target.value);setReceiveId(crypto.randomUUID())}}><option value="pix">Pix</option><option value="cartao">Cartão</option><option value="dinheiro">Dinheiro</option></select></label><div className="grid grid-cols-2 gap-2"><button disabled={receivingBusy} className="min-h-11 text-white" onClick={()=>setReceiving(null)}>Cancelar</button><button disabled={receivingBusy} className="min-h-11 rounded-lg bg-brass text-charcoal" onClick={async()=>{const amount=Number(receiveAmount.replace(',','.'));if(!Number.isFinite(amount)||amount<=0){setToast('Informe um valor válido.');return}setReceivingBusy(true);const r=await supabase.rpc('receive_package_payment',{p_package_id:receiving,p_amount:amount,p_method:receiveMethod,p_request_id:receiveId});if(r.error){setReceivingBusy(false);setToast(r.error.message);return}await load();setReceivingBusy(false);setReceiving(null)}}>{receivingBusy?'Salvando...':'Registrar recebimento'}</button></div></div></Modal>}
       <Toast message={toast} onClose={() => setToast(null)} />
-      <div>
+      <div className="of-work-heading">
         <h2 className="font-display text-2xl text-white mb-2">Pacotes</h2>
 
       </div>
 
-      <div className="rounded-lg border border-charcoal-light p-4 space-y-3">
+      <div className="of-work-panel space-y-3">
         <h3 className="font-medium text-white">{editingTemplateId ? 'Editar modelo de pacote' : 'Novo modelo'}</h3>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
@@ -265,7 +265,7 @@ export function PackagesTab({ shopId }: Props) {
         {editingTemplateId && <p className="text-xs text-charcoal-muted">Mudanças valem para novas vendas.</p>}
       </div>
 
-      <div className="rounded-lg border border-charcoal-light p-4 space-y-3">
+      <div className="of-work-panel space-y-3">
         <h3 className="font-medium text-white">Associar a cliente / pet</h3>
         <div className="grid gap-3 sm:grid-cols-3">
           <select
@@ -323,7 +323,8 @@ export function PackagesTab({ shopId }: Props) {
             const balance=balances.find(b=>b.package_id===pkg.id)
             const remaining = packageRemaining(pkg.total_sessions, pkg.used_sessions)
             return (
-              <div key={pkg.id} className="rounded-lg border border-charcoal-light p-4">
+              <div key={pkg.id} className="of-work-panel">
+                <div className="of-package-progress"><div className="flex justify-between gap-3 text-sm"><span>{pkg.used_sessions} usadas</span><span>{remaining} restantes</span></div><progress aria-label="Sessões utilizadas" value={pkg.used_sessions} max={Math.max(1, pkg.total_sessions)} /><p className="text-sm text-charcoal-muted">{pkg.total_sessions} sessões no pacote</p></div>
                 <div className="flex flex-wrap justify-between gap-2">
                   <div>
                     <p className="text-white font-medium">

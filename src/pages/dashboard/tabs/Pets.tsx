@@ -245,7 +245,7 @@ export function PetsTab({ shopId }: Props) {
   if (loading) return <p className="text-charcoal-muted">Carregando...</p>
 
   return (
-    <div>
+    <div className="of-workspace">
       <Toast message={toast} onClose={() => setToast(null)} />
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -262,7 +262,7 @@ export function PetsTab({ shopId }: Props) {
 
       <label className="mb-4 block text-sm text-charcoal-muted">Buscar pet<input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Pet, raça ou tutor" className="mt-2 w-full rounded-lg border border-charcoal-light bg-charcoal p-3"/></label>
       {showForm && (
-        <div className="mb-8 rounded-lg border border-charcoal-light p-5 space-y-3">
+        <div className="mb-8 of-work-panel space-y-3">
           <h3 className="font-medium text-white">Cadastrar pet</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
@@ -451,7 +451,7 @@ export function PetsTab({ shopId }: Props) {
                   setSelected(pet)
                   setDetailTab('history')
                 }}
-                className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
+                className={`flex w-full items-center gap-4 rounded-2xl border bg-charcoal-dark/30 p-4 text-left transition-colors ${
                   selected?.id === pet.id
                     ? 'border-brass bg-brass/10'
                     : 'border-charcoal-light hover:border-brass/50'
@@ -466,8 +466,8 @@ export function PetsTab({ shopId }: Props) {
                 ) : (
                   <DefaultAvatar name={pet.name} className="h-14 w-14 text-xl rounded-xl" />
                 )}
-                <div>
-                  <p className="font-medium text-white">{pet.name}</p>
+                <div className="min-w-0 break-words">
+                  <p className="text-lg font-semibold text-white">{pet.name}</p>
                   <p className="text-xs text-charcoal-muted">
                     {pet.breed || 'Sem raça'} · {petSizeLabel(pet.size)}
                   </p>
@@ -482,7 +482,7 @@ export function PetsTab({ shopId }: Props) {
         </div>
 
         {selected && (
-          <div className="rounded-lg border border-charcoal-light p-5">
+          <div className="of-work-panel">
             <div className="flex flex-col items-center text-center mb-4">
               {selected.photo_url ? (
                 <img

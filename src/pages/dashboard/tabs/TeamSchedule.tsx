@@ -161,10 +161,10 @@ export function TeamScheduleTab({ shopId }: Props) {
   if (loading) return <LoadingBlock label="Carregando equipe..." />
 
   return (
-    <div>
+    <div className="of-workspace">
       <Toast message={toast} onClose={() => setToast(null)} />
-      <h2 className="font-display text-2xl text-white mb-2">Equipe e horários</h2>
-      <p className="text-sm text-charcoal-muted mb-6">Acesso individual à própria agenda, sem financeiro.</p>
+      <header className="of-work-heading"><h2 className="font-display text-2xl text-white">Equipe e horários</h2><p>Acesso individual à própria agenda, sem financeiro.</p></header>
+
 
       <div className="mb-8 flex flex-wrap gap-2">
         <input
@@ -195,7 +195,7 @@ export function TeamScheduleTab({ shopId }: Props) {
       ) : (
         <div className="space-y-8">
           {barbers.map((barber) => (
-            <div key={barber.id} className="rounded-lg border border-charcoal-light p-4">
+            <div key={barber.id} className="of-work-panel">
               <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
                 <div className="flex items-start gap-4">
                   <div className="relative">

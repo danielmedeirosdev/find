@@ -43,7 +43,7 @@ export function CashFlowTab({ shopId }: Props) {
     load()
   }, [load])
 
-  const balance = useMemo(() => cashTotals(transactions).balance,[transactions])
+  const { balance, income, expenses } = useMemo(() => cashTotals(transactions),[transactions])
 
   const addExpense = async () => {
     const value = parseFloat(amount.replace(',', '.'))
@@ -70,7 +70,7 @@ export function CashFlowTab({ shopId }: Props) {
   if(error && !loading) return <div><InlineError message={error}/><button type="button" onClick={()=>void load()} className="mt-3 text-brass">Tentar novamente</button></div>
 
   return (
-    <div>
+    <div className="of-workspace">
       {error && <InlineError message={error}/>}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -106,15 +106,15 @@ export function CashFlowTab({ shopId }: Props) {
         ))}
       </div>
 
-      <div className="mb-6 rounded-lg border border-charcoal-light p-4">
-        <p className="text-sm text-charcoal-muted">Saldo do período</p>
+      <div className="mb-6 of-work-panel">
+        <div className="of-service-facts mb-5"><div><span>Recebido no período</span><strong>{formatPrice(income)}</strong></div><div><span>Despesas no período</span><strong>{formatPrice(expenses)}</strong></div></div><p className="text-sm text-charcoal-muted">Saldo do período</p>
         <p className={`font-mono text-3xl ${balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
           {formatPrice(balance)}
         </p>
       </div>
 
       {showForm && (
-        <div className="mb-6 rounded-lg border border-charcoal-light p-4 space-y-4">
+        <div className="mb-6 of-work-panel space-y-4">
           <h3 className="font-medium text-white">Nova despesa</h3>
           <input
             value={description}
@@ -183,7 +183,7 @@ export function CashFlowTab({ shopId }: Props) {
           {transactions.map((t) => (
             <div
               key={t.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-charcoal-light p-4"
+              className="flex flex-wrap items-center justify-between gap-2 of-work-panel"
             >
               <div>
                 <p className="text-white">{t.description}</p>

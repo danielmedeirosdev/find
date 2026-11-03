@@ -393,7 +393,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
     : bookings.filter((b) => b.date === selectedDay)
 
   return (
-    <div className="overflow-x-hidden">
+    <div className="of-workspace overflow-x-hidden">
       <div className="mb-5 flex justify-stretch sm:justify-end"><button type="button" onClick={()=>void openNew()} className="min-h-12 w-full rounded-xl bg-brass px-5 py-3 text-sm font-semibold text-charcoal-dark shadow-[0_8px_24px_rgba(0,0,0,0.2)] sm:w-auto">+ Novo agendamento</button></div>
       {showNew && <section className="mb-4 rounded-xl border border-white/10 bg-charcoal-dark p-3 sm:p-4">
         <div className="mb-3 flex items-center justify-between gap-3"><h3 className="text-lg font-semibold text-white">Novo agendamento</h3><button type="button" onClick={()=>setShowNew(false)} className="text-sm text-charcoal-muted">Fechar</button></div>
@@ -477,7 +477,15 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
         )}
       </div>
 
-      <section aria-label="Consulta por dia" className="mb-4 min-w-0 rounded-xl border border-charcoal-light bg-charcoal-dark/30 p-3">
+      <section aria-label="Consulta por dia" className="of-work-panel mb-4 min-w-0">
+        <div className="of-week-strip" aria-label="Dias próximos">
+          {Array.from({ length: 5 }, (_, index) => {
+            const date = new Date(`${selectedDay}T12:00:00`)
+            date.setDate(date.getDate() + index - 2)
+            const value = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
+            return <button key={value} type="button" aria-pressed={value === selectedDay && dayFilter !== 'upcoming'} aria-label={new Intl.DateTimeFormat('pt-BR',{dateStyle:'full'}).format(date)} onClick={() => chooseDay(value)}><span>{new Intl.DateTimeFormat('pt-BR',{weekday:'short'}).format(date)}</span><strong>{date.getDate()}</strong></button>
+          })}
+        </div>
         <div className="agenda-day-navigation grid min-w-0 grid-cols-[44px_minmax(0,1fr)_44px] items-end gap-3">
           <button type="button" aria-label="Dia anterior" onClick={() => moveDay(-1)} className="min-h-11 rounded-lg border border-charcoal-light text-xl text-white">‹</button>
           <label className="block min-w-0 text-xs text-charcoal-muted">Consultar dia
@@ -564,7 +572,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
             const petList = petsForBooking(b)
             const mainPet = petList[0]
             return (
-              <article id={`booking-${b.id}`} tabIndex={-1} data-testid={`booking-${b.id}`} key={b.id} className="rounded-xl border border-charcoal-light bg-charcoal p-4">
+              <article id={`booking-${b.id}`} tabIndex={-1} data-testid={`booking-${b.id}`} key={b.id} className="of-work-panel of-pet-appointment">
                 <div className="mb-3 flex items-center justify-between border-b border-charcoal-light pb-3">
                   <p className="font-mono text-base text-brass">{formatTime(b.time)}</p>
                   <p className="mt-0.5 text-[10px] uppercase tracking-wider text-charcoal-muted">{formatDate(b.date)}</p>

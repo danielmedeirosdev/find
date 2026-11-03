@@ -1352,3 +1352,37 @@ html {
   .mobile-signup-bar p { color: #474f5b; font-size: .875rem; text-align: center; }
   .editorial-home .pricing-action { min-width: 0; }
 }
+
+/* Operational screens share the quiet surfaces and gold details of the product demos. */
+.of-workspace { --work-surface: #1c1e21; color: #f3f1eb; }
+.of-work-heading { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #343537; }
+.of-work-heading p { margin-top: 8px; color: #b5b5b0; font-size: 14px; line-height: 1.6; }
+.of-work-panel { border: 1px solid #38393b; border-radius: 20px; background: #1c1e21; padding: 24px; min-width: 0; }
+.of-workspace h2 { letter-spacing: -.035em; font-weight: 600; }
+.of-workspace h3 { letter-spacing: -.02em; }
+.of-workspace :is(input:not([type=checkbox]):not([type=radio]),select,button) { min-height: 44px; }
+.of-workspace :is(input,select,textarea) { max-width: 100%; }
+.of-workspace :is(button,a,input,select,textarea):focus-visible { outline: 2px solid #ceb780; outline-offset: 3px; }
+.of-service-heading { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; }
+.of-service-facts { display:grid; grid-template-columns:1fr 1fr; margin-top:16px; border-top:1px solid #343537; padding-top:20px; gap:16px; }
+.of-service-facts span { display:block; font-size:13px; color:#b5b5b0; }
+.of-service-facts strong { display:block; margin-top:8px; font-size:24px; font-weight:500; letter-spacing:-.035em; font-variant-numeric:tabular-nums; }
+.of-service-facts > div + div { border-left:1px solid #343537; padding-left:20px; }
+.of-package-progress { padding:18px; border:1px solid #ceb78040; background:#ceb78008; border-radius:16px; margin-bottom:20px; }
+.of-package-progress progress,.of-payment-progress { appearance:none; display:block; width:100%; height:6px; margin:14px 0; border:0; border-radius:99px; overflow:hidden; background:#343537; accent-color:#ceb780; }
+.of-package-progress progress::-webkit-progress-bar,.of-payment-progress::-webkit-progress-bar { background:#343537; }
+.of-package-progress progress::-webkit-progress-value,.of-payment-progress::-webkit-progress-value { background:#ceb780; }
+.of-package-progress progress::-moz-progress-bar,.of-payment-progress::-moz-progress-bar { background:#ceb780; }
+.of-appointment { background:#1c1e21; border-left:3px solid #ceb780; }
+@media(max-width:640px) { .of-work-panel { padding:18px; border-radius:16px; } .of-service-facts strong {font-size:22px;} .of-workspace .of-appointment {margin-left:0; padding-top:64px;} .of-appointment > div:first-child {left:16px; top:16px; width:auto; display:flex; gap:12px; align-items:center; text-align:left;} .of-appointment > span {display:none;} }
+
+.of-pet-appointment { border-left:3px solid #ceb780; }
+.of-pet-appointment > div:first-child {display:flex; align-items:center; gap:12px;}
+.of-pet-appointment > div:first-child p:first-child {font-size:22px; font-weight:500;}
+.of-pet-appointment > div:first-child p + p {font-size:12px; text-transform:none; letter-spacing:0;}
+
+.of-week-strip {display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; margin-bottom:20px;}
+.of-week-strip button {border-radius:12px; padding:10px 2px; color:#b5b5b0;}
+.of-week-strip span {display:block; font-size:12px;}
+.of-week-strip strong {display:block; font-size:24px; font-weight:500; margin-top:4px; font-variant-numeric:tabular-nums;}
+.of-week-strip [aria-pressed=true] {background:#ceb78019; color:#ceb780;}

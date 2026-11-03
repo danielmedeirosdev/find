@@ -277,8 +277,8 @@ export function AgendaTab({ shopId, barberId }: Props) {
   if (loading) return <LoadingBlock label="Carregando agenda..." />
 
   return (
-    <div className="overflow-x-hidden">
-      <header className="mb-6 rounded-2xl border border-charcoal-light bg-gradient-to-br from-charcoal-dark via-charcoal-dark to-brass/5 p-5 sm:p-6">
+    <div className="of-workspace overflow-x-hidden">
+      <header className="of-work-panel mb-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-brass">Operação do dia</p>
@@ -436,9 +436,9 @@ export function AgendaTab({ shopId, barberId }: Props) {
               services.reduce((sum, s) => sum + (s?.duration_minutes || 0), 0)
             const busy = statusUpdatingId === b.id
             return (
-              <article key={b.id} className="relative ml-20 rounded-2xl border border-charcoal-light bg-charcoal-dark/35 p-4 transition hover:border-brass/30 sm:ml-24">
+              <article key={b.id} className="of-appointment relative ml-20 rounded-2xl border border-charcoal-light p-4 sm:ml-24">
                 <div className="absolute -left-20 top-5 w-16 text-right sm:-left-24 sm:w-20"><p className="font-mono text-base text-brass">{formatTime(b.time)}</p><p className="mt-0.5 text-[10px] uppercase tracking-wider text-charcoal-muted">{formatDate(b.date)}</p></div>
-                <span className="absolute -left-[0.41rem] top-7 h-3 w-3 rounded-full border-2 border-charcoal bg-brass shadow-[0_0_0_4px_rgba(214,163,61,0.12)]" />
+                <span className="absolute -left-[0.41rem] top-7 h-3 w-3 rounded-full border-2 border-charcoal bg-brass " />
                 <div className="flex flex-wrap justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-xs font-semibold uppercase tracking-wider text-brass">{b.barbers?.name || 'Profissional'}</p>

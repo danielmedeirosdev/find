@@ -60,8 +60,8 @@ export function ServicesTab({ shopId }: Props) {
   if (loading) return <p className="text-charcoal-muted">Carregando...</p>
 
   return (
-    <div>
-      <h2 className="font-display text-2xl text-white mb-2">Serviços e preços</h2>
+    <div className="of-workspace">
+      <header className="of-work-heading"><h2 className="font-display text-2xl text-white">Serviços e preços</h2><p>Defina o cuidado, o valor e o tempo reservado.</p></header>
 
 
       <div className="mb-8 grid gap-3 sm:grid-cols-4">
@@ -70,7 +70,7 @@ export function ServicesTab({ shopId }: Props) {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Ex: Corte masculino"
+            placeholder="Ex: Banho e tosa"
             className="w-full rounded-lg border border-charcoal-light bg-charcoal px-4 py-2 text-white placeholder:text-charcoal-muted/60 focus:border-brass focus:outline-none"
           />
         </div>
@@ -113,23 +113,17 @@ export function ServicesTab({ shopId }: Props) {
       ) : (
         <div className="space-y-4">
           {services.map((s) => (
-            <div key={s.id} className="rounded-2xl border border-charcoal-light bg-charcoal-dark/30 p-4">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <span className="font-medium text-white">{s.name}</span>
-                  <span className="ml-4 font-mono text-sm text-brass">
-                    {formatPrice(Number(s.price))}
-                  </span>
-                  <span className="ml-2 font-mono text-sm text-charcoal-muted">
-                    {formatDuration(s.duration_minutes)}
-                  </span>
-                </div>
-                <div className="flex gap-3">
-                  <button type="button" onClick={() => setEditingId(editingId === s.id ? null : s.id)} className="text-sm text-brass">
-                    {editingId === s.id ? 'Fechar' : 'Configurar serviço'}
-                  </button>
+            <div key={s.id} className="of-work-panel">
+              <div className="of-service-heading">
+                <h3 className="text-lg font-semibold text-white break-words">{s.name}</h3>
+                <div className="flex flex-wrap gap-3">
+                  <button type="button" onClick={() => setEditingId(editingId === s.id ? null : s.id)} className="text-sm text-brass">{editingId === s.id ? 'Fechar' : 'Configurar serviço'}</button>
                   <button onClick={() => removeService(s.id)} className="text-sm text-red-400 hover:text-red-300">Remover</button>
                 </div>
+              </div>
+              <div className="of-service-facts">
+                <div><span>Valor do serviço</span><strong>{formatPrice(Number(s.price))}</strong></div>
+                <div><span>Tempo reservado</span><strong>{formatDuration(s.duration_minutes)}</strong></div>
               </div>
               {editingId === s.id && (
                 <div className="mt-4 space-y-5 border-t border-charcoal-light pt-4">
