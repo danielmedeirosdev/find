@@ -9,6 +9,7 @@ export interface SubscriptionBilling {
   canConfigureCard: boolean
   hasSubscription: boolean
   pixAutomatic?: 'unavailable' | 'unverified'
+  nextPixInvoiceUrl?: string | null
 }
 export function billingDate(value: string): string {
   const date = value.slice(0,10)

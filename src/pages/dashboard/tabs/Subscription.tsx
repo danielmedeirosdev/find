@@ -143,6 +143,7 @@ export function SubscriptionTab({ shop, onUpdate, onSubscribe, subscribing, subs
           </>}
           {billing?.nextDueDate && billing.nextDueDate.slice(0,10) !== billing.paidUntil?.slice(0,10) && <p className="text-white">Próxima cobrança: <strong>{billingDate(billing.nextDueDate)}</strong></p>}
           {billing && <p className="text-charcoal-muted">{!billing.hasSubscription ? 'Assinatura ainda não contratada.' : billing.automaticRenewal ? `Renovação automática no cartão${billing.cardLast4 ? ` final ${billing.cardLast4}` : ''}.` : billing.billingType === 'CREDIT_CARD' ? 'Cartão ainda não confirmado para renovação automática.' : 'Pix manual: pague a fatura a cada mês.'}</p>}
+          {billing?.billingType === 'PIX' && billing.nextPixInvoiceUrl && <a href={billing.nextPixInvoiceUrl} target="_blank" rel="noopener noreferrer" className="flex min-h-12 w-full items-center justify-center rounded-lg bg-brass px-4 py-3 text-center text-sm font-semibold text-charcoal">Pagar próxima mensalidade com Pix</a>}
           {billing && shop.subscription_status==='active' && !billing.paidUntil && <p className="text-charcoal-muted">Período pago ainda não confirmado pelo Asaas.</p>}
           {billingError && <p role="alert" className="text-red-400">{billingError}</p>}
 

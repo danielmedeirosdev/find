@@ -6,6 +6,16 @@ import { summarizeSubscription, type ProviderSubscription } from "../_shared/sub
 import { configureRenewal } from "../_shared/configure-renewal.ts";
 import type { BillingPayment } from "../_shared/payment-entitlement.ts";
 
+function allowedInvoiceUrl(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && (url.hostname === 'asaas.com' || url.hostname.endsWith('.asaas.com'))
+      ? url.href
+      : null;
+  } catch { return null; }
+}
+
 Deno.serve(async req => {
   const cors = corsFor(req);
   const reply = (body: unknown, status=200) => new Response(JSON.stringify(body), {status,headers:{...cors.headers,'Content-Type':'application/json','Cache-Control':'no-store'}});
@@ -49,7 +59,13 @@ Deno.serve(async req => {
         const merchant=await asaasFetch<{personType?:string}>({path:'/myAccount/commercialInfo',apiKey});
         if(merchant.personType==='FISICA') pixAutomatic='unavailable';
       } catch { /* Billing details remain usable when account information is restricted. */ }
-      return reply({...summary,hasSubscription:Boolean(subscription),pixAutomatic});
+      const pendingPix = subscription?.billingType === 'PIX'
+        ? payments.filter(payment => !payment.deleted && payment.customer === shop.asaas_customer_id &&
+            payment.subscription === subscription?.id && ['PENDING','OVERDUE'].includes(payment.status ?? '') && payment.dueDate)
+          .sort((a,b)=>(a.dueDate ?? '').localeCompare(b.dueDate ?? ''))[0]
+        : null;
+      return reply({...summary,hasSubscription:Boolean(subscription),pixAutomatic,
+        nextPixInvoiceUrl:allowedInvoiceUrl(pendingPix?.invoiceUrl)});
     }
     if(!subscription || subscription.status!=='ACTIVE' || subscription.cycle!=='MONTHLY' || subscription.value!==60) {
       return reply({error:'Não encontramos uma assinatura mensal disponível para esta alteração.'},409);

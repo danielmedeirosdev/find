@@ -9,7 +9,7 @@ async function login(page:Page) {
 test('paid dates, authorized card renewal, decline and manual Pix work on mobile without real charges',async({page})=>{
  await login(page);const shop=(await data(page,'shops?select=*'))[0];
  let automatic=false;let declines=true;const mutations:string[]=[];let checkout=0;
- const billing=()=>({paidUntil:'2026-12-04',daysRemaining:31,nextDueDate:'2026-12-04',billingType:automatic?'CREDIT_CARD':'PIX',automaticRenewal:automatic,cardLast4:automatic?'4242':null,cardBrand:automatic?'VISA':null,canConfigureCard:true,hasSubscription:true,pixAutomatic:'unavailable'});
+ const billing=()=>({paidUntil:'2026-12-04',daysRemaining:31,nextDueDate:'2026-12-04',billingType:automatic?'CREDIT_CARD':'PIX',automaticRenewal:automatic,cardLast4:automatic?'4242':null,cardBrand:automatic?'VISA':null,canConfigureCard:true,hasSubscription:true,pixAutomatic:'unavailable',nextPixInvoiceUrl:automatic?null:'https://www.asaas.com/i/qa-pix-invoice'});
  await page.route('**/rest/v1/shops?*',route=>{
    if(route.request().method()!=='GET') return route.continue();
    const row={...shop,subscription_status:'active',complimentary_until:null,asaas_subscription_id:'sub_qa_controlled'};
@@ -33,6 +33,8 @@ test('paid dates, authorized card renewal, decline and manual Pix work on mobile
  await expect(page.getByText('Próxima cobrança:',{exact:false})).toHaveCount(0);
  await expect(page.getByText('31 dias restantes',{exact:true})).toBeVisible();
  await expect(page.getByText('Pix manual: pague a fatura a cada mês.',{exact:true})).toBeVisible();
+ const pixInvoice=page.getByRole('link',{name:'Pagar próxima mensalidade com Pix',exact:true});
+ await expect(pixInvoice).toHaveAttribute('href','https://www.asaas.com/i/qa-pix-invoice');
  await page.getByRole('button',{name:'Cadastrar cartão de crédito',exact:true}).click();
  const form=page.getByRole('form',{name:'Cadastrar renovação automática'});
  await form.getByRole('button',{name:'Autorizar renovação mensal',exact:true}).click();expect(mutations).toEqual([]);

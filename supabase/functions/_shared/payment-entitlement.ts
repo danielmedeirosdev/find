@@ -8,6 +8,7 @@ export type BillingPayment = {
   dueDate?: string;
   value?: number;
   deleted?: boolean;
+  invoiceUrl?: string;
 };
 
 // Only a verified payment for the current subscription cycle grants access.
