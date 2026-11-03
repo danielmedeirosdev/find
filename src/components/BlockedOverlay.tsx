@@ -14,6 +14,9 @@ import {
 type BlockReason = "trial_expired" | "payment_overdue";
 
 interface BlockedOverlayProps {
+  onCheckPayment?: () => void;
+  checkingPayment?: boolean;
+  paymentMessage?: string;
   shopName: string;
   cpfCnpj?: string | null;
   segment?: ShopSegment | string | null;
@@ -24,6 +27,9 @@ interface BlockedOverlayProps {
 }
 
 export function BlockedOverlay({
+  onCheckPayment,
+  checkingPayment,
+  paymentMessage,
   shopName,
   cpfCnpj,
   segment,
@@ -196,6 +202,14 @@ export function BlockedOverlay({
             Seus dados permanecem salvos. O acesso é reativado após a
             confirmação do pagamento.
           </p>
+
+          {onCheckPayment && (
+            <button type="button" onClick={onCheckPayment} disabled={checkingPayment || loading}
+              className="mt-4 min-h-12 w-full rounded-xl border border-brass/40 px-4 text-sm font-medium text-brass disabled:opacity-50">
+              {checkingPayment ? "Conferindo pagamento..." : "Já paguei · conferir pagamento"}
+            </button>
+          )}
+          {paymentMessage && <p role="status" className="mt-3 text-center text-sm text-charcoal-muted">{paymentMessage}</p>}
 
           {error && (
             <p className="mt-4 text-center text-sm text-red-400">{error}</p>

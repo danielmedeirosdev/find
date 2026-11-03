@@ -29,12 +29,13 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { data: shop } = await supabase
+    const { data: shop, error: lookupError } = await supabase
       .from("shops")
       .select("id, complimentary_until, asaas_subscription_id")
       .eq("asaas_customer_id", payment.customer)
       .maybeSingle();
 
+    if (lookupError) throw lookupError;
     if (!shop) {
       return new Response(JSON.stringify({ received: true, note: "shop not found" }), {
         headers: { "Content-Type": "application/json" },
@@ -47,10 +48,11 @@ Deno.serve(async (req) => {
         : null;
 
     if (paymentSubscriptionId && paymentSubscriptionId !== shop.asaas_subscription_id) {
-      await supabase
+      const link = await supabase
         .from("shops")
         .update({ asaas_subscription_id: paymentSubscriptionId })
         .eq("id", shop.id);
+      if (link.error) throw link.error;
 
       if (!shop.asaas_subscription_id) {
         await supabase.from("referral_events").insert({
@@ -70,28 +72,31 @@ Deno.serve(async (req) => {
     );
 
     if (event === "PAYMENT_CONFIRMED" || event === "PAYMENT_RECEIVED") {
-      await supabase
+      const activation = await supabase
         .from("shops")
         .update({ subscription_status: "active" })
         .eq("id", shop.id);
+      if (activation.error) throw activation.error;
 
       await supabase.rpc("convert_shop_referral", { p_shop_id: shop.id });
     } else if (event === "PAYMENT_OVERDUE") {
       // Asaas é a fonte de verdade quando há assinatura real.
       // complimentary_until não pode esconder inadimplência do Asaas.
       if (hasAsaasSubscription) {
-        await supabase
+        const blocking = await supabase
           .from("shops")
           .update({ subscription_status: "blocked" })
           .eq("id", shop.id);
+        if (blocking.error) throw blocking.error;
       } else {
         const complimentaryActive =
           shop.complimentary_until && new Date(shop.complimentary_until) > new Date();
         if (!complimentaryActive) {
-          await supabase
+          const blocking = await supabase
             .from("shops")
             .update({ subscription_status: "blocked" })
             .eq("id", shop.id);
+          if (blocking.error) throw blocking.error;
         }
       }
     }

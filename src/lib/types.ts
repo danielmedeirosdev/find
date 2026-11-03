@@ -22,6 +22,7 @@ export interface Shop {
   hours_text: string | null
   description?: string | null
   cpf_cnpj: string | null
+  asaas_subscription_id?: string | null
   asaas_customer_id: string | null
   subscription_status: SubscriptionStatus
   trial_ends_at: string | null

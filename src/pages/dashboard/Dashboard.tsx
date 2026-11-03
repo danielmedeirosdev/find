@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { supabase, invokeFunction } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
@@ -25,7 +25,12 @@ export function Dashboard() {
   const [subscribing, setSubscribing] = useState(false)
   const [subscribeError, setSubscribeError] = useState('')
 
-  const loadMembership = async () => {
+  const [checkingPayment, setCheckingPayment] = useState(false)
+  const [paymentMessage, setPaymentMessage] = useState('')
+  const checkingRef = useRef(false)
+  const lastCheck = useRef(0)
+
+  const loadMembership = useCallback(async () => {
     if (!user) return
 
     try {
@@ -105,7 +110,7 @@ export function Dashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
 
   useEffect(() => {
     if (authLoading) return
@@ -114,7 +119,41 @@ export function Dashboard() {
       return
     }
     loadMembership()
-  }, [user, authLoading])
+  }, [user, authLoading, loadMembership])
+
+  const paymentShopId = shop?.id
+  const checkPayment = useCallback(async (manual = false) => {
+    if (!paymentShopId || role !== 'owner' || checkingRef.current) return
+    if (!manual && Date.now() - lastCheck.current < 30000) return
+    checkingRef.current = true
+    lastCheck.current = Date.now()
+    setCheckingPayment(true)
+    setPaymentMessage('')
+    try {
+      const result = await invokeFunction<{ active: boolean }>('check-subscription', { shop_id: paymentShopId })
+      if (result.active) await loadMembership()
+      else if (manual) setPaymentMessage('O pagamento ainda não foi confirmado. Não pague novamente; confira em instantes.')
+    } catch {
+      if (manual) setPaymentMessage('Não foi possível conferir agora. Tente novamente em instantes.')
+    } finally {
+      checkingRef.current = false
+      setCheckingPayment(false)
+    }
+  }, [paymentShopId, role, loadMembership])
+
+  useEffect(() => {
+    if (shop?.subscription_status !== 'blocked' || role !== 'owner') return
+    if (shop.asaas_subscription_id) void checkPayment()
+    const refresh = () => {
+      if (document.visibilityState === 'visible') void checkPayment()
+    }
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', refresh)
+    return () => {
+      window.removeEventListener('focus', refresh)
+      document.removeEventListener('visibilitychange', refresh)
+    }
+  }, [shop?.subscription_status, shop?.asaas_subscription_id, role, checkPayment])
 
   const handleSubscribe = async (billingType: 'PIX' | 'CREDIT_CARD' = 'PIX', cpfCnpj?: string) => {
     if (!shop || !user || role !== 'owner') return
@@ -213,6 +252,9 @@ export function Dashboard() {
     return (
       <SegmentProvider segment={isPet ? 'pet' : 'barbershop'}>
         <BlockedOverlay
+          onCheckPayment={() => void checkPayment(true)}
+          checkingPayment={checkingPayment}
+          paymentMessage={paymentMessage}
           shopName={shop.name}
           cpfCnpj={shop.cpf_cnpj}
           segment={isPet ? 'pet' : 'barbershop'}
