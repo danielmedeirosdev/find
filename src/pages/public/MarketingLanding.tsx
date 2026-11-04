@@ -79,42 +79,39 @@ export function MarketingLanding() {
             </p>
             <div className="mkt-hero-actions">
               <StartLink placement="hero" />
-              <a href="#recursos" className="mkt-secondary">
-                Ver como funciona <AppIcon name="arrow-right" size={18} />
-              </a>
+              {!user && (
+                <div className="mkt-google">
+                  <GoogleSignInButton
+                    disabled={googleBusy}
+                    onError={setGoogleError}
+                    onCredential={async (response, nonce) => {
+                      setGoogleBusy(true);
+                      setGoogleError("");
+                      try {
+                        const result = await completeGoogleCredentialLogin(
+                          "barber",
+                          response,
+                          nonce,
+                          "Meu Pet Shop",
+                          "pet",
+                        );
+                        navigate(result.redirectTo);
+                      } catch (error) {
+                        setGoogleError(
+                          error instanceof Error
+                            ? error.message
+                            : "Não foi possível entrar. Tente pelo cadastro.",
+                        );
+                        setGoogleBusy(false);
+                      }
+                    }}
+                  />
+                </div>
+              )}
             </div>
             <p className="mkt-hero-terms">
               30 dias grátis <i /> Sem cartão
             </p>
-            {!user && (
-              <div className="mkt-google">
-                <GoogleSignInButton
-                  disabled={googleBusy}
-                  onError={setGoogleError}
-                  onCredential={async (response, nonce) => {
-                    setGoogleBusy(true);
-                    setGoogleError("");
-                    try {
-                      const result = await completeGoogleCredentialLogin(
-                        "barber",
-                        response,
-                        nonce,
-                        "Meu Pet Shop",
-                        "pet",
-                      );
-                      navigate(result.redirectTo);
-                    } catch (error) {
-                      setGoogleError(
-                        error instanceof Error
-                          ? error.message
-                          : "Não foi possível entrar. Tente pelo cadastro.",
-                      );
-                      setGoogleBusy(false);
-                    }
-                  }}
-                />
-              </div>
-            )}
             {googleError && (
               <p className="mkt-google-error" role="alert">
                 Google indisponível.{" "}
