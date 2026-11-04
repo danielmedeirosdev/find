@@ -379,15 +379,9 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
   }
 
 
-  const activeBookings = bookings.filter(
-    (b) =>
-      b.status === 'scheduled' ||
-      b.status === 'confirmed' ||
-      b.status === 'in_progress' ||
-      b.status === 'awaiting_payment' ||
-      !b.status
-  )
-  const filtered = activeBookings.filter((b) => b.date === selectedDay)
+  // The date query already scopes the agenda. Keep completed work visible on
+  // historical days; archived records remain in the recoverable archive.
+  const filtered = bookings.filter((b) => b.date === selectedDay)
 
   return (
     <div className="of-workspace overflow-x-hidden">
@@ -526,7 +520,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
         </div>
       </details>
 
-      {!barberId && <div className="mb-4 flex flex-wrap gap-2"><HistoricalBooking rules={sizeRules} discounts={weekdayDiscounts} shopId={shopId} services={shopServices} onSaved={()=>void load()}/><AgendaManagement loading={loading} shopId={shopId} bookings={filtered} services={shopServices} rules={sizeRules} onChanged={()=>void load()}/></div>}
+      {!barberId && <div className="mb-4 flex flex-wrap gap-2"><HistoricalBooking rules={sizeRules} discounts={weekdayDiscounts} shopId={shopId} services={shopServices} onSaved={()=>void load()}/><AgendaManagement loading={loading} shopId={shopId} bookings={filtered} date={selectedDay} services={shopServices} rules={sizeRules} onChanged={()=>void load()}/></div>}
       {loading ? <LoadingBlock label="Carregando agenda..." /> : loadError ? <button type="button" onClick={() => void load()} className="min-h-11 rounded-xl border border-charcoal-light px-4 text-sm text-white">Tentar novamente</button> : filtered.length === 0 ? (
         <EmptyState
           title="Nenhum agendamento neste dia."
@@ -614,12 +608,13 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
                   </div>
                   <p className="font-mono text-brass">{formatPrice(total)}</p>
                 </div>
+          {b.customer_package_id && <p className="mt-3 text-xs font-medium text-brass">Sessão de pacote vinculada a este atendimento</p>}
           <BookingConfirmationReminder booking={b} shopName={shopName} due={pendingReminderIds.includes(b.id)} onUpdate={async()=>{await load();onReminderUpdate?.()}}/>
-          <button type="button" onClick={() => { setReservedMinutes(String(b.duration_minutes || 30)); setEditStaffId(b.barber_id); setEditingBooking(b); setExtraServiceIds([]); setExtraError('');setEditScheduleValid(false);setEditDate(b.date);setEditTime(b.time.slice(0,5));setEditNotes(b.notes||'') }}
+          {['scheduled','confirmed','in_progress','awaiting_payment'].includes(status) && <button type="button" onClick={() => { setReservedMinutes(String(b.duration_minutes || 30)); setEditStaffId(b.barber_id); setEditingBooking(b); setExtraServiceIds([]); setExtraError('');setEditScheduleValid(false);setEditDate(b.date);setEditTime(b.time.slice(0,5));setEditNotes(b.notes||'') }}
             className="min-h-11 w-full rounded-xl border border-brass/40 px-4 py-2.5 text-center text-sm font-medium text-brass hover:bg-brass/10 sm:w-auto">
             Editar / adicionar serviços
-          </button>
-                <BookingActions
+          </button>}
+                {['scheduled','confirmed','in_progress','awaiting_payment'].includes(status) && <BookingActions
                   compact
                   status={b.status}
                   busy={statusUpdatingId === b.id}
@@ -627,7 +622,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
                   onStatusChange={(nextStatus) => requestStatusChange(b, nextStatus)}
                   onComplete={() => setCompletingBooking(b)}
                   className="mt-4"
-                />
+                />}
               </article>
             )
           })}
