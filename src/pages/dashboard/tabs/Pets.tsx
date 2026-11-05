@@ -6,6 +6,7 @@ import { deleteShopMedia, uploadShopMedia } from '../../../lib/media'
 import { petSizeLabel } from '../../../lib/pet'
 import { formatPhone, whatsappUrl, bookingStatusLabel } from '../../../lib/format'
 import { DefaultAvatar, ImageDropzone, ProgressBar, Toast } from '../../../components/MediaUI'
+import { EmptyState, InlineError, LoadingBlock } from '../../../components/EmptyState'
 import { FieldLabel } from '../../../components/FormHints'
 import { PET_SIZES, type BookingWithDetails, type Pet, type PetSize, type ShopCustomer } from '../../../lib/types'
 import { formatDate, formatTime } from '../../../lib/format'
@@ -20,6 +21,7 @@ export function PetsTab({ shopId }: Props) {
   const [pets, setPets] = useState<Pet[]>([])
   const [customers, setCustomers] = useState<ShopCustomer[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [search,setSearch] = useState('')
   const [selected, setSelected] = useState<Pet | null>(null)
   const [toast, setToast] = useState<string | null>(null)
@@ -47,7 +49,7 @@ export function PetsTab({ shopId }: Props) {
   const [detailTab, setDetailTab] = useState<PetDetailTab>('history')
 
   const load = useCallback(async () => {
-    const [{ data: p }, { data: c }] = await Promise.all([
+    const [{ data: p, error: petError }, { data: c, error: customerError }] = await Promise.all([
       supabase
         .from('pets')
         .select('*, shop_customers(*)')
@@ -55,6 +57,7 @@ export function PetsTab({ shopId }: Props) {
         .order('name'),
       supabase.from('shop_customers').select('*').eq('shop_id', shopId).order('name'),
     ])
+    setLoadError(petError || customerError ? 'Não foi possível carregar pets e responsáveis.' : '')
     setPets((p as Pet[]) || [])
     setCustomers((c as ShopCustomer[]) || [])
     setLoading(false)
@@ -242,7 +245,9 @@ export function PetsTab({ shopId }: Props) {
     load()
   }
 
-  if (loading) return <p className="text-charcoal-muted">Carregando...</p>
+  if (loading) return <LoadingBlock label="Carregando pets..." />
+
+  const filteredPets = pets.filter(p=>`${p.name} ${p.breed||''} ${p.shop_customers?.name||''}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()))
 
   return (
     <div className="of-workspace">
@@ -261,6 +266,7 @@ export function PetsTab({ shopId }: Props) {
       </div>
 
       <label className="mb-4 block text-sm text-charcoal-muted">Buscar pet<input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Pet, raça ou tutor" className="mt-2 w-full rounded-lg border border-charcoal-light bg-charcoal p-3"/></label>
+      {loadError && <div className="mb-4 flex flex-wrap items-center gap-3"><InlineError message={loadError} /><button type="button" onClick={()=>void load()} className="rounded-lg border border-charcoal-light px-3 text-sm text-white">Tentar novamente</button></div>}
       {showForm && (
         <div className="mb-8 of-work-panel space-y-3">
           <h3 className="font-medium text-white">Cadastrar pet</h3>
@@ -440,10 +446,12 @@ export function PetsTab({ shopId }: Props) {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-3">
-          {pets.length === 0 ? (
-            <p className="text-charcoal-muted">Nenhum pet cadastrado ainda.</p>
+          {!loadError && pets.length === 0 ? (
+            <EmptyState title="Os pets aparecem aqui" description="Cadastre o primeiro pet para consultar cuidados e atendimentos em seu perfil." actionLabel="Cadastrar pet" onAction={()=>setShowForm(true)} />
+          ) : !loadError && filteredPets.length === 0 ? (
+            <EmptyState title="Nenhum pet encontrado" description="Confira o nome, a raça ou o tutor e tente outra busca." actionLabel="Limpar busca" onAction={()=>setSearch('')} />
           ) : (
-            pets.filter(p=>`${p.name} ${p.breed||''} ${p.shop_customers?.name||''}`.toLocaleLowerCase().includes(search.toLocaleLowerCase())).map((pet) => (
+            filteredPets.map((pet) => (
               <button
                 key={pet.id}
                 type="button"

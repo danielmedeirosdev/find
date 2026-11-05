@@ -1386,6 +1386,10 @@ html {
 .of-week-strip span {display:block; font-size:12px;}
 .of-week-strip strong {display:block; font-size:24px; font-weight:500; margin-top:4px; font-variant-numeric:tabular-nums;}
 .of-week-strip [aria-pressed=true] {background:#ceb78019; color:#ceb780;}
+.of-agenda-date-panel { padding-block: 16px; }
+.of-agenda-date-panel .of-week-strip { margin-bottom: 12px; }
+.of-agenda-date-input { box-sizing: border-box; font-variant-numeric: tabular-nums; }
+@media(max-width:390px) { .of-agenda-date-panel { padding-inline: 12px; } .of-agenda-date-input { font-size: 13px; } }
 
 .payment-heading {display:flex; align-items:center; justify-content:space-between; gap:16px;}
 .payment-brands {display:flex; flex-wrap:wrap; gap:8px; margin-top:20px;}

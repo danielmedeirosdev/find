@@ -448,7 +448,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
         </div>
       )}
 
-      <section aria-label="Consulta por dia" className="of-work-panel mb-4 min-w-0">
+      <section aria-label="Consulta por dia" className="of-work-panel of-agenda-date-panel mb-4 min-w-0">
         <div className="of-week-strip" aria-label="Dias próximos">
           {Array.from({ length: 5 }, (_, index) => {
             const date = new Date(`${selectedDay}T12:00:00`)
@@ -457,10 +457,10 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
             return <button key={value} type="button" aria-pressed={value === selectedDay} aria-label={new Intl.DateTimeFormat('pt-BR',{dateStyle:'full'}).format(date)} onClick={() => chooseDay(value)}><span>{new Intl.DateTimeFormat('pt-BR',{weekday:'short'}).format(date)}</span><strong>{date.getDate()}</strong></button>
           })}
         </div>
-        <div className="agenda-day-navigation mx-auto grid min-w-0 max-w-sm grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-2">
+        <div className="agenda-day-navigation mx-auto grid min-w-0 max-w-sm grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-2">
           <button type="button" aria-label="Dia anterior" onClick={() => moveDay(-1)} className="min-h-11 rounded-lg border border-charcoal-light text-xl text-white">‹</button>
-          <label className="block min-w-0 text-center text-[10px] uppercase tracking-[.16em] text-charcoal-muted">Ir para uma data
-            <input style={{width:"100%",minWidth:0,boxSizing:"border-box"}} type="date" value={selectedDay} onChange={event => chooseDay(event.target.value)} className="mt-1 block min-h-10 w-full min-w-0 max-w-full border-0 border-b border-charcoal-light bg-transparent px-1 text-center text-sm text-white [color-scheme:dark]" />
+          <label className="block min-w-0 text-center text-[11px] text-charcoal-muted">Consultar outra data
+            <input type="date" value={selectedDay} onChange={event => chooseDay(event.target.value)} className="of-agenda-date-input mt-1 block min-h-11 w-full min-w-0 max-w-full rounded-lg border border-charcoal-light bg-charcoal px-2 text-center text-sm text-white [color-scheme:dark]" />
           </label>
           <button type="button" aria-label="Dia seguinte" onClick={() => moveDay(1)} className="min-h-11 rounded-lg border border-charcoal-light text-xl text-white">›</button>
         </div>

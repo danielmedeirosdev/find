@@ -6,6 +6,7 @@ import { petSizeLabel } from '../../../lib/pet'
 import { packageRemaining } from '../../../lib/notifications'
 import { FieldLabel } from '../../../components/FormHints'
 import { DefaultAvatar, Toast } from '../../../components/MediaUI'
+import { EmptyState, InlineError, LoadingBlock } from '../../../components/EmptyState'
 import type {
   BookingWithDetails,
   CustomerPackage,
@@ -145,9 +146,10 @@ export function CustomersTab({ shopId }: Props) {
     load()
   }
 
-  if (loading) return <p className="text-charcoal-muted">Carregando...</p>
+  if (loading) return <LoadingBlock label="Carregando clientes e pets..." />
 
   const selected = customers.find((c) => c.id === selectedId)
+  const filteredCustomers = customers.filter(c=>`${c.name} ${c.phone}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()) || (!!search.replace(/\D/g,'') && c.phone.includes(search.replace(/\D/g,''))))
 
   return (
     <div className="of-workspace">
@@ -155,7 +157,7 @@ export function CustomersTab({ shopId }: Props) {
       <header className="of-work-heading"><h2 className="font-display text-2xl text-white">Clientes</h2><p>Contato, pets e histórico de cada tutor.</p></header>
 
 
-      <details className="of-section mb-5"><summary className="cursor-pointer font-medium text-brass">Cadastrar cliente</summary><div className="mt-4 grid gap-3 sm:grid-cols-3">
+      <details id="cadastrar-cliente" className="of-section mb-5"><summary className="cursor-pointer font-medium text-brass">+ Cadastrar cliente</summary><div className="mt-4 grid gap-3 sm:grid-cols-3">
         <div>
           <FieldLabel>Nome (opcional)</FieldLabel>
           <input
@@ -183,14 +185,16 @@ export function CustomersTab({ shopId }: Props) {
           </button>
         </div>
       </div>
-      </details><label className="block text-sm text-charcoal-muted">Buscar cliente<input value={search} onChange={e=>setSearch(e.target.value)} type="search" placeholder="Nome ou WhatsApp" className="mt-2 w-full rounded-lg border border-charcoal-light bg-charcoal p-3"/></label>{loadError && <p role="alert">{loadError}</p>}
+      </details><label className="block text-sm text-charcoal-muted">Buscar cliente<input value={search} onChange={e=>setSearch(e.target.value)} type="search" placeholder="Nome ou WhatsApp" className="mt-2 w-full rounded-lg border border-charcoal-light bg-charcoal p-3"/></label>{loadError && <div className="mt-3 flex flex-wrap items-center gap-3"><InlineError message={loadError} /><button type="button" onClick={()=>void load()} className="rounded-lg border border-charcoal-light px-3 text-sm text-white">Tentar novamente</button></div>}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="space-y-2">
-          {customers.length === 0 ? (
-            <p className="text-charcoal-muted">Nenhum cliente ainda.</p>
+          {!loadError && customers.length === 0 ? (
+            <EmptyState title="Seus clientes aparecem aqui" description="Cadastre o primeiro tutor para reunir contato, pets e atendimentos em um só lugar." actionLabel="Cadastrar cliente" onAction={()=>document.querySelector<HTMLDetailsElement>('#cadastrar-cliente')?.setAttribute('open','')} />
+          ) : !loadError && filteredCustomers.length === 0 ? (
+            <EmptyState title="Nenhum cliente encontrado" description="Confira o nome ou WhatsApp e tente outra busca." actionLabel="Limpar busca" onAction={()=>setSearch('')} />
           ) : (
-            customers.filter(c=>`${c.name} ${c.phone}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()) || (!!search.replace(/\D/g,'') && c.phone.includes(search.replace(/\D/g,'')))).map((c) => {
+            filteredCustomers.map((c) => {
               const whatsapp = whatsappUrl(c.phone)
               return (
                 <div

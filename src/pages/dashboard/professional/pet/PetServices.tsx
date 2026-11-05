@@ -7,7 +7,7 @@ import { FieldHint, FieldLabel } from '../../../../components/FormHints'
 import { ServiceProfessionalPicker } from '../../../../components/ServiceProfessionalPicker'
 import { ServiceAdvancedSettings } from '../../../../components/ServiceAdvancedSettings'
 import { AppIcon } from '../../../../components/AppIcon'
-import { InlineError } from '../../../../components/EmptyState'
+import { EmptyState, InlineError, LoadingBlock } from '../../../../components/EmptyState'
 import { userFacingError } from '../../../../lib/userFacingError'
 import { PET_SIZES, type PetSize, type Service, type ServicePetTransport, type ServiceSizeRule } from '../../../../lib/types'
 
@@ -31,10 +31,17 @@ export function PetServices({ shopId }: Props) {
   const [serviceError, setServiceError] = useState('')
   const [serviceSaving, setServiceSaving] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
-    const { data } = await supabase.from('services').select('*').eq('shop_id', shopId).order('name')
+    const { data, error } = await supabase.from('services').select('*').eq('shop_id', shopId).order('name')
+    if (error) {
+      setLoadError('Não foi possível carregar os serviços. Tente novamente.')
+      setLoading(false)
+      return
+    }
+    setLoadError('')
     const list = data || []
     setServices(list)
 
@@ -183,15 +190,16 @@ export function PetServices({ shopId }: Props) {
     await load()
   }
 
-  if (loading) return <p className="text-charcoal-muted">Carregando...</p>
+  if (loading) return <LoadingBlock label="Carregando serviços..." />
 
   const transportEnabled = transportSettings.some((item) => item.enabled)
 
   return (
     <div className="of-workspace">
       <h2 className="font-display text-2xl text-white mb-2">Serviços de banho e tosa</h2>
+      {loadError && <div className="mb-4 flex flex-wrap items-center gap-3"><InlineError message={loadError} /><button type="button" onClick={()=>void load()} className="rounded-lg border border-charcoal-light px-3 text-sm text-white">Tentar novamente</button></div>}
 
-
+      {!loadError && <>
       <section className="mb-8 rounded-2xl border border-brass/35 bg-gradient-to-br from-brass/10 to-transparent p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex max-w-2xl items-start gap-3">
@@ -251,7 +259,12 @@ export function PetServices({ shopId }: Props) {
         {!services.length ? <p className="mt-4 text-xs text-charcoal-muted">Cadastre o primeiro serviço para liberar esta configuração.</p> : null}
       </section>
 
-      <div className="mb-8 grid gap-3 sm:grid-cols-4">
+      <section aria-labelledby="new-service-heading" className="of-work-panel mb-6">
+        <div className="mb-5">
+          <h3 id="new-service-heading" className="text-lg font-semibold text-white">Novo serviço</h3>
+          <p className="mt-1 text-sm text-charcoal-muted">Defina o nome, o preço base e o tempo reservado na agenda.</p>
+        </div>
+      <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <FieldLabel>Nome do serviço</FieldLabel>
           <input
@@ -273,24 +286,25 @@ export function PetServices({ shopId }: Props) {
           />
           <FieldHint>Usado como base; ajuste por porte abaixo.</FieldHint>
         </div>
-        <div className="sm:col-span-4">
+        <div className="border-t border-charcoal-light pt-4 sm:col-span-2">
           <PetDurationFields value={durationDraft} onChange={setDurationDraft} disabled={serviceSaving} />
         </div>
-        <div className="flex items-end">
+        <div className="flex items-end sm:col-span-2 sm:justify-end">
           <button
             onClick={addService}
             disabled={serviceSaving}
-            className="w-full rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal"
+            className="w-full rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal sm:w-auto sm:min-w-40"
           >
             Adicionar
           </button>
         </div>
       </div>
+      </section>
 
       {serviceError && <InlineError message={serviceError} />}
 
       {services.length === 0 ? (
-        <p className="text-charcoal-muted">Nenhum serviço cadastrado ainda.</p>
+        <EmptyState title="Seus serviços aparecem aqui" description="Cadastre o primeiro serviço acima para definir horários, preços por porte e agendamentos." />
       ) : (
         <div className="space-y-4">
           {services.map((s) => (
@@ -365,6 +379,7 @@ export function PetServices({ shopId }: Props) {
           ))}
         </div>
       )}
+      </>}
     </div>
   )
 }
