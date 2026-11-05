@@ -49,22 +49,11 @@ export function StoryHeader() {
             aria-controls="mkt-menu"
             onClick={() => setOpen(!open)}
           >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              aria-hidden="true"
-            >
-              {open ? (
-                <path d="m6 6 12 12M18 6 6 18" />
-              ) : (
-                <path d="M4 8h16M4 16h16" />
-              )}
-            </svg>
+            <span className="mkt-menu-icon" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </span>
           </button>
         </div>
       </div>
