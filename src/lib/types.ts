@@ -135,6 +135,7 @@ export interface Booking {
   notes?: string | null
   quoted_amount?: number | null
   services_amount?: number | null
+  package_base_services_amount?: number | null
   discount_amount?: number
   extras_amount?: number
   pet_transport_requested?: boolean

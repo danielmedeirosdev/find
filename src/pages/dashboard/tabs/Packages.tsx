@@ -41,9 +41,13 @@ export function PackagesTab({ shopId }: Props) {
   const [balances,setBalances]=useState<{package_id:string;total:number;received:number;balance:number}[]>([])
   const [receiving,setReceiving]=useState<string|null>(null)
   const [receiveAmount,setReceiveAmount]=useState('')
+  const [receiveTotal,setReceiveTotal]=useState('')
   const [receiveMethod,setReceiveMethod]=useState('pix')
   const [receiveId,setReceiveId]=useState('')
   const [receivingBusy,setReceivingBusy]=useState(false)
+  const receivingBalance = balances.find(b => b.package_id === receiving)
+  const parsedReceiveTotal = Number(receiveTotal.replace(',', '.'))
+  const parsedReceiveAmount = Number(receiveAmount.replace(',', '.'))
   const [assignPackageId, setAssignPackageId] = useState('')
   const [assignCustomerId, setAssignCustomerId] = useState('')
   const [assignPetId, setAssignPetId] = useState('')
@@ -206,7 +210,38 @@ export function PackagesTab({ shopId }: Props) {
 
   return (
     <div className="of-workspace space-y-8">
-      {receiving&&<Modal label="Receber pacote" onClose={()=>setReceiving(null)} busy={receivingBusy} className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3"><div className="w-full max-w-md space-y-3 rounded-xl bg-charcoal p-4"><h3 className="text-lg text-white">Receber pacote</h3><label className="block text-sm text-white">Valor recebido (R$)<input className="min-h-11 w-full rounded-lg bg-charcoal-dark p-3" inputMode="decimal" value={receiveAmount} onChange={e=>{setReceiveAmount(e.target.value);setReceiveId(crypto.randomUUID())}}/></label><label className="block text-sm text-white">Forma de pagamento<select className="min-h-11 w-full rounded-lg bg-charcoal-dark p-3" value={receiveMethod} onChange={e=>{setReceiveMethod(e.target.value);setReceiveId(crypto.randomUUID())}}><option value="pix">Pix</option><option value="cartao">Cartão</option><option value="dinheiro">Dinheiro</option></select></label><div className="grid grid-cols-2 gap-2"><button disabled={receivingBusy} className="min-h-11 text-white" onClick={()=>setReceiving(null)}>Cancelar</button><button disabled={receivingBusy} className="min-h-11 rounded-lg bg-brass text-charcoal" onClick={async()=>{const amount=Number(receiveAmount.replace(',','.'));if(!Number.isFinite(amount)||amount<=0){setToast('Informe um valor válido.');return}setReceivingBusy(true);const r=await supabase.rpc('receive_package_payment',{p_package_id:receiving,p_amount:amount,p_method:receiveMethod,p_request_id:receiveId});if(r.error){setReceivingBusy(false);setToast(r.error.message);return}await load();setReceivingBusy(false);setReceiving(null)}}>{receivingBusy?'Salvando...':'Registrar recebimento'}</button></div></div></Modal>}
+      {receiving && <Modal label="Receber pacote" onClose={() => setReceiving(null)} busy={receivingBusy} className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3">
+        <div className="w-full max-w-md space-y-4 rounded-xl border border-charcoal-light bg-charcoal p-5">
+          <h3 className="text-lg font-semibold text-white">Receber pacote</h3>
+          <p className="text-sm text-charcoal-muted">Ajuste o valor combinado somente para este pacote. O preço do modelo e as sessões não mudam.</p>
+          <label className="block text-sm text-white">Valor total deste pacote (R$)
+            <input className="mt-1 min-h-11 w-full rounded-lg border border-charcoal-light bg-charcoal-dark p-3 text-white" inputMode="decimal" value={receiveTotal} onChange={e => {setReceiveTotal(e.target.value);setReceiveId(crypto.randomUUID())}} />
+          </label>
+          <p className="text-sm text-charcoal-muted">Já recebido: {formatPrice(Number(receivingBalance?.received || 0))}</p>
+          <label className="block text-sm text-white">Receber agora (R$)
+            <input className="mt-1 min-h-11 w-full rounded-lg border border-charcoal-light bg-charcoal-dark p-3 text-white" inputMode="decimal" value={receiveAmount} onChange={e => {setReceiveAmount(e.target.value);setReceiveId(crypto.randomUUID())}} />
+          </label>
+          <label className="block text-sm text-white">Forma de pagamento
+            <select className="mt-1 min-h-11 w-full rounded-lg border border-charcoal-light bg-charcoal-dark p-3 text-white" value={receiveMethod} onChange={e => {setReceiveMethod(e.target.value);setReceiveId(crypto.randomUUID())}}>
+              <option value="pix">Pix</option><option value="cartao">Cartão</option><option value="dinheiro">Dinheiro</option>
+            </select>
+          </label>
+          {Number.isFinite(parsedReceiveTotal) && Number.isFinite(parsedReceiveAmount) &&
+            <p className="text-sm text-brass">Restará: {formatPrice(Math.max(0,parsedReceiveTotal-Number(receivingBalance?.received||0)-parsedReceiveAmount))}</p>}
+          <div className="grid grid-cols-2 gap-2">
+            <button disabled={receivingBusy} className="min-h-11 text-white" onClick={() => setReceiving(null)}>Cancelar</button>
+            <button disabled={receivingBusy} className="min-h-11 rounded-lg bg-brass px-3 font-semibold text-charcoal disabled:opacity-50" onClick={async () => {
+              if (!receiving || !receivingBalance || !/^\d+(?:[,.]\d{1,2})?$/.test(receiveTotal.trim()) || !/^\d+(?:[,.]\d{1,2})?$/.test(receiveAmount.trim()) || parsedReceiveAmount<=0 || parsedReceiveTotal>999999.99 || parsedReceiveTotal<Number(receivingBalance.received)+parsedReceiveAmount) {
+                setToast('Confira o valor total e o recebido. O total não pode ser menor que o que já entrou.');return
+              }
+              setReceivingBusy(true)
+              const {error} = await supabase.rpc('receive_package_payment_with_total',{p_package_id:receiving,p_total:parsedReceiveTotal,p_amount:parsedReceiveAmount,p_method:receiveMethod,p_request_id:receiveId})
+              if(error){setReceivingBusy(false);setToast(error.message);return}
+              await load();setReceivingBusy(false);setReceiving(null);setToast('Recebimento registrado no pacote.')
+            }}>{receivingBusy?'Salvando...':'Registrar recebimento'}</button>
+          </div>
+        </div>
+      </Modal>}
       <Toast message={toast} onClose={() => setToast(null)} />
       <div className="of-work-heading">
         <h2 className="font-display text-2xl text-white mb-2">Pacotes</h2>
@@ -353,7 +388,7 @@ export function PackagesTab({ shopId }: Props) {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {balance&&<p className="w-full text-sm text-brass">{Number(balance.balance)>0?`Pendente ${formatPrice(Number(balance.balance))}`:'Quitado'} · Recebido {formatPrice(Number(balance.received))}</p>}
-                    {balance&&Number(balance.balance)>0&&<button className="min-h-11 rounded-lg bg-brass px-3 text-sm text-charcoal" onClick={()=>{setReceiving(pkg.id);setReceiveAmount(Number(balance.balance).toFixed(2).replace('.',','));setReceiveMethod('pix');setReceiveId(crypto.randomUUID())}}>Receber pacote</button>}
+                    {balance&&<button className="min-h-11 rounded-lg bg-brass px-3 text-sm text-charcoal" onClick={()=>{setReceiving(pkg.id);setReceiveTotal(Number(balance.total).toFixed(2).replace('.',','));setReceiveAmount(Number(balance.balance).toFixed(2).replace('.',','));setReceiveMethod('pix');setReceiveId(crypto.randomUUID())}}>{Number(balance.balance)>0?'Receber pacote':'Ajustar valor e receber'}</button>}
                     <button onClick={() => editAssigned(pkg)} className="rounded-lg border border-brass px-3 py-1.5 text-sm text-brass">Editar</button>
                     <button
                       onClick={() => setSelectedPkgId(pkg.id)}

@@ -60,7 +60,7 @@ export function CompleteBookingModal({ booking, shopServices, onClose, onComplet
   const parsedTransportFee = Number(transportFee.replace(',', '.'))
   const pricedServices=shopServices.map(s=>({...s,price:Math.round(applyWeekdayDiscount(getPetServicesPrice([s],booking.pets?.size||'medio',rules),s.id,booking.date,discounts)*100)/100}))
   const quotedTotal = selectedBookingTotal(booking, selectedIds, pricedServices, booking.pet_transport_requested && Number.isFinite(parsedTransportFee) ? parsedTransportFee : 0)
-  const total = amountDue(quotedTotal,Number(booking.services_amount ?? booking.booking_services?.reduce((sum,s)=>sum+Number(s.services.price),0) ?? 0),Boolean(selectedPackageId))
+  const total = amountDue(quotedTotal,Number(booking.package_base_services_amount ?? booking.services_amount ?? booking.booking_services?.reduce((sum,s)=>sum+Number(s.services.price),0) ?? 0),Boolean(selectedPackageId))
 
   const toggleService = (id: string) => {
     setSelectedIds((prev) => {
