@@ -1,6 +1,11 @@
 {
   "redirects": [
     {
+      "source": "/onefind-banco-de-dados-1/:path*",
+      "destination": "/",
+      "permanent": true
+    },
+    {
       "source": "/b/:slug",
       "destination": "/:slug",
       "permanent": true

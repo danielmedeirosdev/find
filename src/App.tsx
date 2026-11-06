@@ -41,6 +41,7 @@ export default function App() {
           <Route path="recursos/:featureId" element={<FeaturePage />} />
           <Route path="faq" element={<Faq />} />
           <Route path="solucoes" element={<Navigate to="/" replace />} />
+          <Route path="onefind-banco-de-dados-1/*" element={<Navigate to="/" replace />} />
 
           <Route element={<PublicLayout />}>
             <Route path="pet/:shopId" element={<PetBooking />} />
@@ -57,7 +58,6 @@ export default function App() {
 
             <Route path="novidades" element={<Navigate to="/" replace />} />
             <Route path=":slug" element={<ShopPublic />} />
-          <Route path="*" element={<NotFound />} />
           </Route>
 
           <Route path="interno" element={<InternalAdminLayout />}>
