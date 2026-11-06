@@ -36,7 +36,7 @@ export function useMarketingScroll() {
   }, [pathname, hash]);
 }
 
-// Follow scroll with gentle, time-based inertia instead of snapping to each event.
+// Continuous movement, independent of page scrolling, with a seamless repeated row.
 export function useScrollRails() {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -46,55 +46,30 @@ export function useScrollRails() {
     const rows = Array.from(root.querySelectorAll<HTMLElement>(".mkt-rail"));
     let frame = 0;
     let lastTime = 0;
-    let progress = 0.5;
-    let target = progress;
-    let top = 0;
-    let height = 1;
-    let travel: number[] = [];
-    const measure = () => {
-      const bounds = root.getBoundingClientRect();
-      top = bounds.top + window.scrollY;
-      height = bounds.height;
-      travel = rows.map(row => Math.min(280, Math.max(0, row.scrollWidth - root.clientWidth)));
-      schedule();
-    };
-    const paint = () => rows.forEach((row, i) => {
-      const shift = reduced.matches ? 0 : -travel[i] * (i === 0 ? progress : 1 - progress);
-      row.style.transform = `translate3d(${shift}px, 0, 0)`;
-    });
+    let distance = 0;
     const tick = (time: number) => {
-      frame = 0;
-      const dt = lastTime ? Math.min(64, time - lastTime) : 16.67;
+      const dt = lastTime ? Math.min(time - lastTime, 64) : 0;
       lastTime = time;
-      progress += (target - progress) * (1 - Math.exp(-dt / 180));
-      if (Math.abs(target - progress) < 0.0001) progress = target;
-      paint();
-      if (progress !== target) frame = requestAnimationFrame(tick);
-      else lastTime = 0;
+      if (!root.matches(":hover, :focus-within")) distance += dt * 0.024;
+      rows.forEach((row, index) => {
+        const gap = parseFloat(getComputedStyle(row).gap) || 0;
+        const cycle = (row.scrollWidth + gap) / 2;
+        const offset = cycle ? distance % cycle : 0;
+        row.style.transform = `translate3d(${- (index === 0 ? offset : cycle - offset)}px, 0, 0)`;
+      });
+      frame = requestAnimationFrame(tick);
     };
-    function schedule() {
-      target = Math.max(0, Math.min(1, (window.innerHeight + window.scrollY - top) / (window.innerHeight + height)));
-      if (reduced.matches) {
-        cancelAnimationFrame(frame);
-        frame = 0;
-        lastTime = 0;
-        progress = target;
-        paint();
-      } else if (!frame) frame = requestAnimationFrame(tick);
-    }
-    window.addEventListener("scroll", schedule, { passive: true });
-    window.addEventListener("resize", measure);
-    reduced.addEventListener("change", schedule);
-    const observer = new ResizeObserver(measure);
-    observer.observe(root);
-    rows.forEach(row => observer.observe(row));
-    measure();
+    const start = () => {
+      cancelAnimationFrame(frame);
+      lastTime = 0;
+      if (!reduced.matches) frame = requestAnimationFrame(tick);
+      else rows.forEach(row => { row.style.transform = "none"; });
+    };
+    reduced.addEventListener("change", start);
+    start();
     return () => {
       cancelAnimationFrame(frame);
-      observer.disconnect();
-      window.removeEventListener("scroll", schedule);
-      window.removeEventListener("resize", measure);
-      reduced.removeEventListener("change", schedule);
+      reduced.removeEventListener("change", start);
     };
   }, []);
   return ref;

@@ -43,11 +43,11 @@ export function HeroTitle() {
     <h1 className="premium-hero-title">
       <span className="sr-only">Comece em 1 minuto.</span>
       <span aria-hidden="true">
-        {text === phrases[2] ? (
+        {phrases[2].startsWith(text) && text.length > 0 ? (
           <>
-            Comece em
+            {text.slice(0, 9)}
             <br />
-            <em>1 minuto.</em>
+            <em>{text.slice(10)}</em>
           </>
         ) : (
           text

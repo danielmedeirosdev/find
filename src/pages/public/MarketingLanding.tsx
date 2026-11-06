@@ -157,8 +157,8 @@ export function MarketingLanding() {
             aria-label="Explore os recursos"
           >
             <div className="mkt-rail">
-              {features.map((f) => (
-                <Link key={f.id} to={`/recursos/${f.id}`}>
+              {[...features, ...features].map((f, index) => (
+                <Link key={`${f.id}-${index}`} aria-hidden={index >= features.length || undefined} tabIndex={index >= features.length ? -1 : undefined} to={`/recursos/${f.id}`}>
                   <AppIcon name={f.icon} size={25} />
                   {f.label}
                   <AppIcon name="arrow-right" size={16} />
@@ -173,8 +173,9 @@ export function MarketingLanding() {
                 features[0],
                 features[1],
                 features[2],
-              ].map((f) => (
-                <Link key={f.id} to={`/recursos/${f.id}`}>
+                features[3], features[4], features[5], features[0], features[1], features[2],
+              ].map((f, index) => (
+                <Link key={`${f.id}-${index}`} aria-hidden={index >= features.length || undefined} tabIndex={index >= features.length ? -1 : undefined} to={`/recursos/${f.id}`}>
                   <AppIcon name={f.icon} size={25} />
                   {f.label}
                   <AppIcon name="arrow-right" size={16} />
