@@ -16,7 +16,8 @@ import {
 import { useAuth } from '../../contexts/AuthContext'
 import type { ShopSegment } from '../../lib/types'
 import { readStoredReferralCode } from '../../lib/referral'
-import { trackCompleteRegistration, trackFunnel, trackSignUp } from '../../lib/analytics'
+import { trackBusinessRegistration, trackFunnel } from '../../lib/analytics'
+import { persistMarketingAttribution } from '../../lib/attribution'
 
 export function BusinessAuth() {
   const navigate = useNavigate()
@@ -65,6 +66,7 @@ export function BusinessAuth() {
     }
     setGoogleLoading(true)
     try {
+      if (mode === 'signup') trackFunnel('signup_submit', { method: 'google' })
       const result = await completeGoogleCredentialLogin(
         'barber',
         response,
@@ -72,10 +74,9 @@ export function BusinessAuth() {
         shopName.trim() || defaultShopName,
         segment
       )
-      if (mode === 'signup' && result.createdBusiness) {
-        trackFunnel('signup_submit', { method: 'google' })
-        trackSignUp('google')
-        trackCompleteRegistration('google')
+      if (mode === 'signup' && result.createdBusiness && result.shopId) {
+        await persistMarketingAttribution(result.shopId)
+        trackBusinessRegistration(result.shopId, 'google')
       }
       navigate(result.redirectTo)
     } catch (err) {
@@ -142,8 +143,6 @@ export function BusinessAuth() {
           return
         }
 
-        trackSignUp('email')
-
         try {
           await ensureAuthSession(email, password)
         } catch {
@@ -157,7 +156,8 @@ export function BusinessAuth() {
         try {
           const shop = await ensureBarberShop(data.user.id, shopNameValue, segment)
           if (shop.created || isLikelyNewAuthUser(data.user)) {
-            trackCompleteRegistration('email')
+            await persistMarketingAttribution(shop.id)
+            trackBusinessRegistration(shop.id, 'email')
           }
         } catch (shopError) {
           setError(
@@ -318,6 +318,7 @@ export function BusinessAuth() {
               type="button"
               onClick={() => {
                 setMode('signup')
+                trackFunnel('signup_view', { source: 'login_toggle' })
                 setError('')
                 setInfo('')
               }}

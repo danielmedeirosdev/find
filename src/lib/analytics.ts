@@ -1,3 +1,5 @@
+import { captureMarketingAttribution } from './attribution'
+
 type AnalyticsParams = Record<string, string | number | boolean>
 
 type Gtag = {
@@ -117,6 +119,7 @@ export function initializeMetaPixel() {
 export function trackPageView(navigationKey: string) {
   if (typeof window === 'undefined') return
 
+  captureMarketingAttribution()
   const gtag = getGtag()
   initializeMetaPixel()
 
@@ -139,6 +142,33 @@ export function trackCompleteRegistration(method: 'email' | 'google') {
   if (typeof window === 'undefined') return
   initializeMetaPixel()
   window.fbq?.('track', 'CompleteRegistration', { method })
+}
+
+export function trackStartTrial(method: 'email' | 'google') {
+  if (typeof window === 'undefined') return
+  getGtag()?.('event', 'start_trial', { method, currency: 'BRL', value: 0 })
+  initializeMetaPixel()
+  window.fbq?.('track', 'StartTrial', { method, currency: 'BRL', value: 0 })
+}
+
+/** Emits the business conversion once per shop in this browser. */
+export function trackBusinessRegistration(shopId: string, method: 'email' | 'google') {
+  if (typeof window === 'undefined') return
+  const dedupeKey = `onefind_registration_${shopId}`
+  try {
+    if (window.localStorage.getItem(dedupeKey)) return
+  } catch {
+    // Continue without local deduplication when storage is unavailable.
+  }
+
+  trackSignUp(method)
+  trackCompleteRegistration(method)
+  trackStartTrial(method)
+  try {
+    window.localStorage.setItem(dedupeKey, new Date().toISOString())
+  } catch {
+    // Analytics must never block the product flow.
+  }
 }
 
 /** Conversion steps only; never send shop names, phone numbers or message contents. */

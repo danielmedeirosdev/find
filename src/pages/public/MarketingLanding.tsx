@@ -17,6 +17,8 @@ import {
   StoryFooter,
   StartLink,
 } from "../../components/marketing/StoryShell";
+import { trackBusinessRegistration, trackFunnel } from "../../lib/analytics";
+import { persistMarketingAttribution } from "../../lib/attribution";
 
 const faqs = [
   [
@@ -88,6 +90,10 @@ export function MarketingLanding() {
                       setGoogleBusy(true);
                       setGoogleError("");
                       try {
+                        trackFunnel("signup_submit", {
+                          method: "google",
+                          source: "hero",
+                        });
                         const result = await completeGoogleCredentialLogin(
                           "barber",
                           response,
@@ -95,6 +101,10 @@ export function MarketingLanding() {
                           "Meu Pet Shop",
                           "pet",
                         );
+                        if (result.createdBusiness && result.shopId) {
+                          await persistMarketingAttribution(result.shopId);
+                          trackBusinessRegistration(result.shopId, "google");
+                        }
                         navigate(result.redirectTo);
                       } catch (error) {
                         setGoogleError(

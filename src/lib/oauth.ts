@@ -107,7 +107,7 @@ export async function finalizeOAuthLogin(
 
   if (user.app_metadata?.onefind_platform_admin === true) {
     clearOAuthIntent()
-    return { role: 'barber' as const, redirectTo: '/interno' as const, createdBusiness: false }
+    return { role: 'barber' as const, redirectTo: '/interno' as const, createdBusiness: false, shopId: null }
   }
 
   const referralCode = readStoredReferralCode()
@@ -128,6 +128,7 @@ export async function finalizeOAuthLogin(
       role,
       redirectTo: '/painel/dashboard' as const,
       createdBusiness: shop.created || Boolean(options.newUserHint),
+      shopId: shop.id,
     }
   }
 
@@ -137,6 +138,7 @@ export async function finalizeOAuthLogin(
     role,
     redirectTo: '/minhas-reservas' as const,
     createdBusiness: false,
+    shopId: null,
   }
 }
 

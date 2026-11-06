@@ -4,6 +4,8 @@ import type { Session } from '@supabase/supabase-js'
 import { authErrorMessage, supabase } from '../lib/supabase'
 import { finalizeOAuthLogin } from '../lib/oauth'
 import { useAuth } from '../contexts/AuthContext'
+import { trackBusinessRegistration } from '../lib/analytics'
+import { persistMarketingAttribution } from '../lib/attribution'
 
 async function waitForSession(timeoutMs = 8000): Promise<Session> {
   const existing = await supabase.auth.getSession()
@@ -43,6 +45,11 @@ export function AuthCallback() {
 
         const result = await finalizeOAuthLogin(searchParams.get('role'))
         if (cancelled) return
+
+        if (result.createdBusiness && result.shopId) {
+          await persistMarketingAttribution(result.shopId)
+          trackBusinessRegistration(result.shopId, 'google')
+        }
 
         await refreshProfile()
         navigate(result.redirectTo, { replace: true })
