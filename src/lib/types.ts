@@ -404,6 +404,8 @@ export interface PackageUsage {
   note: string | null
   used_at: string
   created_at: string
+  reversed_at: string | null
+  reversed_by: string | null
 }
 
 export interface AppNotification {

@@ -52,6 +52,7 @@ export function PackagesTab({ shopId }: Props) {
   const [assignCustomerId, setAssignCustomerId] = useState('')
   const [assignPetId, setAssignPetId] = useState('')
   const [selectedPkgId, setSelectedPkgId] = useState<string | null>(null)
+  const [reversingUsageId, setReversingUsageId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     const [{ data: t }, { data: a }, { data: c }, { data: p }] = await Promise.all([
@@ -204,6 +205,17 @@ export function PackagesTab({ shopId }: Props) {
     setToast('Sessão debitada.')
     setSelectedPkgId(pkg.id)
     load()
+  }
+
+  const reverseManualUsage = async (usage: PackageUsage) => {
+    if (reversingUsageId || !window.confirm('Estornar este débito manual? A sessão volta ao pacote e o estorno fica no histórico.')) return
+    setReversingUsageId(usage.id)
+    const { error } = await supabase.rpc('reverse_manual_package_usage', { p_usage_id: usage.id })
+    setReversingUsageId(null)
+    if (error) { setToast(error.message); return }
+    setUsages(current => current.map(item => item.id === usage.id ? { ...item, reversed_at: new Date().toISOString() } : item))
+    await load()
+    setToast('Débito manual estornado. Uma sessão voltou ao pacote.')
   }
 
   if (loading) return <p className="text-charcoal-muted">Carregando...</p>
@@ -414,7 +426,7 @@ export function PackagesTab({ shopId }: Props) {
                       <label className="text-sm text-charcoal-muted">Sessões utilizadas<input type="number" readOnly min="0" value={assignedUsed} onChange={e => setAssignedUsed(e.target.value)} className="mt-1 w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2 text-white" /></label>
                       <label className="text-sm text-charcoal-muted">Validade<input type="date" value={assignedExpiry} onChange={e => setAssignedExpiry(e.target.value)} className="mt-1 w-full rounded-lg border border-charcoal-light bg-charcoal px-3 py-2 text-white" /></label>
                     </div>
-                    <p className="text-xs text-charcoal-muted">Sessões utilizadas não podem ser alteradas.</p>
+                    <p className="text-xs text-charcoal-muted">Para corrigir um débito manual, abra o Histórico e estorne o lançamento. Usos vinculados a atendimentos permanecem registrados.</p>
                     <div className="flex gap-2">
                       <button disabled={savingAssigned} onClick={() => saveAssigned(pkg)} className="rounded-lg bg-brass px-3 py-2 text-sm font-semibold text-charcoal disabled:opacity-50">Salvar alterações</button>
                       <button onClick={() => setEditingAssignedId(null)} className="rounded-lg border border-charcoal-light px-3 py-2 text-sm text-white">Cancelar</button>
@@ -427,10 +439,11 @@ export function PackagesTab({ shopId }: Props) {
                       <p className="text-sm text-charcoal-muted">Nenhum uso ainda.</p>
                     ) : (
                       usages.map((u) => (
-                        <p key={u.id} className="text-sm text-charcoal-muted">
-                          {formatDate(u.used_at.slice(0, 10))} · {u.note || 'utilizado'}
-                          {u.booking_id ? ' · agendamento' : ''}
-                        </p>
+                        <div key={u.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-charcoal-light/50 py-2 text-sm text-charcoal-muted">
+                          <span>{formatDate(u.used_at.slice(0, 10))} · {u.note || 'utilizado'}{u.booking_id ? ' · agendamento' : ''}{u.reversed_at ? ' · estornado' : ''}</span>
+                          {!u.booking_id && u.note === 'Uso manual' && !u.reversed_at &&
+                            <button disabled={!!reversingUsageId} onClick={() => reverseManualUsage(u)} className="min-h-11 rounded-lg border border-charcoal-light px-3 text-brass disabled:opacity-50">{reversingUsageId === u.id ? 'Estornando...' : 'Estornar débito'}</button>}
+                        </div>
                       ))
                     )}
                   </div>
