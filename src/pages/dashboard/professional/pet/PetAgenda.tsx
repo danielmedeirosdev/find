@@ -36,6 +36,7 @@ interface Props {
   shopId: string
   shopName: string
   barberId?: string
+  shopAgendaAccess?: boolean
   pendingReminderIds?: string[]
   focusBookingId?: string
   onReminderUpdate?: () => void
@@ -59,7 +60,7 @@ function addDaysIso(days: number): string {
   return localDateIso(d)
 }
 
-export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [], focusBookingId, onReminderUpdate }: Props) {
+export function PetAgenda({ shopId, shopName, barberId, shopAgendaAccess = false, pendingReminderIds = [], focusBookingId, onReminderUpdate }: Props) {
   const focusedBooking=useRef('')
   const loadRequest=useRef(0)
   const [showNew, setShowNew] = useState(false)
@@ -180,7 +181,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
       .order('date')
       .order('time')
     query = query.eq('date', selectedDay)
-    if (barberId) query = query.eq('barber_id', barberId)
+    if (barberId && !shopAgendaAccess) query = query.eq('barber_id', barberId)
 
     const [{ data, error }, { data: svc }, {data: team, error: teamError}] = await Promise.all([
       query,
@@ -209,7 +210,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
       if(rules.error||discounts.error||transport.error)setLoadError('Não foi possível carregar as regras de preços e transporte. Atualize a agenda.')
     }
     setLoading(false)
-  }, [shopId, barberId, today, dayFilter, selectedDay])
+  }, [shopId, barberId, shopAgendaAccess, today, dayFilter, selectedDay])
 
   useEffect(() => {
     load()
@@ -219,14 +220,14 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
     if (!focusBookingId) return
     let active = true
     let query = supabase.from('bookings').select('date').eq('id', focusBookingId).eq('shop_id', shopId)
-    if (barberId) query = query.eq('barber_id', barberId)
+    if (barberId && !shopAgendaAccess) query = query.eq('barber_id', barberId)
     void query.maybeSingle().then(({ data, error }) => {
       if (!active) return
       if (error) { setActionError('Não foi possível localizar o atendimento do aviso.'); return }
       if (data) { setConsultationDate(data.date); setDayFilter('date') }
     })
     return () => { active = false }
-  }, [focusBookingId, shopId, barberId])
+  }, [focusBookingId, shopId, barberId, shopAgendaAccess])
   useEffect(()=>{
     if(!focusBookingId || loading || dayFilter!=='date' || focusedBooking.current===focusBookingId)return
     const target=document.getElementById(`booking-${focusBookingId}`)
@@ -364,7 +365,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
       .order('date', { ascending: false })
       .order('time', { ascending: false })
 
-    if (barberId) q = q.eq('barber_id', barberId)
+    if (barberId && !shopAgendaAccess) q = q.eq('barber_id', barberId)
 
     if (digits.length >= 8) {
       q = q.ilike('client_phone', `%${digits}%`)
@@ -418,7 +419,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
           {newStep===3 && <div className="space-y-4">
             <BookingSchedulePicker
               shopId={shopId}
-              professionals={barberId?teamList.filter(staff=>staff.id===barberId):teamList}
+              professionals={barberId && !shopAgendaAccess?teamList.filter(staff=>staff.id===barberId):teamList}
               serviceIds={serviceIds}
               duration={getPetServicesDuration(shopServices.filter(service=>serviceIds.includes(service.id)),petsList.find(p=>p.id===petId)?.size||'medio',sizeRules)}
               value={{professionalId:staffId,date:dateValue,time:timeValue}}
@@ -435,7 +436,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
           <div className="flex gap-3">{newStep>1 && <button type="button" onClick={()=>setNewStep(newStep-1)} className="rounded-xl border border-white/20 px-5 py-3 text-white">Voltar</button>}<button type="submit" disabled={savingNew || (newStep===3 && !scheduleValid)} className="flex-1 rounded-xl bg-brass px-5 py-3 font-semibold text-charcoal-dark disabled:opacity-50">{savingNew?'Salvando...':newStep===3?'Confirmar agendamento':'Continuar'}</button></div>
         </form>}
       </section>}
-      <header className="mb-4 flex flex-wrap items-center justify-between gap-3"><h2>{barberId ? 'Minha agenda' : 'Agenda'}</h2><button type="button" onClick={()=>setShowAvailability(v=>!v)} className="rounded-lg border border-charcoal-light px-3 text-sm text-charcoal-muted">Folgas e feriados</button></header>
+      <header className="mb-4 flex flex-wrap items-center justify-between gap-3"><h2>{barberId && !shopAgendaAccess ? 'Minha agenda' : 'Agenda da loja'}</h2><button type="button" onClick={()=>setShowAvailability(v=>!v)} className="rounded-lg border border-charcoal-light px-3 text-sm text-charcoal-muted">Folgas e feriados</button></header>
       {showAvailability ? (
         <div className="mb-6 space-y-4">
           {!barberId ? <ShopClosures shopId={shopId} /> : null}
@@ -640,7 +641,7 @@ export function PetAgenda({ shopId, shopName, barberId, pendingReminderIds = [],
             </div>
             <div className="mt-4">{['in_progress','awaiting_payment'].includes(editingBooking.status || '') ? <p className="text-sm text-charcoal-muted">Atendimento iniciado em {formatDate(editingBooking.date)} às {formatTime(editingBooking.time)}. Você pode acrescentar serviços abaixo.</p> : <BookingSchedulePicker
               shopId={shopId}
-              professionals={barberId ? teamList.filter(person=>person.id===barberId) : teamList}
+              professionals={barberId && !shopAgendaAccess ? teamList.filter(person=>person.id===barberId) : teamList}
               serviceIds={[...(editingBooking.booking_services || []).map(item=>item.service_id),...extraServiceIds]}
               duration={Number(reservedMinutes) || 1}
               value={{professionalId:editStaffId,date:editDate,time:editTime}}

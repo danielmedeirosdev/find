@@ -247,6 +247,17 @@ export function PetTeam({ shopId }: Props) {
               </div>
 
               {expandedId === barber.id && <div className="mt-5 space-y-5 border-t border-charcoal-light pt-5">
+                <label className="flex items-start gap-3 rounded-xl border border-charcoal-light p-4 text-sm text-white">
+                  <input type="checkbox" className="mt-1 h-5 w-5 accent-brass" checked={barber.can_manage_operations === true} onChange={async e => {
+                    const enabled = e.target.checked
+                    const {error} = await supabase.from('barbers').update({can_manage_operations: enabled}).eq('id',barber.id).eq('shop_id',shopId)
+                    if(error){setToast('Não foi possível alterar a permissão.');return}
+                    setBarbers(current=>current.map(person=>person.id===barber.id?{...person,can_manage_operations:enabled}:person))
+                    setToast(enabled?'Operação da loja liberada para este funcionário.':'Acesso limitado à própria agenda.')
+                  }} />
+                  <span>Gerenciar a operação da loja<span className="mt-1 block text-xs text-charcoal-muted">Agenda de todos, clientes, pets, serviços e pacotes. Sem caixa, relatórios financeiros, assinatura ou permissões da equipe.</span></span>
+                </label>
+
                 <div className="grid gap-4 sm:grid-cols-[auto_1fr]">
                   <div className="w-24">
                     <ImageDropzone onFiles={(files) => uploadPhoto(barber, files)} disabled={uploadingId === barber.id} className="rounded-lg border border-dashed border-charcoal-light px-2 py-2 text-center text-xs text-brass hover:border-brass">{barber.photo_url ? 'Trocar foto' : 'Adicionar foto'}</ImageDropzone>

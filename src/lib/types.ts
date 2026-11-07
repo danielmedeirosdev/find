@@ -72,6 +72,7 @@ export interface Service {
 }
 
 export interface Barber {
+  can_manage_operations?: boolean
   id: string
   shop_id: string
   name: string

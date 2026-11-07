@@ -16,9 +16,10 @@ import type {
 
 interface Props {
   shopId: string
+  operationalOnly?: boolean
 }
 
-export function PackagesTab({ shopId }: Props) {
+export function PackagesTab({ shopId, operationalOnly = false }: Props) {
   const [templates, setTemplates] = useState<ServicePackage[]>([])
   const [assigned, setAssigned] = useState<CustomerPackage[]>([])
   const [customers, setCustomers] = useState<ShopCustomer[]>([])
@@ -65,7 +66,7 @@ export function PackagesTab({ shopId }: Props) {
       supabase.from('shop_customers').select('*').eq('shop_id', shopId).order('name'),
       supabase.from('pets').select('*').eq('shop_id', shopId).order('name'),
     ])
-    const balanceResult=await supabase.rpc('package_balances',{p_shop_id:shopId})
+    const balanceResult=operationalOnly ? {data:[],error:null} : await supabase.rpc('package_balances',{p_shop_id:shopId})
     if(balanceResult.error)setToast('Não foi possível carregar os saldos dos pacotes.');else setBalances(balanceResult.data||[])
     setTemplates((t as ServicePackage[]) || [])
     setAssigned((a as CustomerPackage[]) || [])
@@ -73,7 +74,7 @@ export function PackagesTab({ shopId }: Props) {
     setPets((p as Pet[]) || [])
     if (!assignPackageId && (t || []).length > 0) setAssignPackageId(t![0].id)
     setLoading(false)
-  }, [shopId, assignPackageId])
+  }, [shopId, assignPackageId, operationalOnly])
 
   useEffect(() => {
     load()
@@ -182,7 +183,7 @@ export function PackagesTab({ shopId }: Props) {
       return
     }
     setSavingAssigned(true)
-    const { error } = await supabase.from('customer_packages')
+    const { error } = operationalOnly ? await supabase.rpc('update_operational_package',{p_id:pkg.id,p_total:total,p_expiry:assignedExpiry||null}) : await supabase.from('customer_packages')
       .update({ total_sessions: total, used_sessions: used, expires_at: assignedExpiry || null, status: used >= total ? 'exhausted' : assignedExpiry && assignedExpiry < new Date().toLocaleDateString('en-CA') ? 'expired' : 'active' })
       .eq('id', pkg.id).eq('shop_id', shopId)
     setSavingAssigned(false)
@@ -355,13 +356,13 @@ export function PackagesTab({ shopId }: Props) {
             ))}
           </select>
         </div>
-        <label className="block text-sm text-white">Registro financeiro<select className="mt-2 min-h-11 w-full rounded-lg bg-charcoal px-3 text-white" value={saleMode} onChange={e=>setSaleMode(e.target.value)}><option value="pending">Nova venda — receber depois</option><option value="paid">Nova venda — pagamento recebido agora</option><option value="legacy">Pacote antigo já pago — somente sessões</option></select></label>{saleMode==='paid'&&<label className="block text-sm text-white">Forma de pagamento<select className="min-h-11 w-full rounded-lg bg-charcoal px-3" value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)}><option value="pix">Pix</option><option value="cartao">Cartão</option><option value="dinheiro">Dinheiro</option></select></label>}<p className="text-xs text-charcoal-muted">Somente valores recebidos entram no caixa.</p><button disabled={assigning} onClick={assignPackage} className="rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal">
+        {!operationalOnly && <label className="block text-sm text-white">Registro financeiro<select className="mt-2 min-h-11 w-full rounded-lg bg-charcoal px-3 text-white" value={saleMode} onChange={e=>setSaleMode(e.target.value)}><option value="pending">Nova venda — receber depois</option><option value="paid">Nova venda — pagamento recebido agora</option><option value="legacy">Pacote antigo já pago — somente sessões</option></select></label>}{!operationalOnly && saleMode==='paid'&&<label className="block text-sm text-white">Forma de pagamento<select className="min-h-11 w-full rounded-lg bg-charcoal px-3" value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)}><option value="pix">Pix</option><option value="cartao">Cartão</option><option value="dinheiro">Dinheiro</option></select></label>}<p className="text-xs text-charcoal-muted">Somente valores recebidos entram no caixa.</p><button disabled={assigning} onClick={assignPackage} className="rounded-lg bg-brass px-4 py-2 font-semibold text-charcoal">
           Associar pacote
         </button>
       </div>
 
       <div className="space-y-3">
-        <div className="grid gap-3 sm:grid-cols-3"><p className="text-sm text-white">Vendido: {formatPrice(balances.reduce((v,b)=>v+Number(b.total),0))}</p><p className="text-sm text-white">Recebido: {formatPrice(balances.reduce((v,b)=>v+Number(b.received),0))}</p><p className="text-sm text-brass">A receber: {formatPrice(balances.reduce((v,b)=>v+Number(b.balance),0))}</p></div><p className="text-xs text-charcoal-muted">Totais das novas vendas. Pacotes antigos não incluídos.</p>
+        {!operationalOnly && <><div className="grid gap-3 sm:grid-cols-3"><p className="text-sm text-white">Vendido: {formatPrice(balances.reduce((v,b)=>v+Number(b.total),0))}</p><p className="text-sm text-white">Recebido: {formatPrice(balances.reduce((v,b)=>v+Number(b.received),0))}</p><p className="text-sm text-brass">A receber: {formatPrice(balances.reduce((v,b)=>v+Number(b.balance),0))}</p></div><p className="text-xs text-charcoal-muted">Totais das novas vendas. Pacotes antigos não incluídos.</p></>}
         <h3 className="font-medium text-white">Pacotes ativos</h3>
         {assigned.length === 0 ? (
           <p className="text-charcoal-muted text-sm">Nenhum pacote associado.</p>
