@@ -44,8 +44,13 @@ describe('GA4 runtime bootstrap', () => {
       },
     ])
     expect(window.dataLayer).toHaveLength(2)
+    // Google dispatches Arguments as gtag commands and arrays as data-model methods.
+    for (const command of window.dataLayer ?? []) {
+      expect(Object.prototype.toString.call(command)).toBe('[object Arguments]')
+      expect(Array.isArray(command)).toBe(false)
+    }
     expect(window.dataLayer?.[0]?.[0]).toBe('js')
-    expect(window.dataLayer?.[1]).toEqual([
+    expect(Array.from(window.dataLayer?.[1] ?? [])).toEqual([
       'config',
       'G-RQ3JNDR4M4',
       { send_page_view: false },

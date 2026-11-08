@@ -23,7 +23,7 @@ type MetaPixel = ((...args: unknown[]) => void) & {
 
 declare global {
   interface Window {
-    dataLayer?: unknown[][]
+    dataLayer?: IArguments[]
     gtag?: Gtag
     fbq?: MetaPixel
     _fbq?: MetaPixel
@@ -39,8 +39,9 @@ function getOrCreateGtag(): Gtag | null {
   if (window.gtag) return window.gtag
 
   window.dataLayer = window.dataLayer ?? []
-  const gtag = ((...args: unknown[]) => {
-    window.dataLayer?.push(args)
+  // gtag.js dispatches commands from Arguments objects; arrays use a different API.
+  const gtag = (function () {
+    window.dataLayer?.push(arguments)
   }) as Gtag
   window.gtag = gtag
   return gtag
@@ -172,9 +173,12 @@ export function trackBusinessRegistration(shopId: string, method: 'email' | 'goo
 }
 
 /** Conversion steps only; never send shop names, phone numbers or message contents. */
-export function trackFunnel(event: 'landing_cta' | 'signup_view' | 'signup_submit' | 'setup_choice' | 'setup_whatsapp_open' | 'setup_manual_start' | 'setup_complete', params: Record<string, string> = {}) {
+export function trackFunnel(event: 'landing_cta' | 'signup_view' | 'signup_submit' | 'setup_choice' | 'setup_whatsapp_open' | 'setup_manual_start' | 'setup_complete' | 'signup_error' | 'signup_start', params: Record<string, string> = {}) {
   try {
     getGtag()?.('event', event, params)
-    if (typeof window !== 'undefined') window.fbq?.('trackCustom', event, params)
+    if (typeof window !== 'undefined') {
+      initializeMetaPixel()
+      window.fbq?.('trackCustom', event, params)
+    }
   } catch { /* Analytics must never block the product flow. */ }
 }

@@ -1,5 +1,5 @@
 import { BrandLogo } from '../../components/BrandLogo'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase, authErrorMessage, isSupabaseConfigured } from '../../lib/supabase'
 import { ensureAuthSession, ensureBarberShop, isLikelyNewAuthUser } from '../../lib/auth'
@@ -34,6 +34,16 @@ export function BusinessAuth() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [resetMode, setResetMode] = useState(false)
+  const signupStarted = useRef(false)
+
+  const startSignup = () => {
+    if (mode !== 'signup' || signupStarted.current) return
+    signupStarted.current = true
+    trackFunnel('signup_start', { method: 'email' })
+  }
+  const signupError = (stage: string, method = 'email') => {
+    if (mode === 'signup') trackFunnel('signup_error', { stage, method })
+  }
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -60,10 +70,6 @@ export function BusinessAuth() {
     nonce: string
   ) => {
     setError('')
-    if (mode === 'signup' && !shopName.trim()) {
-      setError('Informe o nome do estabelecimento antes de continuar com Google.')
-      return
-    }
     setGoogleLoading(true)
     try {
       if (mode === 'signup') trackFunnel('signup_submit', { method: 'google' })
@@ -80,6 +86,7 @@ export function BusinessAuth() {
       }
       navigate(result.redirectTo)
     } catch (err) {
+      signupError('google_auth', 'google')
       setError(authErrorMessage(err))
       setGoogleLoading(false)
     }
@@ -112,6 +119,7 @@ export function BusinessAuth() {
       if (mode === 'signup') {
         trackFunnel('signup_submit', { method: 'email' })
         if (!isPasswordStrong(password)) {
+          signupError('password_requirements')
           setError('A senha ainda não atende a todos os requisitos.')
           setLoading(false)
           return
@@ -133,11 +141,13 @@ export function BusinessAuth() {
           },
         })
         if (signUpError) {
+          signupError('auth_signup')
           setError(authErrorMessage(signUpError))
           setLoading(false)
           return
         }
         if (!data.user) {
+          signupError('missing_user')
           setError('Não foi possível criar a conta.')
           setLoading(false)
           return
@@ -146,8 +156,9 @@ export function BusinessAuth() {
         try {
           await ensureAuthSession(email, password)
         } catch {
+          signupError('session_confirmation')
           setError(
-            'Conta criada! Confirme seu e-mail e faça login. (Ou desative "Confirm email" no Supabase → Authentication → Email)'
+            'Sua conta foi criada. Confira o e-mail de confirmação e depois entre com sua senha.'
           )
           setLoading(false)
           return
@@ -160,10 +171,11 @@ export function BusinessAuth() {
             trackBusinessRegistration(shop.id, 'email')
           }
         } catch (shopError) {
+          signupError('shop_creation')
           setError(
             shopError instanceof Error
               ? shopError.message
-              : 'Erro ao criar estabelecimento. Rode o SQL 002_signup_trigger.sql no Supabase.'
+              : 'Não foi possível preparar seu estabelecimento. Tente entrar novamente ou fale com o suporte.'
           )
           setLoading(false)
           return
@@ -211,6 +223,7 @@ export function BusinessAuth() {
         navigate('/painel/dashboard')
       }
     } catch (err) {
+      signupError('unexpected')
       setError(authErrorMessage(err))
     }
 
@@ -230,6 +243,7 @@ export function BusinessAuth() {
 
       <form
         onSubmit={resetMode ? sendReset : handleSubmit}
+        onChange={startSignup}
         className="rounded-lg border border-charcoal-light bg-charcoal-light/30 p-6 space-y-4"
       >
         {!resetMode && mode === 'signup' && (
@@ -304,6 +318,7 @@ export function BusinessAuth() {
           disabled={loading || googleLoading}
           onCredential={handleGoogleCredential}
           onError={(message) => {
+            signupError('google_load', 'google')
             setGoogleError(message)
             setGoogleLoading(false)
           }}
