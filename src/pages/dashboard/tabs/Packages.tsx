@@ -29,7 +29,7 @@ export function PackagesTab({ shopId, operationalOnly = false }: Props) {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [paymentFilter, setPaymentFilter] = useState<PackagePaymentFilter>('all')
-  const [sort, setSort] = useState<PackageSort>('customer')
+  const [sort, setSort] = useState<PackageSort>('pet')
   const [assigning,setAssigning] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
@@ -381,11 +381,11 @@ export function PackagesTab({ shopId, operationalOnly = false }: Props) {
           </label>}
           <label className="min-w-0 text-sm text-charcoal-muted">Ordenar por
             <select value={sort} onChange={e=>setSort(e.target.value as PackageSort)} className="mt-1 min-h-11 w-full min-w-0 rounded-lg border border-charcoal-light bg-charcoal px-3 text-white">
-              <option value="customer">Cliente: A–Z</option><option value="recent">Mais recentes</option>
+              <option value="pet">Pet: A–Z</option><option value="customer">Cliente/tutor: A–Z</option><option value="recent">Mais recentes</option>
             </select>
           </label>
         </div>
-        <p className="text-xs text-charcoal-muted" role="status">{visiblePackages.length} de {assigned.length} pacotes</p>
+        <p className="text-xs text-charcoal-muted" role="status">{visiblePackages.length} de {assigned.length} pacotes · {sort === 'pet' ? 'Ordem pelo nome do pet' : sort === 'customer' ? 'Ordem pelo nome do cliente/tutor' : 'Mais recentes primeiro'}</p>
         {!operationalOnly && paymentFilter !== 'all' && <p className="text-xs text-charcoal-muted">Filtro pelo saldo registrado, independentemente das sessões restantes. Pacotes antigos sem cobrança registrada não entram neste filtro.</p>}
         {assigned.length === 0 ? (
           <p className="text-charcoal-muted text-sm">Nenhum pacote associado.</p>

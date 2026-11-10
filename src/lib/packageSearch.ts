@@ -1,7 +1,7 @@
 import type { CustomerPackage } from './types'
 
 export type PackagePaymentFilter = 'all' | 'pending' | 'paid'
-export type PackageSort = 'customer' | 'recent'
+export type PackageSort = 'customer' | 'pet' | 'recent'
 export interface PackageBalance { package_id: string; balance: number | string }
 const collator = new Intl.Collator('pt-BR', { sensitivity: 'base', numeric: true })
 const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim()
@@ -24,8 +24,12 @@ export function findCustomerPackages(
     return payment === 'all' || (payment === 'pending' ? amount! > 0 : amount === 0)
   }).sort((a, b) => {
     if (sort === 'recent') return b.created_at.localeCompare(a.created_at) || a.id.localeCompare(b.id)
-    return collator.compare(a.shop_customers?.name || '', b.shop_customers?.name || '')
-      || collator.compare(a.pets?.name || '', b.pets?.name || '')
+    if (sort === 'pet') {
+      const byPet = collator.compare((a.pets?.name || '').trim(), (b.pets?.name || '').trim())
+      if (byPet) return byPet
+    }
+    return collator.compare((a.shop_customers?.name || '').trim(), (b.shop_customers?.name || '').trim())
+      || collator.compare((a.pets?.name || '').trim(), (b.pets?.name || '').trim())
       || collator.compare(a.service_packages?.name || '', b.service_packages?.name || '')
       || b.created_at.localeCompare(a.created_at) || a.id.localeCompare(b.id)
   })

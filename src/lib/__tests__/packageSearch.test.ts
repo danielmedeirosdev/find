@@ -14,6 +14,14 @@ describe('package consultation', () => {
     expect(findCustomerPackages(packages,balances,'','all').map(p=>p.id)).toEqual(['a','c','b'])
     expect(packages.map(p=>p.id)).toEqual(['b','a','c'])
   })
+  it('supports pet order independently of tutor order', () => {
+    const pets = [make('b','Adriana','Lola'), make('a','Alessandra','Thor'), make('c','Aline','Lady')]
+    expect(findCustomerPackages(pets, [], '', 'all', 'customer').map(p=>p.pets?.name)).toEqual(['Lola','Thor','Lady'])
+    expect(findCustomerPackages(pets, [], '', 'all', 'pet').map(p=>p.pets?.name)).toEqual(['Lady','Lola','Thor'])
+  })
+  it('ignores accidental outer spaces when ordering names', () => {
+    expect(findCustomerPackages([make('b',' Zélia ','Luna'),make('a','Ágata','Jade')],[], '', 'all').map(p=>p.id)).toEqual(['a','b'])
+  })
   it('searches by tutor, pet and model without requiring accents or capitalization', () => {
     expect(findCustomerPackages(packages,balances,'AGATA jade banho','all').map(p=>p.id)).toEqual(['a'])
     expect(findCustomerPackages(packages,balances,'luna','all').map(p=>p.id)).toEqual(['b'])
