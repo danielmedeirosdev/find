@@ -1,3 +1,4 @@
+import { findCustomerPackages, type PackagePaymentFilter, type PackageSort } from '../../../lib/packageSearch'
 import { Modal } from '../../../components/Modal'
 import { customerLabel } from '../../../lib/format'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -26,6 +27,9 @@ export function PackagesTab({ shopId, operationalOnly = false }: Props) {
   const [pets, setPets] = useState<Pet[]>([])
   const [usages, setUsages] = useState<PackageUsage[]>([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [paymentFilter, setPaymentFilter] = useState<PackagePaymentFilter>('all')
+  const [sort, setSort] = useState<PackageSort>('customer')
   const [assigning,setAssigning] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
@@ -67,7 +71,7 @@ export function PackagesTab({ shopId, operationalOnly = false }: Props) {
       supabase.from('pets').select('*').eq('shop_id', shopId).order('name'),
     ])
     const balanceResult=operationalOnly ? {data:[],error:null} : await supabase.rpc('package_balances',{p_shop_id:shopId})
-    if(balanceResult.error)setToast('Não foi possível carregar os saldos dos pacotes.');else setBalances(balanceResult.data||[])
+    if(balanceResult.error){setBalances([]);setToast('Não foi possível carregar os saldos dos pacotes.');}else setBalances(balanceResult.data||[])
     setTemplates((t as ServicePackage[]) || [])
     setAssigned((a as CustomerPackage[]) || [])
     setCustomers((c as ShopCustomer[]) || [])
@@ -97,6 +101,8 @@ export function PackagesTab({ shopId, operationalOnly = false }: Props) {
     () => pets.filter((p) => p.customer_id === assignCustomerId),
     [pets, assignCustomerId]
   )
+
+  const visiblePackages = useMemo(() => findCustomerPackages(assigned, operationalOnly ? [] : balances, search, operationalOnly ? 'all' : paymentFilter, sort), [assigned, balances, search, paymentFilter, sort, operationalOnly])
 
   const editTemplate = (tpl: ServicePackage) => {
     setEditingTemplateId(tpl.id)
@@ -363,11 +369,31 @@ export function PackagesTab({ shopId, operationalOnly = false }: Props) {
 
       <div className="space-y-3">
         {!operationalOnly && <><div className="grid gap-3 sm:grid-cols-3"><p className="text-sm text-white">Vendido: {formatPrice(balances.reduce((v,b)=>v+Number(b.total),0))}</p><p className="text-sm text-white">Recebido: {formatPrice(balances.reduce((v,b)=>v+Number(b.received),0))}</p><p className="text-sm text-brass">A receber: {formatPrice(balances.reduce((v,b)=>v+Number(b.balance),0))}</p></div><p className="text-xs text-charcoal-muted">Totais das novas vendas. Pacotes antigos não incluídos.</p></>}
-        <h3 className="font-medium text-white">Pacotes ativos</h3>
+        <h3 className="font-medium text-white">Pacotes dos clientes</h3>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <label className="min-w-0 text-sm text-charcoal-muted">Buscar cliente, pet ou pacote
+            <input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Digite um nome" className="mt-1 min-h-11 w-full min-w-0 rounded-lg border border-charcoal-light bg-charcoal px-3 text-white" />
+          </label>
+          {!operationalOnly && <label className="min-w-0 text-sm text-charcoal-muted">Pagamento
+            <select value={paymentFilter} onChange={e=>setPaymentFilter(e.target.value as PackagePaymentFilter)} className="mt-1 min-h-11 w-full min-w-0 rounded-lg border border-charcoal-light bg-charcoal px-3 text-white">
+              <option value="all">Todos</option><option value="pending">A receber</option><option value="paid">Quitados</option>
+            </select>
+          </label>}
+          <label className="min-w-0 text-sm text-charcoal-muted">Ordenar por
+            <select value={sort} onChange={e=>setSort(e.target.value as PackageSort)} className="mt-1 min-h-11 w-full min-w-0 rounded-lg border border-charcoal-light bg-charcoal px-3 text-white">
+              <option value="customer">Cliente: A–Z</option><option value="recent">Mais recentes</option>
+            </select>
+          </label>
+        </div>
+        <p className="text-xs text-charcoal-muted" role="status">{visiblePackages.length} de {assigned.length} pacotes</p>
+        {!operationalOnly && paymentFilter !== 'all' && <p className="text-xs text-charcoal-muted">Filtro pelo saldo registrado, independentemente das sessões restantes. Pacotes antigos sem cobrança registrada não entram neste filtro.</p>}
         {assigned.length === 0 ? (
           <p className="text-charcoal-muted text-sm">Nenhum pacote associado.</p>
         ) : (
-          assigned.map((pkg) => {
+          visiblePackages.length === 0 ? <div className="rounded-xl border border-charcoal-light p-5 text-sm text-charcoal-muted">
+            <p>Nenhum pacote encontrado com essa busca ou filtro.</p>
+            <button type="button" onClick={()=>{setSearch('');setPaymentFilter('all')}} className="mt-2 min-h-11 text-brass">Limpar busca e filtro</button>
+          </div> : visiblePackages.map((pkg) => {
             const balance=balances.find(b=>b.package_id===pkg.id)
             const remaining = packageRemaining(pkg.total_sessions, pkg.used_sessions)
             return (
