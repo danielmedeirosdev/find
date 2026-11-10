@@ -26,6 +26,6 @@ describe('package consultation', () => {
   })
   it('combines search and balance filters, and supports recent-first ordering', () => {
     expect(findCustomerPackages(packages,balances,'Luna','pending')).toEqual([])
-    expect(findCustomerPackages(packages,balances,'','all','recent').at(-1)?.id).toBe('a')
+    expect(findCustomerPackages(packages,balances,'','all','recent')[packages.length - 1]?.id).toBe('a')
   })
 })
