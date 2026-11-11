@@ -39,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       if (!mounted) return
+      window.__onefindAnalyticsTestAccount = s?.user.app_metadata?.onefind_analytics_test === true
       setSession(s)
       setUser(s?.user ?? null)
       setLoading(false)
@@ -47,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, s) => {
+      window.__onefindAnalyticsTestAccount = s?.user.app_metadata?.onefind_analytics_test === true
       setSession(s)
       setUser(s?.user ?? null)
       setLoading(false)

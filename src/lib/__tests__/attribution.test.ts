@@ -3,6 +3,7 @@ import {
   captureMarketingAttribution,
   persistMarketingAttribution,
   readMarketingAttribution,
+  readLatestMarketingAttribution,
 } from '../attribution'
 
 const upsert = vi.fn(async () => ({ error: null }))
@@ -48,6 +49,9 @@ describe('marketing attribution', () => {
     window.location.search = '?utm_source=other&utm_campaign=revisit'
     expect(captureMarketingAttribution()).toEqual(first)
     expect(readMarketingAttribution()).toEqual(first)
+    expect(readLatestMarketingAttribution()).toMatchObject({
+      utm_source: 'other', utm_campaign: 'revisit',
+    })
   })
 
   it('persists the captured source against the created shop', async () => {
@@ -62,5 +66,17 @@ describe('marketing attribution', () => {
       }),
       { onConflict: 'shop_id', ignoreDuplicates: true },
     )
+  })
+
+  it('keeps both first and conversion touches when persisting a new shop', async () => {
+    captureMarketingAttribution()
+    window.location.search = '?utm_source=meta&utm_campaign=onefind_teste04d&utm_content=beneficios'
+    captureMarketingAttribution()
+    window.location.search = '?modo=cadastro'
+    captureMarketingAttribution()
+    await persistMarketingAttribution('shop-2')
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({
+      utm_campaign: 'onefind_teste04', last_utm_campaign: 'onefind_teste04d',
+    }), expect.anything())
   })
 })

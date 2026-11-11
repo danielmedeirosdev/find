@@ -1,11 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { initializeGoogleAnalytics, trackPageView } from '../analytics'
+import { initializeGoogleAnalytics, trackPageView, trackBusinessRegistration, trackFunnel } from '../analytics'
+
+const insert = vi.fn(async () => ({ error: null }))
+vi.mock('../supabase', () => ({ supabase: { from: () => ({ insert }) } }))
 
 describe('GA4 runtime bootstrap', () => {
   const appendedScripts: Array<{ id: string; async: boolean; src: string }> = []
 
   beforeEach(() => {
     appendedScripts.length = 0
+    insert.mockClear()
 
     vi.stubGlobal('window', {
       location: {
@@ -74,5 +78,31 @@ describe('GA4 runtime bootstrap', () => {
     expect(pageViews?.[1]?.[2]).toMatchObject({
       page_path: '/painel?modo=cadastro',
     })
+  })
+
+  it('records technical diagnostics without sending acquisition events to GA4 or Meta', async () => {
+    const storage = new Map<string, string>()
+    window.sessionStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => { storage.set(key, value) },
+      clear: () => storage.clear(),
+      removeItem: (key: string) => { storage.delete(key) },
+      key: (index: number) => Array.from(storage.keys())[index] ?? null,
+      get length() { return storage.size },
+    } as Storage
+    window.localStorage = window.sessionStorage
+    window.location.search = '?onefind_test=1'
+    trackPageView('technical')
+    window.location.search = ''
+    trackFunnel('signup_error', { method: 'google', stage: 'google_auth' })
+    trackBusinessRegistration('1bf81d61-803e-4a5c-9b33-08e458532ed4', 'email')
+    await Promise.resolve()
+    expect(appendedScripts).toHaveLength(0)
+    expect(window.dataLayer).toBeUndefined()
+    expect(window.fbq).toBeUndefined()
+    expect(insert.mock.calls.length).toBe(3)
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({
+      event_name: 'registration_complete', is_test: true,
+    }))
   })
 })

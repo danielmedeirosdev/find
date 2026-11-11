@@ -1,4 +1,6 @@
 import { captureMarketingAttribution } from './attribution'
+import { isAnalyticsTestTraffic } from './analyticsContext'
+import { recordFunnelEvent, type FunnelEvent } from './funnelEvents'
 
 type AnalyticsParams = Record<string, string | number | boolean>
 
@@ -41,6 +43,7 @@ function getOrCreateGtag(): Gtag | null {
   window.dataLayer = window.dataLayer ?? []
   // gtag.js dispatches commands from Arguments objects; arrays use a different API.
   const gtag = (function () {
+    // eslint-disable-next-line prefer-rest-params -- gtag dispatch requires a native Arguments object.
     window.dataLayer?.push(arguments)
   }) as Gtag
   window.gtag = gtag
@@ -50,6 +53,7 @@ function getOrCreateGtag(): Gtag | null {
 /** Initializes GA4 from the application bundle so CSP cannot block the bootstrap. */
 export function initializeGoogleAnalytics() {
   if (typeof window === 'undefined' || typeof document === 'undefined') return
+  if (isAnalyticsTestTraffic()) return
 
   const gtag = getOrCreateGtag()
   if (!gtag || window.__onefindGaInitialized) return
@@ -75,6 +79,7 @@ function getGtag(): Gtag | null {
 }
 
 export function trackSignUp(method: 'email' | 'google') {
+  if (isAnalyticsTestTraffic()) return
   getGtag()?.('event', 'sign_up', { method })
 }
 
@@ -100,6 +105,7 @@ function getOrCreateMetaPixel(): MetaPixel | null {
 /** Initializes the Meta Pixel exactly once for the lifetime of the page. */
 export function initializeMetaPixel() {
   if (typeof window === 'undefined' || typeof document === 'undefined') return
+  if (isAnalyticsTestTraffic()) return
 
   const fbq = getOrCreateMetaPixel()
   if (!fbq || window.__onefindMetaPixelInitialized) return
@@ -121,10 +127,18 @@ export function trackPageView(navigationKey: string) {
   if (typeof window === 'undefined') return
 
   captureMarketingAttribution()
+  if (isAnalyticsTestTraffic()) {
+    if (window.__onefindGaLastPageViewKey !== navigationKey) {
+      void recordFunnelEvent('page_view')
+      window.__onefindGaLastPageViewKey = navigationKey
+    }
+    return
+  }
   const gtag = getGtag()
   initializeMetaPixel()
 
   if (window.__onefindGaLastPageViewKey !== navigationKey) {
+    void recordFunnelEvent('page_view')
     gtag?.('event', 'page_view', {
       page_location: window.location.href,
       page_path: window.location.pathname + window.location.search,
@@ -141,12 +155,14 @@ export function trackPageView(navigationKey: string) {
 
 export function trackCompleteRegistration(method: 'email' | 'google') {
   if (typeof window === 'undefined') return
+  if (isAnalyticsTestTraffic()) return
   initializeMetaPixel()
   window.fbq?.('track', 'CompleteRegistration', { method })
 }
 
 export function trackStartTrial(method: 'email' | 'google') {
   if (typeof window === 'undefined') return
+  if (isAnalyticsTestTraffic()) return
   getGtag()?.('event', 'start_trial', { method, currency: 'BRL', value: 0 })
   initializeMetaPixel()
   window.fbq?.('track', 'StartTrial', { method, currency: 'BRL', value: 0 })
@@ -162,6 +178,7 @@ export function trackBusinessRegistration(shopId: string, method: 'email' | 'goo
     // Continue without local deduplication when storage is unavailable.
   }
 
+  void recordFunnelEvent('registration_complete', { method }, shopId)
   trackSignUp(method)
   trackCompleteRegistration(method)
   trackStartTrial(method)
@@ -173,7 +190,9 @@ export function trackBusinessRegistration(shopId: string, method: 'email' | 'goo
 }
 
 /** Conversion steps only; never send shop names, phone numbers or message contents. */
-export function trackFunnel(event: 'landing_cta' | 'signup_view' | 'signup_submit' | 'setup_choice' | 'setup_whatsapp_open' | 'setup_manual_start' | 'setup_complete' | 'signup_error' | 'signup_start', params: Record<string, string> = {}) {
+export function trackFunnel(event: Exclude<FunnelEvent, 'page_view' | 'registration_complete'>, params: Record<string, string> = {}) {
+  void recordFunnelEvent(event, params)
+  if (isAnalyticsTestTraffic()) return
   try {
     getGtag()?.('event', event, params)
     if (typeof window !== 'undefined') {
