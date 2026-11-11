@@ -34,7 +34,8 @@ group by 1,2,3,4;
 ```
 
 WhatsApp campaign 04D uses a distinct campaign identifier and a prefilled
-message identifying Benefícios 04D. For assisted signup, share the normal
+message: “Tenho um banho e tosa e quero conhecer o onefind.” Campaign
+identifiers stay in URL tags, outside the customer-facing message. For assisted signup, share the normal
 business signup link with `utm_source=whatsapp`,
 `utm_campaign=onefind_teste04d_whatsapp`, and
 `utm_content=beneficios_fbfeed_igstories`. Do not add the technical test flag
