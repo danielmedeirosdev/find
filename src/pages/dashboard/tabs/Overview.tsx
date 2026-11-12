@@ -1,3 +1,4 @@
+import { cashPeriodStart } from '../../../lib/finance'
 import { useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { formatPrice, formatTime, formatDate, bookingStatusLabel } from '../../../lib/format'
@@ -54,11 +55,11 @@ export function OverviewTab({ shopId, onNavigate }: Props) {
           .order('time')
           .limit(5),
         supabase
-          .from('financial_transactions')
+          .from('financial_receipts')
           .select('amount')
           .eq('shop_id', shopId)
           .eq('type', 'entrada')
-          .gte('created_at', monthStr),
+          .gte('cash_date', cashPeriodStart('month')),
         supabase
           .from('shop_customers')
           .select('*', { count: 'exact', head: true })

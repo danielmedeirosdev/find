@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { periodStart, cashTotals } from '../../../lib/finance'
+import { cashPeriodStart, cashTotals } from '../../../lib/finance'
 import { InlineError } from '../../../components/EmptyState'
 import { supabase } from '../../../lib/supabase'
 import { formatPrice } from '../../../lib/format'
@@ -31,15 +31,15 @@ export function ReportsTab({ shopId }: Props) {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const start = periodStart(period)
+    const start = cashPeriodStart(period)
 
     const [{ data: tx, error: txError }, { data: bookings, error: bookingsError }, { data: barb, error: barbersError }, {data:sales,error:salesError}] = await Promise.all([
       supabase
-        .from('financial_transactions')
-        .select('*, bookings(barber_id)')
+        .from('financial_receipts')
+        .select('*')
         .eq('shop_id', shopId)
         .eq('type', 'entrada')
-        .gte('created_at', start),
+        .gte('cash_date', cashPeriodStart(period)),
       supabase
         .from('bookings')
         .select(`
@@ -102,7 +102,7 @@ export function ReportsTab({ shopId }: Props) {
     }
 
     for (const tx of transactions) {
-      const entry=tx.bookings?.barber_id ? statsMap.get(tx.bookings.barber_id) : undefined
+      const entry=tx.barber_id ? statsMap.get(tx.barber_id) : undefined
       if(entry)entry.revenue+=Number(tx.amount)
     }
     for (const entry of statsMap.values()) {
@@ -120,7 +120,7 @@ export function ReportsTab({ shopId }: Props) {
   return (
     <div>
       {error && <InlineError message={error}/>}
-      <h2 className="font-display text-2xl text-white mb-6">Relatórios</h2>
+      <h2 className="font-display text-2xl text-white mb-2">Relatórios</h2><p className="mb-6 text-sm text-charcoal-muted">Recebimentos pela data efetiva. Nos registros antigos sem data informada, os totais usam a data de registro.</p>
 
       <div className="mb-6 flex gap-2">
         {([

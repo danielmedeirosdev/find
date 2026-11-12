@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../../../lib/supabase";
 import { localDateIso } from "../../../../lib/booking";
-import { cashTotals, periodStart } from "../../../../lib/finance";
+import { cashTotals, cashPeriodStart } from "../../../../lib/finance";
 import {
   customerLabel,
   formatPrice,
@@ -42,10 +42,10 @@ export function PetOverview({ shopId, onNavigate }: Props) {
         .eq("date", localDateIso())
         .order("time"),
       supabase
-        .from("financial_transactions")
+        .from("financial_receipts")
         .select("*")
         .eq("shop_id", shopId)
-        .gte("created_at", periodStart("today")),
+        .gte("cash_date", cashPeriodStart("today")),
     ]);
     if (b.error || t.error)
       setError("Não foi possível carregar o resumo. Tente novamente.");

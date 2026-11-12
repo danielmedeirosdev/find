@@ -80,3 +80,18 @@ export function selectedBookingTotal(
 export function amountDue(total:number, servicesAmount:number, coveredByPackage:boolean):number {
  return Math.max(0,cents(total)-(coveredByPackage?cents(servicesAmount):0))/100
 }
+
+export function paymentToday(now = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+}
+export function cashPeriodStart(period: Period, now = new Date()): string {
+  const day = new Date(paymentToday(now) + 'T12:00:00Z');
+  if (period === 'month') day.setUTCDate(1);
+  if (period === 'week') day.setUTCDate(day.getUTCDate() - day.getUTCDay());
+  return day.toISOString().slice(0,10);
+}
+export function receiptTitle(t: FinancialTransaction): string {
+  const who = [t.pet_name, t.customer_name ? (t.pet_name ? `(${t.customer_name})` : t.customer_name) : null].filter(Boolean).join(' ');
+  if (!who || t.type !== 'entrada') return t.description;
+  return `${t.customer_package_id ? 'Recebimento de pacote' : 'Recebimento de atendimento'} — ${who}`;
+}
