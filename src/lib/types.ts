@@ -309,6 +309,15 @@ export interface ServiceSizeRule {
 }
 
 export interface FinancialTransaction {
+  paid_on?: string | null
+  cash_date?: string
+  customer_package_id?: string | null
+  customer_name?: string | null
+  pet_name?: string | null
+  service_name?: string | null
+  booking_date?: string | null
+  payment_status?: string | null
+  barber_id?: string | null
   id: string
   shop_id: string
   booking_id: string | null

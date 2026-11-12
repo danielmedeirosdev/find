@@ -6,6 +6,7 @@ import {
   bookingTotal,
   selectedBookingTotal,
   periodStart,
+  paymentToday, cashPeriodStart, receiptTitle,
 } from "../finance";
 import type { BookingWithDetails, FinancialTransaction } from "../types";
 const b = {
@@ -54,3 +55,17 @@ describe("financial contract", () => {
 });
 
 describe('package settlement',()=>{it('charges only amounts outside the package',()=>expect(amountDue(100,80,true)).toBe(20));it('charges the quote without a package',()=>expect(amountDue(100,80,false)).toBe(100));it('never generates a negative charge',()=>expect(amountDue(70,80,true)).toBe(0))})
+
+describe('receipt identity and business dates', () => {
+ it('uses São Paulo day around UTC midnight', () => {
+   expect(paymentToday(new Date('2026-11-12T01:00:00Z'))).toBe('2026-11-11')
+   expect(cashPeriodStart('month',new Date('2026-12-01T01:00:00Z'))).toBe('2026-11-01')
+ })
+ it('identifies package pet and tutor without repeating the service', () => {
+   expect(receiptTitle({type:'entrada',customer_package_id:'p',pet_name:'Meg',customer_name:'Rose',description:'Recebimento de pacote'} as FinancialTransaction)).toBe('Recebimento de pacote — Meg (Rose)')
+ })
+ it('retains legacy descriptions and identifies bookings', () => {
+   expect(receiptTitle({type:'entrada',description:'Legado'} as FinancialTransaction)).toBe('Legado')
+   expect(receiptTitle({type:'entrada',description:'Atendimento',customer_name:'Ana'} as FinancialTransaction)).toBe('Recebimento de atendimento — Ana')
+ })
+})

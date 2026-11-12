@@ -1,6 +1,7 @@
+import { PaymentDateEditor } from '../../../components/PaymentDateEditor'
 import { BookingReceivables } from '../../../components/BookingReceivables'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { periodStart, cashTotals } from '../../../lib/finance'
+import { cashPeriodStart, cashTotals, receiptTitle } from '../../../lib/finance'
 import { InlineError, LoadingBlock } from '../../../components/EmptyState'
 import { supabase } from '../../../lib/supabase'
 import { formatPrice, paymentMethodLabel } from '../../../lib/format'
@@ -26,13 +27,12 @@ export function CashFlowTab({ shopId }: Props) {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const start = periodStart(period)
     const { data, error: loadError } = await supabase
-      .from('financial_transactions')
+      .from('financial_receipts')
       .select('*')
       .eq('shop_id', shopId)
-      .gte('created_at', start)
-      .order('created_at', { ascending: false })
+      .gte('cash_date', cashPeriodStart(period))
+      .order('cash_date', { ascending: false }).order('created_at', { ascending: false })
 
     setError(loadError ? 'Não foi possível carregar o caixa. Tente novamente.' : '')
     setTransactions((data as FinancialTransaction[]) || [])
@@ -75,7 +75,7 @@ export function CashFlowTab({ shopId }: Props) {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-2xl text-white">Fluxo de Caixa</h2>
-          <p className="text-sm text-charcoal-muted mt-1">Recebimentos e despesas.</p>
+          <p className="text-sm text-charcoal-muted mt-1">Recebimentos e despesas pela data efetiva. Registros antigos sem data informada usam a data de registro nos totais.</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
@@ -186,11 +186,15 @@ export function CashFlowTab({ shopId }: Props) {
               className="flex flex-wrap items-center justify-between gap-2 of-work-panel"
             >
               <div>
-                <p className="text-white">{t.description}</p>
+                <p className="break-words text-white">{receiptTitle(t)}</p>
+                {t.service_name && <p className="mt-1 break-words text-sm text-charcoal-muted">{t.service_name}</p>}
+                {t.payment_status && <p className="text-xs text-brass">{t.payment_status}</p>}
                 <p className="text-xs text-charcoal-muted">
-                  {new Date(t.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })} ·{' '}
+                  {t.paid_on ? `Pago em ${t.paid_on.split('-').reverse().join('/')}` : `Data do pagamento não informada · Registro ${new Date(t.created_at).toLocaleDateString('pt-BR')}`} ·{' '}
                   {paymentMethodLabel(t.payment_method)}
                 </p>
+                {t.booking_date && <p className="text-xs text-charcoal-muted">Atendimento: {t.booking_date.split('-').reverse().join('/')}</p>}
+                <PaymentDateEditor transaction={t} onSaved={()=>void load()}/>
               </div>
               <p
                 className={`font-mono text-lg ${
