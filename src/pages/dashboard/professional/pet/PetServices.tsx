@@ -6,6 +6,7 @@ import { durationPayload, type PetDurationDraft } from '../../../../lib/pet'
 import { FieldHint, FieldLabel } from '../../../../components/FormHints'
 import { ServiceProfessionalPicker } from '../../../../components/ServiceProfessionalPicker'
 import { ServiceAdvancedSettings } from '../../../../components/ServiceAdvancedSettings'
+import { AssistedServiceDrafts } from '../../../../components/AssistedServiceDrafts'
 import { AppIcon } from '../../../../components/AppIcon'
 import { EmptyState, InlineError, LoadingBlock } from '../../../../components/EmptyState'
 import { userFacingError } from '../../../../lib/userFacingError'
@@ -200,6 +201,7 @@ export function PetServices({ shopId }: Props) {
       {loadError && <div className="mb-4 flex flex-wrap items-center gap-3"><InlineError message={loadError} /><button type="button" onClick={()=>void load()} className="rounded-lg border border-charcoal-light px-3 text-sm text-white">Tentar novamente</button></div>}
 
       {!loadError && <>
+      <AssistedServiceDrafts shopId={shopId} onConfirmed={() => void load()} />
       <section className="mb-8 rounded-2xl border border-brass/35 bg-gradient-to-br from-brass/10 to-transparent p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex max-w-2xl items-start gap-3">
