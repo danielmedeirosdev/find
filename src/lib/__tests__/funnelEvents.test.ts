@@ -49,3 +49,12 @@ describe('first-party funnel diagnostics', () => {
     expect(insert).toHaveBeenCalledWith(expect.objectContaining({stage: null, method: null, last_utm_campaign: null}))
   })
 })
+
+it('keeps button diagnostics separate, allowlisted and marked for technical traffic', async () => {
+ const storage=new Map<string,string>();const store={getItem:(key:string)=>storage.get(key)||null,setItem:(key:string,value:string)=>storage.set(key,value)}
+ vi.stubGlobal('window',{location:{hostname:'www.onefind.com.br',pathname:'/',search:'?onefind_test=1'},localStorage:store,sessionStorage:store})
+ await recordFunnelEvent('google_button_error',{method:'google',stage:'google_script_timeout',message:'sensitive-token'})
+ expect(insert).toHaveBeenLastCalledWith(expect.objectContaining({event_name:'google_button_error',stage:'google_script_timeout',is_test:true}))
+ expect(JSON.stringify(insert.mock.calls[insert.mock.calls.length-1])).not.toContain('sensitive-token')
+ vi.unstubAllGlobals()
+})

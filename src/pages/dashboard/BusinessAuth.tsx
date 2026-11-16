@@ -317,8 +317,9 @@ export function BusinessAuth() {
           tone="dark"
           disabled={loading || googleLoading}
           onCredential={handleGoogleCredential}
-          onError={(message) => {
-            signupError('google_load', 'google')
+          onReady={()=>setGoogleError('')}
+                    onError={(message, stage) => {
+            trackFunnel(stage === 'google_auth' ? 'signup_error' : 'google_button_error', { method: 'google', stage })
             setGoogleError(message)
             setGoogleLoading(false)
           }}

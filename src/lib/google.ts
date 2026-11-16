@@ -33,31 +33,45 @@ declare global {
   }
 }
 
+export type GoogleFailureStage = 'google_script_error' | 'google_script_timeout' | 'google_sdk_missing' | 'google_prepare' | 'google_auth'
+export class GoogleLoadError extends Error {
+  constructor(public readonly stage: GoogleFailureStage) { super('Não foi possível preparar o Google. Tente novamente ou use e-mail e senha.') }
+}
 let gsiLoading: Promise<void> | null = null
 
 export function loadGoogleIdentityServices(): Promise<void> {
   if (window.google?.accounts?.id) return Promise.resolve()
   if (gsiLoading) return gsiLoading
-
-  gsiLoading = new Promise((resolve, reject) => {
+  const attempt = new Promise<void>((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>(`script[src="${GSI_SRC}"]`)
-    if (existing) {
-      existing.addEventListener('load', () => resolve(), { once: true })
-      existing.addEventListener('error', () => reject(new Error('Falha ao carregar Google.')), {
-        once: true,
-      })
-      return
+    const script = existing || document.createElement('script')
+    let settled = false
+    const finish = (stage?: GoogleFailureStage) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timeout)
+      clearInterval(poll)
+      script.removeEventListener('load', loaded)
+      script.removeEventListener('error', failed)
+      if (stage) { script.remove(); reject(new GoogleLoadError(stage)) } else resolve()
     }
-
-    const script = document.createElement('script')
-    script.src = GSI_SRC
-    script.async = true
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error('Falha ao carregar Google.'))
-    document.head.appendChild(script)
+    const loaded = () => finish(window.google?.accounts?.id ? undefined : 'google_sdk_missing')
+    const failed = () => finish('google_script_error')
+    const timeout = setTimeout(() => finish('google_script_timeout'), 15000)
+    // An existing script may already have emitted load before listeners were attached.
+    const poll = setInterval(() => { if (window.google?.accounts?.id) finish() }, 100)
+    script.addEventListener('load', loaded)
+    script.addEventListener('error', failed)
+    if (!existing) {
+      script.src = GSI_SRC
+      script.async = true
+      document.head.appendChild(script)
+    }
   })
-
-  return gsiLoading
+  gsiLoading = attempt
+  // Release the settled attempt for both success and failure, without an unhandled rejection.
+  void attempt.then(() => { if (gsiLoading === attempt) gsiLoading = null }, () => { if (gsiLoading === attempt) gsiLoading = null })
+  return attempt
 }
 
 /** Retorna [nonce cru para Supabase, nonce hash para o Google]. */

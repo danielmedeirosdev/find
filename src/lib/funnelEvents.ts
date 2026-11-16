@@ -4,11 +4,11 @@ import { isAnalyticsTestTraffic } from './analyticsContext'
 
 export type FunnelEvent = 'page_view' | 'landing_cta' | 'signup_view' | 'signup_submit' |
   'setup_choice' | 'setup_whatsapp_open' | 'setup_manual_start' | 'setup_complete' |
-  'signup_error' | 'signup_start' | 'registration_complete'
+  'google_button_error' | 'signup_error' | 'signup_start' | 'registration_complete'
 
 const SESSION_KEY = 'onefind_funnel_session'
 const PUBLIC_PATHS = new Set(['/', '/pet', '/apresentacao', '/painel', '/auth/callback'])
-const STAGES = new Set(['google_load', 'google_auth', 'password_requirements', 'auth_signup',
+const STAGES = new Set(['google_script_error', 'google_script_timeout', 'google_sdk_missing', 'google_prepare', 'google_load', 'google_auth', 'password_requirements', 'auth_signup',
   'missing_user', 'session_confirmation', 'shop_creation', 'unexpected'])
 const SOURCES = new Set(['hero', 'landing', 'login_toggle', 'header', 'footer', 'pricing',
   'menu', 'nav', 'final', 'features', 'cta', 'mobile'])

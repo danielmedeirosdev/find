@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   GOOGLE_CLIENT_ID,
+  GoogleLoadError,
+  type GoogleFailureStage,
   generateGoogleNonce,
   loadGoogleIdentityServices,
   type GoogleCredentialResponse,
@@ -10,7 +12,8 @@ type Tone = 'light' | 'dark'
 
 interface GoogleSignInButtonProps {
   onCredential: (response: GoogleCredentialResponse, nonce: string) => void | Promise<void>
-  onError?: (message: string) => void
+  onError?: (message: string, stage: GoogleFailureStage) => void
+  onReady?: () => void
   disabled?: boolean
   tone?: Tone
 }
@@ -18,10 +21,15 @@ interface GoogleSignInButtonProps {
 export function GoogleSignInButton({
   onCredential,
   onError,
+  onReady,
   disabled = false,
   tone = 'light',
 }: GoogleSignInButtonProps) {
   const hostRef = useRef<HTMLDivElement>(null)
+  const [attempt,setAttempt] = useState(0)
+  const [failed,setFailed] = useState(false)
+  const readyRef = useRef(onReady)
+  readyRef.current = onReady
   const [ready, setReady] = useState(false)
   const [loading, setLoading] = useState(true)
   const callbackRef = useRef(onCredential)
@@ -34,24 +42,29 @@ export function GoogleSignInButton({
 
     const mount = async () => {
       setLoading(true)
+      setReady(false)
+      setFailed(false)
       try {
         await loadGoogleIdentityServices()
-        if (cancelled || !hostRef.current || !window.google?.accounts?.id) {
+        if (cancelled || !hostRef.current) return
+        if (!window.google?.accounts?.id) {
           throw new Error('Google não carregou. Atualize a página.')
         }
 
         const [rawNonce, hashedNonce] = await generateGoogleNonce()
+        if (cancelled || !hostRef.current) return
         hostRef.current.innerHTML = ''
 
         window.google.accounts.id.initialize({
           client_id: GOOGLE_CLIENT_ID,
           callback: async (response: GoogleCredentialResponse) => {
+            if (cancelled) return
             try {
               await callbackRef.current(response, rawNonce)
             } catch (err) {
               const message =
                 err instanceof Error ? err.message : 'Falha no login com Google.'
-              errorRef.current?.(message)
+              if (!cancelled) errorRef.current?.(message, 'google_auth')
             }
           },
           nonce: hashedNonce,
@@ -74,16 +87,19 @@ export function GoogleSignInButton({
         })
 
         if (!cancelled) {
+          readyRef.current?.()
           setReady(true)
           setLoading(false)
         }
       } catch (err) {
         if (!cancelled) {
           setLoading(false)
+          setFailed(true)
           errorRef.current?.(
             err instanceof Error
               ? err.message
-              : 'Não foi possível carregar o botão do Google.'
+              : 'Não foi possível carregar o botão do Google.',
+            err instanceof GoogleLoadError ? err.stage : 'google_prepare'
           )
         }
       }
@@ -92,9 +108,9 @@ export function GoogleSignInButton({
     void mount()
     return () => {
       cancelled = true
-      window.google?.accounts.id.cancel()
+      // This component does not own a One Tap prompt; do not cancel other mounts.
     }
-  }, [tone])
+  }, [tone, attempt])
 
   return (
     <div className="w-full">
@@ -109,6 +125,7 @@ export function GoogleSignInButton({
           Carregando Google...
         </p>
       )}
+      {failed && <button type="button" disabled={disabled} className="min-h-11 text-sm underline" onClick={()=>setAttempt(value=>value+1)}>Tentar Google novamente</button>}
       <div
         ref={hostRef}
         className={`flex w-full justify-center min-h-[44px] ${disabled ? 'pointer-events-none opacity-50' : ''}`}

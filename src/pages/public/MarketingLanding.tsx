@@ -85,8 +85,9 @@ export function MarketingLanding() {
                 <div className="mkt-google">
                   <GoogleSignInButton
                     disabled={googleBusy}
-                    onError={(message) => {
-                      trackFunnel('signup_error', { method: 'google', stage: 'google_load', source: 'hero' });
+                    onReady={()=>setGoogleError('')}
+                    onError={(message, stage) => {
+                      trackFunnel(stage === 'google_auth' ? 'signup_error' : 'google_button_error', { method: 'google', stage, source: 'hero' });
                       setGoogleError(message);
                     }}
                     onCredential={async (response, nonce) => {
