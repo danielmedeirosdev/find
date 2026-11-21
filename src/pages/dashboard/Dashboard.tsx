@@ -1,3 +1,4 @@
+import { OperationalPresence } from '../../components/OperationalPresence'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { supabase, invokeFunction } from '../../lib/supabase'
@@ -268,29 +269,29 @@ export function Dashboard() {
   }
 
   if (role === 'staff' && barber) {
-    return <StaffProfessional shop={shop} barber={barber} onUpdate={loadMembership} />
+    return <><OperationalPresence shopId={shop.id} /><StaffProfessional shop={shop} barber={barber} onUpdate={loadMembership} /></>
   }
 
 
   if (isPet) {
     return (
-      <ProfessionalPet
+      <><OperationalPresence shopId={shop.id} /><ProfessionalPet
         shop={{ ...shop, segment: 'pet' }}
         onUpdate={loadMembership}
         onSubscribe={handleSubscribe}
         subscribing={subscribing}
         subscribeError={subscribeError}
-      />
+      /></>
     )
   }
 
   return (
-    <ProfessionalBarbearia
+    <><OperationalPresence shopId={shop.id} /><ProfessionalBarbearia
       shop={{ ...shop, segment: 'barbershop' }}
       onUpdate={loadMembership}
       onSubscribe={handleSubscribe}
       subscribing={subscribing}
       subscribeError={subscribeError}
-    />
+    /></>
   )
 }

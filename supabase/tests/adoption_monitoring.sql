@@ -1,0 +1,51 @@
+-- Isolated fixtures; always wrap in BEGIN/ROLLBACK. No real tenant writes.
+DO $$
+DECLARE owner_id uuid:=gen_random_uuid(); staff_id uuid:=gen_random_uuid(); admin_id uuid:=gen_random_uuid(); other_id uuid:=gen_random_uuid(); sid uuid; barber_id uuid:=gen_random_uuid(); bid uuid:=gen_random_uuid(); cid uuid:=gen_random_uuid(); pid uuid:=gen_random_uuid(); package_template uuid:=gen_random_uuid(); package_id uuid:=gen_random_uuid(); d date:=(now() AT TIME ZONE 'America/Sao_Paulo')::date; report jsonb; rejected boolean;
+BEGIN
+ INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES(owner_id,'qa.adoption.'||owner_id||'@example.test','{"role":"barber","segment":"pet","shop_name":"QA adoption rollback"}'),(staff_id,'qa.adoption.'||staff_id||'@example.test','{}'),(other_id,'qa.adoption.'||other_id||'@example.test','{}');
+ INSERT INTO auth.users(id,email,raw_app_meta_data) VALUES(admin_id,'qa.adoption.'||admin_id||'@example.test','{"onefind_platform_admin":true}');
+ SELECT id INTO sid FROM public.shops WHERE owner_user_id=owner_id;
+ PERFORM set_config('request.jwt.claim.role','service_role',true);
+ INSERT INTO public.barbers(id,shop_id,name,user_id) VALUES(barber_id,sid,'Profissional de teste',staff_id);
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ PERFORM set_config('request.jwt.claim.sub',owner_id::text,true);
+ INSERT INTO public.shop_customers(id,shop_id,name,phone) VALUES(cid,sid,'Nome confidencial de teste','19999990000');
+ INSERT INTO public.pets(id,shop_id,customer_id,name) VALUES(pid,sid,cid,'Pet confidencial de teste');
+ INSERT INTO public.bookings(id,shop_id,barber_id,client_name,client_phone,date,time,historical_entry,shop_customer_id,pet_id) VALUES(bid,sid,barber_id,'Nome confidencial de teste','19999990000',d-2,'09:00',true,cid,pid);
+ IF NOT EXISTS(SELECT 1 FROM private.adoption_events WHERE entity_id=bid AND actor_id=owner_id AND actor_role='owner' AND assigned_professional_id=barber_id AND action='created') THEN RAISE EXCEPTION 'Creator confused with assigned professional';END IF;
+ UPDATE public.bookings SET status=status WHERE id=bid;
+ IF (SELECT count(*) FROM private.adoption_events WHERE entity_id=bid)<>1 THEN RAISE EXCEPTION 'No-op duplicated';END IF;
+ INSERT INTO public.service_packages(id,shop_id,name,total_sessions,price) VALUES(package_template,sid,'Pacote de teste',4,0);
+ INSERT INTO public.customer_packages(id,shop_id,package_id,customer_id,pet_id,total_sessions) VALUES(package_id,sid,package_template,cid,pid,4);
+ INSERT INTO public.package_usages(customer_package_id,note) VALUES(package_id,'Conteúdo confidencial');
+ INSERT INTO public.financial_transactions(shop_id,type,description,amount,paid_on) VALUES(sid,'entrada','Conteúdo confidencial',1,d);
+ IF (SELECT count(DISTINCT entity_kind) FROM private.adoption_events WHERE shop_id=sid AND actor_id=owner_id)<>7 THEN RAISE EXCEPTION 'Missing operational entity audit';END IF;
+ UPDATE public.bookings SET notes='Conteúdo confidencial' WHERE id=bid;
+ UPDATE public.bookings SET status='cancelled' WHERE id=bid;
+ IF NOT EXISTS(SELECT 1 FROM private.adoption_events WHERE entity_id=bid AND action='cancelled') OR NOT EXISTS(SELECT 1 FROM private.adoption_events WHERE entity_id=bid AND action='edited') THEN RAISE EXCEPTION 'Edit or cancel missing';END IF;
+ PERFORM public.record_operational_presence(sid,'agenda');PERFORM public.record_operational_presence(sid,'agenda');
+ IF (SELECT count(*) FROM private.adoption_sessions WHERE shop_id=sid AND user_id=owner_id)<>1 THEN RAISE EXCEPTION 'Duplicate session';END IF;
+ IF (SELECT count(*) FROM private.adoption_features f JOIN private.adoption_sessions s ON s.id=f.session_id WHERE s.shop_id=sid)<>1 THEN RAISE EXCEPTION 'Duplicate feature';END IF;
+ UPDATE private.adoption_sessions SET last_seen_at=now()-interval '31 minutes' WHERE shop_id=sid;
+ PERFORM public.record_operational_presence(sid,'packages');
+ IF (SELECT count(*) FROM private.adoption_sessions WHERE shop_id=sid)<>2 THEN RAISE EXCEPTION 'Session interval';END IF;
+ PERFORM set_config('request.jwt.claim.sub',staff_id::text,true);
+ UPDATE public.bookings SET status='completed',completed_at=now() WHERE id=bid;
+ IF NOT EXISTS(SELECT 1 FROM private.adoption_events WHERE entity_id=bid AND actor_id=staff_id AND actor_role='staff' AND action='completed') THEN RAISE EXCEPTION 'Staff attribution missing';END IF;
+ PERFORM public.record_operational_presence(sid,'agenda');
+ PERFORM set_config('request.jwt.claim.sub',other_id::text,true);
+ PERFORM public.record_operational_presence(sid,'reports');
+ IF EXISTS(SELECT 1 FROM private.adoption_sessions WHERE user_id=other_id) THEN RAISE EXCEPTION 'Cross tenant session';END IF;
+ rejected:=false;BEGIN PERFORM public.admin_shop_adoption(sid,d-29,d,d);EXCEPTION WHEN OTHERS THEN rejected:=true;END;
+ IF NOT rejected THEN RAISE EXCEPTION 'Non admin read allowed';END IF;
+ PERFORM set_config('request.jwt.claim.sub',admin_id::text,true);
+ report:=public.admin_shop_adoption(sid,d-29,d,d);
+ IF (report->'summary'->>'total')::int<>1 OR jsonb_array_length(report->'bookings')<>1 OR (report->'bookings'->0->>'creator_id')::uuid<>owner_id THEN RAISE EXCEPTION 'Report duplicate or creator incorrect';END IF;
+ IF report::text LIKE '%19999990000%' OR report::text LIKE '%Nome confidencial%' OR report::text LIKE '%Pet confidencial%' OR report::text LIKE '%Conteúdo confidencial%' THEN RAISE EXCEPTION 'Sensitive data leaked';END IF;
+
+ report:=public.admin_shop_adoption((SELECT id FROM public.shops WHERE name='Karina Janone StudioPet'),date '2026-10-22',date '2026-11-20',date '2026-11-20');
+ IF (report->'summary'->>'total')::int<>412 OR (report->'summary'->>'future')::int<>157 OR (report->'summary'->>'past_scheduled')::int<>107 THEN RAISE EXCEPTION 'StudioPet snapshot mismatch'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(report->'assignments') x WHERE x->>'name'='Evilim' AND (x->>'total')::int=184) THEN RAISE EXCEPTION 'Evilim assignment mismatch';END IF;
+ IF has_table_privilege('authenticated','private.adoption_events','SELECT') OR has_function_privilege('anon','public.admin_shop_adoption(uuid,date,date,date,integer,date)','EXECUTE') THEN RAISE EXCEPTION 'Privilege leak';END IF;
+ IF (timestamptz '2026-11-20 01:30:00+00' AT TIME ZONE 'America/Sao_Paulo')::date<>date '2026-11-19' THEN RAISE EXCEPTION 'Timezone boundary';END IF;
+END $$;
