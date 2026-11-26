@@ -1,3 +1,4 @@
+import {ReceiptShareActions} from '../../../../components/ReceiptShareActions'
 import {SetupDependencies} from '../../../../components/SetupDependencies'
 import { HistoricalBooking } from '../../../../components/HistoricalBooking'
 import { AgendaManagement } from '../../../../components/AgendaManagement'
@@ -395,7 +396,7 @@ export function PetAgenda({ shopId, shopName, barberId, shopAgendaAccess = false
         {newStep===4 && receipt ? <div className="space-y-3">
           {createdCount>1 && <p className="rounded-xl border border-brass/30 p-3 text-center text-sm text-white">{createdCount} agendamentos criados com sucesso. O comprovante abaixo corresponde ao primeiro horário.</p>}
           <ConfirmReceipt view={receipt} signedIn={true}/>
-          <a target="_blank" rel="noopener noreferrer" href={`https://wa.me/${receiptPhone.replace(/\D/g,'').replace(/^(?!55)/,'55')}?text=${encodeURIComponent(`${receipt.clientName?.trim()?`Oi, ${receipt.clientName}!`:'Oi!'} Seu horário na ${receipt.shopName} está agendado.\nPet: ${receipt.petName}\nServiço: ${receipt.services.map(s=>s.name).join(', ')}\nData: ${formatDate(receipt.date)}\nHorário: ${formatTime(receipt.time)}\nProfissional: ${receipt.barberName || 'A definir'}\nValor: ${formatPrice(Number(receipt.quotedAmount ?? receipt.services.reduce((a,s)=>a+s.price,0)))}${receipt.notes?`\nObservação: ${receipt.notes}`:''}${receipt.petTransportRequested?`\nTáxi Pet: ${Number(receipt.petTransportFee)>0?formatPrice(Number(receipt.petTransportFee)):'valor a confirmar'}\nEndereço da busca: ${receipt.petTransportAddress}${receipt.petTransportNotes?`\nInstruções: ${receipt.petTransportNotes}`:''}`:''}`)}`} className="block rounded-xl bg-brass px-5 py-4 text-center font-semibold text-charcoal-dark">Mandar comprovante pro cliente pelo WhatsApp</a>
+          <ReceiptShareActions view={receipt} phone={receiptPhone}/>
 
           <button type="button" onClick={()=>setShowNew(false)} className="w-full rounded-xl border border-white/20 py-3 text-white">Concluir</button>
         </div> : <form onSubmit={e=>{if(newStep<3){e.preventDefault();if(newStep===2&&serviceIds.length===0){setNewError('Selecione pelo menos um serviço.');return}if(newStep===2&&!validateDetails())return;setNewError('');setNewStep(newStep+1)}else void saveNew(e)}} className="space-y-4">
