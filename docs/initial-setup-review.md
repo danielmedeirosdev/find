@@ -1,29 +1,25 @@
-# Configuração inicial — implementação em revisão
+# Configuração inicial — revisão atual
 
-## Causa confirmada
+## Causa
+Cadastro e Google redirecionavam ao dashboard sem nenhum componente para a escolha inicial. Os tipos/eventos antigos permaneciam sem uso. Não foi reutilizada a regra antiga `onboarding_completed=false`, que atingiria contas existentes.
 
-`BusinessAuth` e o login Google resolvem a loja e redirecionam ao dashboard. Os tipos e eventos da escolha antiga continuam no repositório, mas nenhum componente em uso apresenta a escolha. O utilitário antigo baseado em onboarding_completed=false não pode ser reativado indiscriminadamente: também atingiria clientes antigos.
+## Implementação
+Elegibilidade prospectiva em banco; nenhuma conta antiga é incluída. Criações administrativas com service_role não recebem o guia. Funcionários não recebem o componente e RLS impede leitura/alteração de outros estabelecimentos.
 
-## Implementado nesta revisão (não publicado)
+Escolha assistida/manual, progresso, adiamento, dispensa, retomada, etapas puladas e solicitações assistidas consultáveis no administrativo. Janela sobreposta, largura máxima 36rem, altura máxima 82dvh, rolagem interna e rodapé fixo.
 
-- Elegibilidade prospectiva em banco, sem backfill. Gatilho ignora contas antigas e criações pelo service_role da configuração administrativa. Proprietário lê/atualiza apenas a própria linha, com RLS; funcionário não recebe o guia.
-- Escolha assistida ou por conta própria; progresso persistido, adiamento, dispensa, retomada e etapas puladas. Solicitação assistida pode ser consultada pelo administrador nos detalhes da loja.
-- Janela sobreposta com largura máxima e altura limitada a 82dvh, rolagem interna, rodapé acessível e componentes existentes.
-- Ordem por dependências: estabelecimento, equipe, horários por profissional, serviços, clientes/pets, pacotes. Nenhum profissional é criado automaticamente.
-- Perfil e serviços aceitam modo compacto; exclui mídia/transportes avançados da configuração inicial. Exclusão da loja não aparece no modo compacto.
-- Atalhos em agenda e pacotes abrem cadastros relacionados mantendo o formulário original montado; ao fechar, recarregam as listas. Modais aninhados deixam o teclado sob controle do diálogo superior.
+Ordem: estabelecimento, equipe, horários por profissional, serviços, cliente/pet, pacote opcional. Os formulários iniciais são compactos, sem fotos ou configurações avançadas. Horários e duração usam os componentes compartilhados do painel; serviços usam a mesma RPC de duração. As estruturas normais de lojas, profissionais, agenda, clientes, pets e pacotes continuam sendo as fontes oficiais.
+
+Continuar salva a etapa e o progresso numa transação. Reenvio da mesma requisição usa recibo idempotente, evitando duplicações. Salvar e adicionar outro mantém a etapa e limpa o formulário após sucesso. Validação/erro mantém a etapa. Cliente+pet são salvos atomicamente; falha no pet não deixa cliente parcial.
+
+Rascunhos são enviados ao banco após 350ms e sincronizados antes de voltar, pular ou fechar. Falha no envio mantém a janela aberta. O navegador avisa ao sair com alterações ainda pendentes. Não há garantia de persistência durante encerramento abrupto/offline antes da confirmação do banco. Rascunhos concluídos são removidos da linha de progresso.
+
+Atalhos em agenda/pacotes mantêm o formulário original montado; recarregam listas ao fechar. Esses atalhos ainda reutilizam os formulários completos do painel.
 
 ## Validação executada
+171 testes automatizados existentes; build/TypeScript e lint sem erros (21 avisos preexistentes).
 
-Migração e fixtures SQL executadas entre BEGIN/ROLLBACK: novo responsável elegível, usuário antigo excluído, criação administrativa excluída, progresso/adiamento/pulo persistidos e isolamento de leitura com SET LOCAL ROLE authenticated. Nenhuma migração desta revisão foi aplicada em produção.
-Build com TypeScript e suíte automatizada foram executados. Esses resultados não comprovam fluxo completo no navegador.
+SQL transacional com rollback: elegibilidade, conta antiga, criação administrativa, progresso/adiamento/pulo, RLS de leitura e isolamento. Segundo teste percorre as seis etapas, valida erro sem avanço, rascunho persistido, reenvio sem duplicação de serviço, cliente/pet atômicos, um único profissional, agendamento via RPC operacional, contratação e consumo de pacote, isolamento de escrita e conclusão com limpeza dos rascunhos.
 
-## Pendências que impedem publicação
-
-- Testar E2E e responsividade 320–430px e desktop, inclusive email/Google, ativação administrativa e criação/consumo reais de pacotes em ambiente isolado.
-- Avançar ainda exige usar os botões Salvar/Adicionar dos componentes existentes. Falta conectar o salvamento ao Continuar e proteger rascunhos de etapas contra troca/fechamento sem salvar.
-- Etapa de cliente/pet usa as telas existentes com seleção interna; precisa refino para um cadastro simplificado sequencial.
-- Acesso e foco com modais aninhados precisam de teste visual, especialmente nos formulários de pets.
-- Auditar os demais pontos de dependência (além dos atalhos implementados em agenda e pacotes) e validar renovação de disponibilidade após mudanças de horários/serviços.
-
-Esta revisão é um trabalho em andamento. Não deve ser promovida à main antes de resolver as pendências e executar os fluxos solicitados.
+## Ainda não comprovado
+Cadastro real de ponta a ponta por email/Google, consumo de convite e retomada após logout no navegador. Responsividade 320–430px/desktop e comportamento de foco/modais aninhados aguardam execução visual. Testes SQL de usuários simulados não equivalem a autenticação real. Não promover a main antes das verificações de interface e autenticação.

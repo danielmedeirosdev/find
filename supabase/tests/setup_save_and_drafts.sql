@@ -1,0 +1,35 @@
+-- Isolated transactional workflow: run BEGIN/migration/this file/ROLLBACK.
+DO $$ DECLARE u uuid:=gen_random_uuid(); other_id uuid:=gen_random_uuid(); sid uuid; rid uuid:=gen_random_uuid(); r jsonb; professional uuid; service uuid; pet uuid; customer uuid; template uuid; package uuid:=gen_random_uuid(); booking uuid; day date:=(now() AT TIME ZONE 'America/Sao_Paulo')::date+1; failed boolean; BEGIN
+INSERT INTO auth.users(id,email,created_at,raw_user_meta_data) VALUES(u,u||'@example.test',now(),'{"role":"barber","segment":"pet"}'),(other_id,other_id||'@example.test',now(),'{"role":"barber","segment":"pet"}');
+SELECT id INTO sid FROM public.shops WHERE owner_user_id=u;
+PERFORM set_config('request.jwt.claim.sub',u::text,true);
+UPDATE public.initial_setup SET mode='self' WHERE shop_id=sid;
+PERFORM public.save_initial_setup_draft(sid,1,'{"values":{"name":"Rascunho"}}');
+IF (SELECT drafts->'1'->'values'->>'name' FROM public.initial_setup WHERE shop_id=sid)<>'Rascunho' THEN RAISE EXCEPTION 'Draft lost';END IF;
+failed:=false;BEGIN PERFORM public.save_initial_setup_step(sid,1,rid,'{"name":""}');EXCEPTION WHEN OTHERS THEN failed:=true;END;
+IF NOT failed OR (SELECT step FROM public.initial_setup WHERE shop_id=sid)<>1 THEN RAISE EXCEPTION 'Advanced with invalid input';END IF;
+r:=public.save_initial_setup_step(sid,1,rid,'{"name":"QA transactional setup"}');
+IF r<>public.save_initial_setup_step(sid,1,rid,'{"name":"must not rewrite"}') THEN RAISE EXCEPTION 'Retry not idempotent';END IF;
+IF (SELECT name FROM public.shops WHERE id=sid)<>'QA transactional setup' THEN RAISE EXCEPTION 'Duplicate request changed data';END IF;
+r:=public.save_initial_setup_step(sid,2,gen_random_uuid(),'{"name":"Responsável que atende"}');professional:=(r->>'saved_entity_id')::uuid;
+IF (SELECT count(*) FROM public.barbers WHERE shop_id=sid)<>1 THEN RAISE EXCEPTION 'Fictitious employee';END IF;
+INSERT INTO public.barber_schedule(barber_id,day_of_week,start_time,end_time,is_active) VALUES(professional,extract(dow FROM day),'09:00','18:00',true);
+PERFORM public.save_initial_setup_step(sid,3,gen_random_uuid(),'{}');
+rid:=gen_random_uuid();r:=public.save_initial_setup_step(sid,4,rid,'{"name":"Banho","price":"50","duration_minutes":60}',false);service:=(r->>'saved_entity_id')::uuid;
+PERFORM public.save_initial_setup_step(sid,4,rid,'{"name":"Banho","price":"50","duration_minutes":60}',false);
+IF (SELECT count(*) FROM public.services WHERE shop_id=sid)<>1 THEN RAISE EXCEPTION 'Duplicate service';END IF;
+PERFORM public.save_initial_setup_step(sid,4,gen_random_uuid(),'{}');
+failed:=false;BEGIN PERFORM public.save_initial_setup_step(sid,5,gen_random_uuid(),'{"customer_name":"QA","customer_phone":"19912345678","pet_name":"Pet","size":"invalid"}');EXCEPTION WHEN OTHERS THEN failed:=true;END;
+IF NOT failed OR EXISTS(SELECT 1 FROM public.shop_customers WHERE shop_id=sid) THEN RAISE EXCEPTION 'Partial customer persisted';END IF;
+r:=public.save_initial_setup_step(sid,5,gen_random_uuid(),'{"customer_name":"QA","customer_phone":"19912345678","pet_name":"Pet","size":"medio"}');pet:=(r->>'saved_entity_id')::uuid;
+SELECT customer_id INTO customer FROM public.pets WHERE id=pet;
+r:=public.save_initial_setup_step(sid,6,gen_random_uuid(),'{"name":"Quinzenal","price":"120","sessions":"4","validity":"30"}');template:=(r->>'saved_entity_id')::uuid;
+IF r->>'status'<>'completed' OR r->'drafts'<>'{}'::jsonb THEN RAISE EXCEPTION 'Completion or draft cleanup failed';END IF;
+booking:=(public.create_operational_booking_with_details(sid,professional,customer,pet,day,'10:00',ARRAY[service])->>'id')::uuid;
+PERFORM public.sell_customer_package(package,sid,template,customer,pet,false,NULL);
+PERFORM public.consume_package_session(package,booking,'QA isolated');
+IF (SELECT used_sessions FROM public.customer_packages WHERE id=package)<>1 THEN RAISE EXCEPTION 'Package use failed';END IF;
+PERFORM set_config('request.jwt.claim.sub',other_id::text,true);
+failed:=false;BEGIN PERFORM public.save_initial_setup_draft(sid,1,'{}');EXCEPTION WHEN OTHERS THEN failed:=true;END;IF NOT failed THEN RAISE EXCEPTION 'Cross tenant draft write';END IF;
+failed:=false;BEGIN PERFORM public.save_initial_setup_step(sid,1,gen_random_uuid(),'{"name":"invasion"}');EXCEPTION WHEN OTHERS THEN failed:=true;END;IF NOT failed THEN RAISE EXCEPTION 'Cross tenant mutation';END IF;
+END $$;
