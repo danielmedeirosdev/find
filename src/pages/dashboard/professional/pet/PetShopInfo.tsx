@@ -11,9 +11,10 @@ import type { PetBusinessType, Shop, ShopPhoto } from '../../../../lib/types'
 interface Props {
   shop: Shop
   onUpdate: () => void
+  compact?: boolean
 }
 
-export function PetShopInfo({ shop, onUpdate }: Props) {
+export function PetShopInfo({ shop, onUpdate, compact=false }: Props) {
   const [name, setName] = useState(shop.name)
   const [slogan, setSlogan] = useState(shop.slogan || '')
   const [description, setDescription] = useState(shop.description || '')
@@ -175,6 +176,7 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
 
         </div>
 
+        {!compact&&<>
         <div className="rounded-lg border border-charcoal-light p-5">
           <h3 className="font-medium text-white mb-1">Logo do Pet Shop</h3>
 
@@ -247,6 +249,7 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
           <p className="text-xs text-charcoal-muted">Arraste para reordenar.</p>
         </div>
 
+        </>}
         <div className="grid gap-4 rounded-2xl border border-charcoal-light p-5 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-charcoal-muted">
@@ -340,7 +343,7 @@ export function PetShopInfo({ shop, onUpdate }: Props) {
         </button>
       </form>
 
-      <DeleteShopControl shopName={shop.name} segment="pet" />
+      {!compact&&<DeleteShopControl shopName={shop.name} segment="pet" />}
 
     </div>
   )

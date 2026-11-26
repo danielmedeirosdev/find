@@ -1,3 +1,4 @@
+import {SetupDependencies} from '../../../components/SetupDependencies'
 import { paymentToday } from '../../../lib/finance'
 import { findCustomerPackages, type PackagePaymentFilter, type PackageSort } from '../../../lib/packageSearch'
 import { Modal } from '../../../components/Modal'
@@ -231,6 +232,7 @@ export function PackagesTab({ shopId, operationalOnly = false }: Props) {
 
   return (
     <div className="of-workspace space-y-8">
+      {(!customers.length||!pets.length)&&<SetupDependencies shopId={shopId} steps={[5]} onResolved={()=>void load()}/> }
       {receiving && <Modal label="Receber pacote" onClose={() => setReceiving(null)} busy={receivingBusy} className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3">
         <div className="max-h-[90dvh] overflow-y-auto w-full max-w-md space-y-4 rounded-xl border border-charcoal-light bg-charcoal p-5">
           <h3 className="text-lg font-semibold text-white">Receber pacote</h3>

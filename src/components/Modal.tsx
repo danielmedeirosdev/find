@@ -31,6 +31,8 @@ export function Modal({
       ).filter((n) => n.getClientRects().length > 0);
     (nodes()[0] || root.current)?.focus();
     const key = (e: KeyboardEvent) => {
+      const dialogs=Array.from(document.querySelectorAll('[role="dialog"][aria-modal="true"]'))
+      if(dialogs[dialogs.length-1]!==root.current)return
       if (e.key === "Escape" && !pending.current) {
         e.preventDefault();
         close.current();

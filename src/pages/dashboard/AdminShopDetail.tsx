@@ -1,3 +1,4 @@
+import {AdminInitialSetup} from '../../components/AdminInitialSetup'
 import {AdminResponsibleContact} from '../../components/AdminResponsibleContact'
 import { AdminAdoption } from '../../components/AdminAdoption'
 import { useEffect, useState } from 'react'
@@ -32,7 +33,7 @@ export function AdminShopDetail(){
         <div><p className="text-xs uppercase tracking-widest text-brass">Estabelecimento</p><h1 className="mt-2 text-3xl font-semibold">{detail.shop.name}</h1><p className="mt-2 text-sm text-neutral-400">{detail.shop.owner_email||'E-mail indisponível'}</p></div>
         <span className="rounded-full border border-white/20 px-4 py-2 text-sm">{detail.shop.onboarding_completed?'Configurada':'Pendente'}</span>
       </div>
-      <AdminResponsibleContact shopId={detail.shop.id}/><AdminAdoption shopId={detail.shop.id}/>
+      <AdminInitialSetup shopId={detail.shop.id}/><AdminResponsibleContact shopId={detail.shop.id}/><AdminAdoption shopId={detail.shop.id}/>
       <div className="grid gap-4 md:grid-cols-2">
         <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
           <h2 className="mb-4 text-lg font-semibold">Dados da loja</h2>

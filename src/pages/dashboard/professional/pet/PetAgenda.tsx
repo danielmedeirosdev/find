@@ -1,3 +1,4 @@
+import {SetupDependencies} from '../../../../components/SetupDependencies'
 import { HistoricalBooking } from '../../../../components/HistoricalBooking'
 import { AgendaManagement } from '../../../../components/AgendaManagement'
 import { BookingConfirmationReminder } from '../../../../components/BookingConfirmationReminder'
@@ -389,6 +390,7 @@ export function PetAgenda({ shopId, shopName, barberId, shopAgendaAccess = false
       <div className="mb-5 flex justify-stretch sm:justify-end"><button type="button" onClick={()=>void openNew()} className="min-h-12 w-full rounded-xl bg-brass px-5 py-3 text-sm font-semibold text-charcoal-dark shadow-[0_8px_24px_rgba(0,0,0,0.2)] sm:w-auto">+ Novo agendamento</button></div>
       {showNew && <section className="mb-4 rounded-xl border border-white/10 bg-charcoal-dark p-3 sm:p-4">
         <div className="mb-3 flex items-center justify-between gap-3"><h3 className="text-lg font-semibold text-white">Novo agendamento</h3><button type="button" onClick={()=>setShowNew(false)} className="text-sm text-charcoal-muted">Fechar</button></div>
+        <SetupDependencies shopId={shopId} steps={barberId?[5]:[2,3,4,5]} onResolved={()=>{void(async()=>{const [c,p,t]=await Promise.all([supabase.from('shop_customers').select('id,name,phone').eq('shop_id',shopId).order('name'),supabase.from('pets').select('id,name,customer_id,size').eq('shop_id',shopId).order('name'),supabase.from('barbers').select('id,name').eq('shop_id',shopId).order('name')]);if(c.data)setClients(c.data);if(p.data)setPetsList(p.data);if(t.data)setTeamList(t.data);void load()})()}}/>
         <BookingStepper steps={['Cliente e pet','Serviços','Horário','Concluído'].map((label,i)=>({n:i+1,label}))} current={newStep} tone="dark"/>
         {newStep===4 && receipt ? <div className="space-y-3">
           {createdCount>1 && <p className="rounded-xl border border-brass/30 p-3 text-center text-sm text-white">{createdCount} agendamentos criados com sucesso. O comprovante abaixo corresponde ao primeiro horário.</p>}

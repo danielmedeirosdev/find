@@ -14,9 +14,10 @@ import { PET_SIZES, type PetSize, type Service, type ServicePetTransport, type S
 
 interface Props {
   shopId: string
+  compact?: boolean
 }
 
-export function PetServices({ shopId }: Props) {
+export function PetServices({ shopId, compact=false }: Props) {
   const [services, setServices] = useState<Service[]>([])
   const [rules, setRules] = useState<ServiceSizeRule[]>([])
   const [transportSettings, setTransportSettings] = useState<ServicePetTransport[]>([])
@@ -202,7 +203,7 @@ export function PetServices({ shopId }: Props) {
 
       {!loadError && <>
       <AssistedServiceDrafts shopId={shopId} onConfirmed={() => void load()} />
-      <section className="mb-8 rounded-2xl border border-brass/35 bg-gradient-to-br from-brass/10 to-transparent p-5">
+      {!compact&&(      <section className="mb-8 rounded-2xl border border-brass/35 bg-gradient-to-br from-brass/10 to-transparent p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex max-w-2xl items-start gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brass/15 text-brass">
@@ -259,7 +260,7 @@ export function PetServices({ shopId }: Props) {
         {transportError ? <div className="mt-4"><InlineError message={transportError} /></div> : null}
         {transportNotice ? <p role="status" className="mt-4 rounded-xl border border-brass/20 bg-charcoal/35 px-4 py-3 text-sm text-brass-light">{transportNotice}</p> : null}
         {!services.length ? <p className="mt-4 text-xs text-charcoal-muted">Cadastre o primeiro serviço para liberar esta configuração.</p> : null}
-      </section>
+      </section>)}
 
       <section aria-labelledby="new-service-heading" className="of-work-panel mb-6">
         <div className="mb-5">

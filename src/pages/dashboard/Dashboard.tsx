@@ -1,3 +1,4 @@
+import {InitialSetup} from '../../components/InitialSetup'
 import { OperationalPresence } from '../../components/OperationalPresence'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Navigate } from 'react-router-dom'
@@ -275,7 +276,7 @@ export function Dashboard() {
 
   if (isPet) {
     return (
-      <><OperationalPresence shopId={shop.id} /><ProfessionalPet
+      <><InitialSetup shop={shop} onUpdate={loadMembership}/><OperationalPresence shopId={shop.id} /><ProfessionalPet
         shop={{ ...shop, segment: 'pet' }}
         onUpdate={loadMembership}
         onSubscribe={handleSubscribe}
