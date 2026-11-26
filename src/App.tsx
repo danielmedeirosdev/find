@@ -1,3 +1,4 @@
+import { ResponsibleContactGate } from './components/ResponsibleContactGate'
 import { lazy, Suspense } from 'react'
 import { LoadingBlock } from './components/EmptyState'
 import { BrowserRouter, Navigate, Routes, Route, useParams } from 'react-router-dom'
@@ -68,7 +69,7 @@ export default function App() {
 
           <Route path="painel" element={<DashboardLayout />}>
             <Route index element={<BusinessAuth />} />
-            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="dashboard" element={<ResponsibleContactGate><Dashboard /></ResponsibleContactGate>} />
             <Route path="seguranca" element={<AccountSecurity />} />
           </Route>
 

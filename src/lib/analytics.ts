@@ -1,3 +1,4 @@
+import {supabase} from './supabase'
 import { captureMarketingAttribution } from './attribution'
 import { isAnalyticsTestTraffic } from './analyticsContext'
 import { recordFunnelEvent, type FunnelEvent } from './funnelEvents'
@@ -169,8 +170,10 @@ export function trackStartTrial(method: 'email' | 'google') {
 }
 
 /** Emits the business conversion once per shop in this browser. */
-export function trackBusinessRegistration(shopId: string, method: 'email' | 'google') {
+export async function trackBusinessRegistration(shopId: string, method: 'email' | 'google') {
   if (typeof window === 'undefined') return
+  const {data: contact,error: contactError}=await supabase.rpc('my_responsible_contact')
+  if(contactError||contact?.required)return
   const dedupeKey = `onefind_registration_${shopId}`
   try {
     if (window.localStorage.getItem(dedupeKey)) return
@@ -178,6 +181,8 @@ export function trackBusinessRegistration(shopId: string, method: 'email' | 'goo
     // Continue without local deduplication when storage is unavailable.
   }
 
+  const {data: claimed,error: claimError}=await supabase.rpc('claim_responsible_registration',{p_shop_id:shopId})
+  if(claimError||!claimed)return
   void recordFunnelEvent('registration_complete', { method }, shopId)
   trackSignUp(method)
   trackCompleteRegistration(method)

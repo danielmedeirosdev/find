@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { initializeGoogleAnalytics, trackPageView, trackBusinessRegistration, trackFunnel } from '../analytics'
 
+const contactRpc = vi.hoisted(()=>vi.fn(async()=>({data:{required:false},error:null})))
 const insert = vi.fn(async () => ({ error: null }))
-vi.mock('../supabase', () => ({ supabase: { from: () => ({ insert }) } }))
+vi.mock('../supabase', () => ({ supabase: { rpc:(name:string)=>name==='claim_responsible_registration'?Promise.resolve({data:true,error:null}):contactRpc(), from: () => ({ insert }) } }))
 
 describe('GA4 runtime bootstrap', () => {
   const appendedScripts: Array<{ id: string; async: boolean; src: string }> = []
@@ -10,6 +11,7 @@ describe('GA4 runtime bootstrap', () => {
   beforeEach(() => {
     appendedScripts.length = 0
     insert.mockClear()
+    contactRpc.mockResolvedValue({data:{required:false},error:null})
 
     vi.stubGlobal('window', {
       location: {
@@ -34,6 +36,12 @@ describe('GA4 runtime bootstrap', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals()
+  })
+
+  it('does not emit registration while the required contact is pending', async()=>{
+    contactRpc.mockResolvedValueOnce({data:{required:true},error:null})
+    await trackBusinessRegistration('pending-shop','google')
+    expect(insert).not.toHaveBeenCalled()
   })
 
   it('loads and configures GA4 exactly once', () => {
@@ -95,7 +103,7 @@ describe('GA4 runtime bootstrap', () => {
     trackPageView('technical')
     window.location.search = ''
     trackFunnel('signup_error', { method: 'google', stage: 'google_auth' })
-    trackBusinessRegistration('1bf81d61-803e-4a5c-9b33-08e458532ed4', 'email')
+    await trackBusinessRegistration('1bf81d61-803e-4a5c-9b33-08e458532ed4', 'email')
     await Promise.resolve()
     expect(appendedScripts).toHaveLength(0)
     expect(window.dataLayer).toBeUndefined()

@@ -1,3 +1,5 @@
+import { ResponsiblePhoneField } from '../../components/ResponsiblePhoneField'
+import { normalizeResponsiblePhone } from '../../lib/responsibleContact'
 import { BrandLogo } from '../../components/BrandLogo'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
@@ -26,6 +28,7 @@ export function BusinessAuth() {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [responsiblePhone,setResponsiblePhone]=useState('')
   const [shopName, setShopName] = useState('')
   const [segment] = useState<ShopSegment>('pet')
   const [error, setError] = useState('')
@@ -118,6 +121,7 @@ export function BusinessAuth() {
     try {
       if (mode === 'signup') {
         trackFunnel('signup_submit', { method: 'email' })
+        if(!normalizeResponsiblePhone(responsiblePhone)){setError('Informe um celular brasileiro com DDD válido e 11 dígitos.');setLoading(false);return}
         if (!isPasswordStrong(password)) {
           signupError('password_requirements')
           setError('A senha ainda não atende a todos os requisitos.')
@@ -135,6 +139,7 @@ export function BusinessAuth() {
             data: {
               role: 'barber',
               shop_name: shopNameValue,
+              responsible_whatsapp: normalizeResponsiblePhone(responsiblePhone),
               segment,
               ...(referralCode ? { referral_code: referralCode } : {}),
             },
@@ -277,6 +282,7 @@ export function BusinessAuth() {
 
         </div>
 
+        {!resetMode && mode==='signup' && <ResponsiblePhoneField value={responsiblePhone} onChange={setResponsiblePhone}/> }
         {!resetMode && <div>
           <FieldLabel htmlFor="business-password">Senha</FieldLabel>
           <input
