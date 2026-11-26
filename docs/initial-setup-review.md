@@ -21,5 +21,12 @@ Atalhos em agenda/pacotes mantêm o formulário original montado; recarregam lis
 
 SQL transacional com rollback: elegibilidade, conta antiga, criação administrativa, progresso/adiamento/pulo, RLS de leitura e isolamento. Segundo teste percorre as seis etapas, valida erro sem avanço, rascunho persistido, reenvio sem duplicação de serviço, cliente/pet atômicos, um único profissional, agendamento via RPC operacional, contratação e consumo de pacote, isolamento de escrita e conclusão com limpeza dos rascunhos.
 
+## Interface verificada na preview
+
+Com a conta de teste criada pelo usuário, o navegador mostrou a escolha inicial e percorreu as seis etapas. Foram verificados preenchimento prévio da loja, salvamento ao continuar, rascunho da equipe preservado ao configurar depois/atualizar/retomar, profissional único, horários, serviço com duração, cliente/pet, modelo de pacote, contratação e débito de uma sessão (4 → 3 restantes). Também foi criado agendamento com comprovante para 27/11/2026 às 10:00. A escolha assistida persistiu após atualizar; pular o último passo concluiu o guia. As repetições de cenário alteraram somente o progresso da loja de teste identificada pelo nome e ID.
+
+O banco confirmou um profissional, um serviço e um agendamento nessa loja. Não foram enviados comprovantes nem mensagens. A sessão foi marcada como tráfego técnico.
+
 ## Ainda não comprovado
-Cadastro real de ponta a ponta por email/Google, consumo de convite e retomada após logout no navegador. Responsividade 320–430px/desktop e comportamento de foco/modais aninhados aguardam execução visual. Testes SQL de usuários simulados não equivalem a autenticação real. Não promover a main antes das verificações de interface e autenticação.
+
+Cadastro real Google, consumo de convite e retomada após logout no navegador. Convites administrativos, contas antigas e isolamento foram verificados por SQL com usuários isolados e rollback, não por autenticação real. Layout desktop foi observado; as larguras 320–430px e Safari/iPhone não foram verificadas, pois o controle disponível não expôs redimensionamento e o zoom por teclado não alterou o viewport. Não declarar esses cenários aprovados.
